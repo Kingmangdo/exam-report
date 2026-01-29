@@ -35,7 +35,7 @@
         <input
           v-model="filters.search"
           type="text"
-          placeholder="이름 또는 학부모 이름 검색"
+          placeholder="학생 이름 검색"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           @input="fetchStudents"
         />
@@ -165,8 +165,9 @@
               />
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학년</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반 (중복 가능)</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학교/학년</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반/담임</th>
+            <th v-if="isAdmin" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">수강료</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 이름</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 연락처</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
@@ -186,19 +187,25 @@
               {{ student.name }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ student.grade || '-' }}
+              {{ student.school || '-' }} / {{ student.grade || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <span v-if="student.classes && student.classes.length > 0">
-                <span
-                  v-for="(className, idx) in student.classes"
-                  :key="idx"
-                  class="inline-block mr-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
-                >
-                  {{ className }}
+              <div class="flex flex-col">
+                <span v-if="student.classes && student.classes.length > 0">
+                  <span
+                    v-for="(className, idx) in student.classes"
+                    :key="idx"
+                    class="inline-block mr-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                  >
+                    {{ className }}
+                  </span>
                 </span>
-              </span>
-              <span v-else>-</span>
+                <span v-else>-</span>
+                <span class="text-xs text-gray-400 mt-1">{{ student.teacher_name ? `담임: ${student.teacher_name}` : '' }}</span>
+              </div>
+            </td>
+            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+              ₩{{ (student.monthly_tuition || 0).toLocaleString() }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ student.parent_name || '-' }}
@@ -207,6 +214,12 @@
               {{ formatPhone(student.parent_phone) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button
+                @click="openCounselingModal(student)"
+                class="text-green-600 hover:text-green-800 mr-3"
+              >
+                상담
+              </button>
               <button
                 @click="openModal('edit', student)"
                 class="text-primary hover:text-primary-dark mr-3"
@@ -255,10 +268,40 @@
             </div>
 
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">학교</label>
+              <input
+                v-model="form.school"
+                type="text"
+                placeholder="학교명 입력"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">학년</label>
               <input
                 v-model="form.grade"
                 type="text"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">담임 선생님</label>
+              <input
+                v-model="form.teacher_name"
+                type="text"
+                placeholder="선생님 성함 입력"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div v-if="isAdmin">
+              <label class="block text-sm font-medium text-gray-700 mb-1">매월 수강료</label>
+              <input
+                v-model.number="form.monthly_tuition"
+                type="number"
+                placeholder="수강료 금액(원) 입력"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -348,13 +391,89 @@
         </form>
       </div>
     </div>
+
+    <!-- 상담일지 모달 -->
+    <div
+      v-if="showCounselingModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeCounselingModal"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div class="p-4 border-b bg-green-600 text-white flex justify-between items-center rounded-t-lg">
+          <h3 class="text-xl font-bold">{{ selectedStudentForCounseling?.name }} 학생 상담일지</h3>
+          <button @click="closeCounselingModal" class="text-2xl font-bold">&times;</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- 상담 입력 폼 -->
+          <div class="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 class="font-bold text-gray-700 mb-3">새 상담 기록</h4>
+            <div class="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담자</label>
+                <input v-model="counselingForm.counselor_name" type="text" class="w-full px-3 py-2 text-sm border rounded" placeholder="선생님 성함" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담 유형</label>
+                <select v-model="counselingForm.category" class="w-full px-3 py-2 text-sm border rounded">
+                  <option value="일반상담">일반상담</option>
+                  <option value="학습상담">학습상담</option>
+                  <option value="진학상담">진학상담</option>
+                  <option value="생활상담">생활상담</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="block text-xs text-gray-500 mb-1">상담 내용</label>
+              <textarea v-model="counselingForm.content" rows="3" class="w-full px-3 py-2 text-sm border rounded" placeholder="상담 내용을 입력하세요"></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button @click="saveCounselingLog" class="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition">
+                기록 저장
+              </button>
+            </div>
+          </div>
+
+          <!-- 상담 히스토리 -->
+          <div>
+            <h4 class="font-bold text-gray-700 mb-4">상담 히스토리 ({{ counselingLogs.length }}건)</h4>
+            <div v-if="counselingLogs.length === 0" class="text-center py-8 text-gray-400 text-sm">
+              기록된 상담 내역이 없습니다.
+            </div>
+            <div v-else class="space-y-4">
+              <div v-for="log in counselingLogs" :key="log.id" class="border-l-4 border-green-500 bg-white p-4 shadow-sm rounded-r-lg border-y border-r">
+                <div class="flex justify-between items-start mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-bold rounded">{{ log.category }}</span>
+                    <span class="text-xs text-gray-500">{{ log.consultation_date }}</span>
+                  </div>
+                  <button @click="deleteCounselingLog(log.id)" class="text-red-400 hover:text-red-600 text-xs">삭제</button>
+                </div>
+                <p class="text-sm text-gray-800 whitespace-pre-wrap mb-2">{{ log.content }}</p>
+                <div class="text-right">
+                  <span class="text-xs text-gray-400">작성자: {{ log.counselor_name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 border-t bg-gray-50 text-right rounded-b-lg">
+          <button @click="closeCounselingModal" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">닫기</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { studentApi, excelApi } from '../services/api';
+import { studentApi, excelApi, counselingApi } from '../services/api';
 import type { Student } from '../types';
+
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = user?.role === 'admin';
 
 const students = ref<Student[]>([]);
 const loading = ref(true);
@@ -373,6 +492,80 @@ const targetClasses = ref<string[]>([]);
 const showNewClassInput = ref(false);
 const newClassName = ref('');
 const availableClasses = ref<string[]>([]);
+
+// 상담일지 관련 상태
+const showCounselingModal = ref(false);
+const selectedStudentForCounseling = ref<Student | null>(null);
+const counselingLogs = ref<any[]>([]);
+const counselingForm = ref({
+  counselor_name: '',
+  category: '일반상담',
+  content: '',
+  consultation_date: new Date().toISOString().split('T')[0]
+});
+
+const openCounselingModal = async (student: Student) => {
+  selectedStudentForCounseling.value = student;
+  showCounselingModal.value = true;
+  await fetchCounselingLogs(student.id);
+};
+
+const closeCounselingModal = () => {
+  showCounselingModal.value = false;
+  selectedStudentForCounseling.value = null;
+  counselingLogs.value = [];
+  counselingForm.value = {
+    counselor_name: '',
+    category: '일반상담',
+    content: '',
+    consultation_date: new Date().toISOString().split('T')[0]
+  };
+};
+
+const fetchCounselingLogs = async (studentId: number) => {
+  try {
+    const response = await counselingApi.getLogs(studentId);
+    if (response.data.success) {
+      counselingLogs.value = response.data.data;
+    }
+  } catch (err) {
+    console.error('상담일지 로드 실패:', err);
+  }
+};
+
+const saveCounselingLog = async () => {
+  if (!selectedStudentForCounseling.value) return;
+  if (!counselingForm.value.counselor_name || !counselingForm.value.content) {
+    alert('상담자와 내용을 입력해주세요.');
+    return;
+  }
+
+  try {
+    const response = await counselingApi.createLog({
+      student_id: selectedStudentForCounseling.value.id,
+      ...counselingForm.value
+    });
+    if (response.data.success) {
+      alert('상담 기록이 저장되었습니다.');
+      counselingForm.value.content = '';
+      await fetchCounselingLogs(selectedStudentForCounseling.value.id);
+    }
+  } catch (err) {
+    alert('상담 기록 저장 중 오류가 발생했습니다.');
+  }
+};
+
+const deleteCounselingLog = async (id: number) => {
+  if (!confirm('상담 기록을 삭제하시겠습니까?')) return;
+  try {
+    const response = await counselingApi.deleteLog(id);
+    if (response.data.success && selectedStudentForCounseling.value) {
+      await fetchCounselingLogs(selectedStudentForCounseling.value.id);
+    }
+  } catch (err) {
+    alert('상담 기록 삭제 중 오류가 발생했습니다.');
+  }
+};
 
 const formatPhone = (phone: string) => {
   if (!phone) return '-';
@@ -528,6 +721,9 @@ const saveStudent = async () => {
     const studentData: any = {
       name: form.value.name,
       grade: form.value.grade,
+      school: form.value.school,
+      teacher_name: form.value.teacher_name,
+      monthly_tuition: form.value.monthly_tuition || 0,
       class_name: form.value.classes || [],
       phone: form.value.phone,
       parent_name: form.value.parent_name,

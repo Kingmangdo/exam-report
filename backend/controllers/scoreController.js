@@ -5,6 +5,7 @@ export const getAllScores = async (req, res) => {
   try {
     const filters = {
       student_id: req.query.student_id,
+      student_name: req.query.student_name,
       exam_date: req.query.exam_date,
       class_name: req.query.class_name,
       start_date: req.query.start_date,

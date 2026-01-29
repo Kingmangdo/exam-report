@@ -8,6 +8,9 @@ create table if not exists public.students (
   phone text,
   parent_name text,
   parent_phone text not null,
+  school text,
+  teacher_name text,
+  monthly_tuition integer default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -63,7 +66,56 @@ create table if not exists public.settings (
   updated_at timestamptz not null default now()
 );
 
+-- 반(클래스) 테이블
+create table if not exists public.classes (
+  id bigserial primary key,
+  name text not null unique,
+  description text,
+  teacher_name text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.counseling_logs (
+  id bigserial primary key,
+  student_id bigint not null references public.students(id) on delete cascade,
+  counselor_name text not null,
+  category text default '일반상담',
+  content text not null,
+  consultation_date date default current_date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 사용자(관리자/강사) 테이블
+create table if not exists public.users (
+  id bigserial primary key,
+  username text not null unique,
+  password text not null,
+  name text not null,
+  role text not null check (role in ('admin', 'instructor')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 학원비 결제 기록 테이블
+create table if not exists public.payments (
+  id bigserial primary key,
+  student_id bigint not null references public.students(id) on delete cascade,
+  amount integer not null,
+  billing_month text not null, -- YYYY-MM 형식
+  payment_date date,
+  payment_method text, -- 카드, 계좌이체, 현금 등
+  status text not null default 'unpaid' check (status in ('paid', 'unpaid')),
+  remarks text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists idx_students_parent_phone on public.students(parent_phone);
+create index if not exists idx_users_username on public.users(username);
+create index if not exists idx_payments_student_id on public.payments(student_id);
+create index if not exists idx_payments_billing_month on public.payments(billing_month);
 create index if not exists idx_scores_student_date on public.scores(student_id, exam_date);
 create index if not exists idx_scores_class_date on public.scores(class_name, exam_date);
 create index if not exists idx_report_access_token on public.report_access(access_token);
@@ -89,4 +141,24 @@ for each row execute function public.set_updated_at();
 drop trigger if exists trg_settings_updated_at on public.settings;
 create trigger trg_settings_updated_at
 before update on public.settings
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_users_updated_at on public.users;
+create trigger trg_users_updated_at
+before update on public.users
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_payments_updated_at on public.payments;
+create trigger trg_payments_updated_at
+before update on public.payments
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_counseling_logs_updated_at on public.counseling_logs;
+create trigger trg_counseling_logs_updated_at
+before update on public.counseling_logs
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_classes_updated_at on public.classes;
+create trigger trg_classes_updated_at
+before update on public.classes
 for each row execute function public.set_updated_at();

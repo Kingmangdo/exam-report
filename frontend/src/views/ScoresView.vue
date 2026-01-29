@@ -5,20 +5,13 @@
     <!-- 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <select
-          v-model="filters.student_id"
+        <input
+          v-model="filters.search"
+          type="text"
+          placeholder="학생 이름 검색"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @change="fetchScores"
-        >
-          <option value="">전체 학생</option>
-          <option
-            v-for="student in students"
-            :key="student.id"
-            :value="student.id"
-          >
-            {{ student.name }}
-          </option>
-        </select>
+          @input="fetchScores"
+        />
 
         <input
           v-model="filters.exam_date"
@@ -404,7 +397,7 @@ const scores = ref<Score[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const filters = ref({
-  student_id: '',
+  search: '',
   exam_date: '',
   start_date: '',
   end_date: ''
@@ -426,7 +419,7 @@ const fetchScores = async () => {
     loading.value = true;
     error.value = null;
     const params: any = {};
-    if (filters.value.student_id) params.student_id = Number(filters.value.student_id);
+    if (filters.value.search) params.student_name = filters.value.search;
     if (filters.value.exam_date) params.exam_date = filters.value.exam_date;
     if (filters.value.start_date) params.start_date = filters.value.start_date;
     if (filters.value.end_date) params.end_date = filters.value.end_date;
@@ -611,7 +604,7 @@ const deleteScore = async (id: number) => {
 
 const resetFilters = () => {
   filters.value = {
-    student_id: '',
+    search: '',
     exam_date: '',
     start_date: '',
     end_date: ''

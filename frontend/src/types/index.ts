@@ -3,7 +3,10 @@ export interface Student {
   id: number;
   name: string;
   grade?: string;
+  school?: string;
+  teacher_name?: string;
   class_name?: string;
+  monthly_tuition?: number;
   phone?: string;
   parent_name?: string;
   parent_phone: string;

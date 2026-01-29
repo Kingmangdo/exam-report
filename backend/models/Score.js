@@ -13,6 +13,11 @@ export class Score {
       query = query.eq('student_id', filters.student_id);
     }
 
+    if (filters.student_name) {
+      // students!inner를 사용하므로 joined table 필터링 가능
+      query = query.ilike('students.name', `%${filters.student_name}%`);
+    }
+
     if (filters.exam_date) {
       query = query.eq('exam_date', filters.exam_date);
     }

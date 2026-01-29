@@ -99,7 +99,7 @@ export const createStudent = async (req, res) => {
 export const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, grade, class_name, phone, parent_name, parent_phone } = req.body;
+    const updateData = req.body;
 
     const existingStudent = await Student.getById(id);
     if (!existingStudent) {
@@ -109,30 +109,34 @@ export const updateStudent = async (req, res) => {
       });
     }
 
-    // 필수 필드 검증
-    if (!name || !parent_phone) {
+    // 수정 시 이름이 전달되었다면 비어있지 않은지 확인
+    if (updateData.name !== undefined && !updateData.name) {
       return res.status(400).json({
         success: false,
-        message: '학생 이름과 학부모 연락처는 필수입니다.'
+        message: '학생 이름은 비워둘 수 없습니다.'
       });
     }
 
-    // 학부모 연락처 형식 검증
-    if (!/^\d+$/.test(parent_phone.replace(/-/g, ''))) {
-      return res.status(400).json({
-        success: false,
-        message: '학부모 연락처는 숫자만 입력 가능합니다.'
-      });
+    // 수정 시 학부모 연락처가 전달되었다면 유효성 검사
+    if (updateData.parent_phone !== undefined) {
+      if (!updateData.parent_phone) {
+        return res.status(400).json({
+          success: false,
+          message: '학부모 연락처는 비워둘 수 없습니다.'
+        });
+      }
+      
+      const phoneOnly = updateData.parent_phone.replace(/-/g, '');
+      if (!/^\d+$/.test(phoneOnly)) {
+        return res.status(400).json({
+          success: false,
+          message: '학부모 연락처는 숫자만 입력 가능합니다.'
+        });
+      }
+      updateData.parent_phone = phoneOnly;
     }
 
-    const student = await Student.update(id, {
-      name,
-      grade,
-      class_name: Array.isArray(class_name) ? class_name : (class_name ? [class_name] : []),
-      phone,
-      parent_name,
-      parent_phone: parent_phone.replace(/-/g, '')
-    });
+    const student = await Student.update(id, updateData);
 
     res.json({
       success: true,

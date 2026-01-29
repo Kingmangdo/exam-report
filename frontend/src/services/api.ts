@@ -16,6 +16,43 @@ const api = axios.create({
   }
 });
 
+// 인터셉터 추가: 로컬 스토리지에서 토큰 가져와 헤더에 추가
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 인터셉터 추가: 401 에러(인증 만료) 처리
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// 인증 API
+export const authApi = {
+  login: (credentials: any) => {
+    return api.post<ApiResponse<{ user: any; token: string }>>('/auth/login', credentials);
+  },
+  getMe: () => {
+    return api.get<ApiResponse<any>>('/auth/me');
+  },
+  initAdmin: () => {
+    return api.post<ApiResponse<any>>('/auth/init-admin');
+  }
+};
+
 // 학생 관리 API
 export const studentApi = {
   getAll: (filters?: { class_name?: string; grade?: string; search?: string }) => {
@@ -41,10 +78,52 @@ export const studentApi = {
   }
 };
 
+// 상담 관리 API
+export const counselingApi = {
+  getLogs: (studentId: number) => {
+    return api.get<ApiResponse<any[]>>(`/counseling/student/${studentId}`);
+  },
+  createLog: (data: any) => {
+    return api.post<ApiResponse<any>>('/counseling', data);
+  },
+  updateLog: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/counseling/${id}`, data);
+  },
+  deleteLog: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/counseling/${id}`);
+  }
+};
+
+// 반 관리 API
+export const classApi = {
+  getAll: () => {
+    return api.get<ApiResponse<any[]>>('/classes');
+  },
+  getStudents: (className: string) => {
+    return api.get<ApiResponse<any[]>>(`/classes/${className}/students`);
+  },
+  create: (data: any) => {
+    return api.post<ApiResponse<any>>('/classes', data);
+  },
+  update: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/classes/${id}`, data);
+  },
+  delete: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/classes/${id}`);
+  },
+  assignStudents: (studentIds: number[], classNames: string[]) => {
+    return api.post<ApiResponse<void>>('/classes/assign-students', {
+      student_ids: studentIds,
+      class_names: classNames
+    });
+  }
+};
+
 // 성적 관리 API
 export const scoreApi = {
   getAll: (filters?: { 
     student_id?: number; 
+    student_name?: string;
     exam_date?: string; 
     class_name?: string;
     start_date?: string;
@@ -145,6 +224,25 @@ export const excelApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  }
+};
+
+// 결제 관리 API
+export const paymentApi = {
+  getAll: (filters?: any) => {
+    return api.get<ApiResponse<any[]>>('/payments', { params: filters });
+  },
+  getStudentPayments: (studentId: number) => {
+    return api.get<ApiResponse<any[]>>(`/payments/student/${studentId}`);
+  },
+  create: (data: any) => {
+    return api.post<ApiResponse<any>>('/payments', data);
+  },
+  update: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/payments/${id}`, data);
+  },
+  delete: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/payments/${id}`);
   }
 };
 

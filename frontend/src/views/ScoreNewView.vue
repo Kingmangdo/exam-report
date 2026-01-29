@@ -298,11 +298,12 @@ const scoreForms = ref<Array<{
   rt_correct?: number;
   word_total?: number;
   word_correct?: number;
-  assignment_score: number;
-  attitude_score: number;
+  assignment_score?: number;
+  attitude_score?: number;
   word_retest?: boolean;
   comment?: string;
 }>>([]);
+
 const saving = ref<Record<number, boolean>>({});
 const savingAll = ref(false);
 const saveSuccessMessage = ref<string>('');
@@ -318,8 +319,8 @@ const resetScoreForms = () => {
     rt_correct: undefined,
     word_total: undefined,
     word_correct: undefined,
-    assignment_score: 0,
-    attitude_score: 0,
+    assignment_score: undefined,
+    attitude_score: undefined,
     word_retest: false,
     comment: ''
   }));
@@ -346,8 +347,8 @@ const loadDraftScores = () => {
       rt_correct: item.rt_correct ?? undefined,
       word_total: item.word_total ?? undefined,
       word_correct: item.word_correct ?? undefined,
-      assignment_score: item.assignment_score ?? 0,
-      attitude_score: item.attitude_score ?? 0,
+      assignment_score: item.assignment_score ?? undefined,
+      attitude_score: item.attitude_score ?? undefined,
       word_retest: Boolean(item.word_retest),
       comment: item.comment || ''
     }));
@@ -496,6 +497,14 @@ const onClassChange = () => {
 const loadExistingScores = async () => {
   if (!examDate.value || !selectedClass.value) return;
 
+  // 0. 먼저 현재 입력 폼을 초기화 (날짜 변경 시 기존 데이터 잔류 방지)
+  resetScoreForms();
+
+  // 1. 임시저장(Draft)이 있는지 먼저 확인
+  const loadedDraft = loadDraftScores();
+  if (loadedDraft) return;
+
+  // 2. 임시저장이 없으면 서버에서 기존 성적 가져오기
   try {
     const response = await scoreApi.getAll({
       class_name: selectedClass.value,
@@ -504,17 +513,13 @@ const loadExistingScores = async () => {
 
     if (response.data.success && response.data.data) {
       const existingScores = response.data.data;
-      const loadedDraft = loadDraftScores();
-      if (loadedDraft) return;
 
-      let hasExisting = false;
       classStudents.value.forEach((student, index) => {
         // 같은 반의 성적만 찾기
         const existing = existingScores.find((s: any) =>
           s.student_id === student.id && s.class_name === selectedClass.value
         );
         if (existing) {
-          hasExisting = true;
           scoreForms.value[index] = {
             rt_total: existing.rt_total || undefined,
             rt_correct: existing.rt_correct || undefined,
@@ -528,10 +533,6 @@ const loadExistingScores = async () => {
           calculateScore(index);
         }
       });
-
-      if (!hasExisting) {
-        resetScoreForms();
-      }
     }
   } catch (err) {
     console.error('기존 성적 불러오기 실패:', err);

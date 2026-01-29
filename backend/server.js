@@ -44,6 +44,10 @@ import compareRouter from './routes/compare.js';
 import settingsRouter from './routes/settings.js';
 import reportsRouter from './routes/reports.js';
 import excelRouter from './routes/excel.js';
+import counselingRouter from './routes/counseling.js';
+import authRouter from './routes/auth.js';
+import paymentRouter from './routes/payments.js';
+import classesRouter from './routes/classes.js';
 
 app.use('/api/students', studentsRouter);
 app.use('/api/scores', scoresRouter);
@@ -52,6 +56,10 @@ app.use('/api/compare', compareRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/excel', excelRouter);
+app.use('/api/counseling', counselingRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/payments', paymentRouter);
+app.use('/api/classes', classesRouter);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {

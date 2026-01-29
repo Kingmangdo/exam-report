@@ -32,7 +32,7 @@ export class Student {
 
     if (filters.search) {
       const searchTerm = `%${filters.search}%`;
-      query = query.or(`name.ilike.${searchTerm},parent_name.ilike.${searchTerm}`);
+      query = query.ilike('name', searchTerm);
     }
 
     const { data, error } = await query;
@@ -53,7 +53,7 @@ export class Student {
 
   // 학생 등록
   static async create(data) {
-    const { name, grade, class_name, phone, parent_name, parent_phone } = data;
+    const { name, grade, school, teacher_name, class_name, phone, parent_name, parent_phone, monthly_tuition } = data;
     const classNames = toClassNames(class_name);
 
     const { data: inserted, error } = await supabase
@@ -61,10 +61,13 @@ export class Student {
       .insert({
         name,
         grade: grade || null,
+        school: school || null,
+        teacher_name: teacher_name || null,
         class_name: classNames || null,
         phone: phone || null,
         parent_name: parent_name || null,
-        parent_phone
+        parent_phone,
+        monthly_tuition: monthly_tuition || 0
       })
       .select('*')
       .single();
@@ -73,22 +76,25 @@ export class Student {
     return withClasses(inserted);
   }
 
-  // 학생 수정
+  // 학생 수정 (전달된 필드만 업데이트)
   static async update(id, data) {
-    const { name, grade, class_name, phone, parent_name, parent_phone } = data;
-    const classNames = toClassNames(class_name);
+    const updateData = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.grade !== undefined) updateData.grade = data.grade || null;
+    if (data.school !== undefined) updateData.school = data.school || null;
+    if (data.teacher_name !== undefined) updateData.teacher_name = data.teacher_name || null;
+    if (data.class_name !== undefined) updateData.class_name = toClassNames(data.class_name);
+    if (data.phone !== undefined) updateData.phone = data.phone || null;
+    if (data.parent_name !== undefined) updateData.parent_name = data.parent_name || null;
+    if (data.parent_phone !== undefined) updateData.parent_phone = data.parent_phone;
+    if (data.monthly_tuition !== undefined) updateData.monthly_tuition = data.monthly_tuition;
 
     const { data: updated, error } = await supabase
       .from('students')
-      .update({
-        name,
-        grade: grade || null,
-        class_name: classNames || null,
-        phone: phone || null,
-        parent_name: parent_name || null,
-        parent_phone,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select('*')
       .single();
