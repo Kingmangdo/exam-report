@@ -408,7 +408,11 @@
           <!-- 상담 입력 폼 -->
           <div class="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
             <h4 class="font-bold text-gray-700 mb-3">새 상담 기록</h4>
-            <div class="grid grid-cols-2 gap-4 mb-3">
+            <div class="grid grid-cols-3 gap-4 mb-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담 날짜</label>
+                <input v-model="counselingForm.consultation_date" type="date" class="w-full px-3 py-2 text-sm border rounded" />
+              </div>
               <div>
                 <label class="block text-xs text-gray-500 mb-1">상담자</label>
                 <input v-model="counselingForm.counselor_name" type="text" class="w-full px-3 py-2 text-sm border rounded" placeholder="선생님 성함" />
