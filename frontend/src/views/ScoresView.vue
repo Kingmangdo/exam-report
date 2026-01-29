@@ -10,7 +10,7 @@
           type="text"
           placeholder="학생 이름 검색"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchScores"
+          @input="handleSearchInput"
         />
 
         <input
@@ -18,7 +18,7 @@
           type="text"
           placeholder="시험일자 (yy-mm-dd)"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchScores"
+          @input="handleSearchInput"
         />
 
         <input
@@ -26,7 +26,7 @@
           type="text"
           placeholder="시작일자 (yy-mm-dd)"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchScores"
+          @input="handleSearchInput"
         />
 
         <input
@@ -34,7 +34,7 @@
           type="text"
           placeholder="종료일자 (yy-mm-dd)"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchScores"
+          @input="handleSearchInput"
         />
       </div>
       <div class="mt-4">
@@ -402,6 +402,16 @@ const filters = ref({
   start_date: '',
   end_date: ''
 });
+
+// 검색 디바운스용 타이머
+let searchTimer: any = null;
+
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    fetchScores();
+  }, 500); // 0.5초 대기 후 검색
+};
 
 const fetchStudents = async () => {
   try {

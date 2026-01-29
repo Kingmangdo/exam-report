@@ -10,7 +10,7 @@
           type="text"
           placeholder="학생 이름 검색"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchPayments"
+          @input="handleSearchInput"
         />
         <input
           v-model="filters.billing_month"
@@ -220,6 +220,7 @@ const loading = ref(true);
 const showModal = ref(false);
 const modalMode = ref<'create' | 'edit'>('create');
 const selectedPaymentName = ref('');
+
 // 오늘 날짜 기준 이번 달 1일 가져오기 (YYYY-MM-01)
 const getFirstDayOfMonth = () => {
   const now = new Date();
@@ -236,7 +237,46 @@ const form = ref<any>({
   remarks: ''
 });
 
-// ... (기존 filters 생략)
+const filters = ref({
+  student_name: '',
+  billing_month: '',
+  status: ''
+});
+
+// 검색 디바운스용 타이머
+let searchTimer: any = null;
+
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    fetchPayments();
+  }, 500); // 0.5초 대기 후 검색
+};
+
+const fetchPayments = async () => {
+  try {
+    loading.value = true;
+    const response = await paymentApi.getAll(filters.value);
+    if (response.data.success) {
+      payments.value = response.data.data || [];
+    }
+  } catch (err) {
+    console.error('수납 내역 로드 실패:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchStudents = async () => {
+  try {
+    const response = await studentApi.getAll();
+    if (response.data.success) {
+      students.value = response.data.data || [];
+    }
+  } catch (err) {
+    console.error('학생 목록 로드 실패:', err);
+  }
+};
 
 const openModal = (mode: 'create' | 'edit', payment?: any) => {
   modalMode.value = mode;
@@ -257,7 +297,23 @@ const openModal = (mode: 'create' | 'edit', payment?: any) => {
   showModal.value = true;
 };
 
-// ... (기존 savePayment 생략)
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const savePayment = async () => {
+  try {
+    if (modalMode.value === 'create') {
+      await paymentApi.create(form.value);
+    } else {
+      await paymentApi.update(form.value.id, form.value);
+    }
+    showModal.value = false;
+    fetchPayments();
+  } catch (err) {
+    alert('저장 중 오류가 발생했습니다.');
+  }
+};
 
 const initMonthlyBilling = async () => {
   const currentMonth01 = getFirstDayOfMonth();
@@ -265,23 +321,28 @@ const initMonthlyBilling = async () => {
 
   try {
     loading.value = true;
-    let createdCount = 0;
+    const newPayments = [];
     
     for (const student of students.value) {
       // 해당 학생의 해당 월 기록이 이미 있는지 확인
       const existing = payments.value.find(p => p.student_id === student.id && p.billing_month === currentMonth01);
       if (!existing) {
-        await paymentApi.create({
+        newPayments.push({
           student_id: student.id,
           amount: student.monthly_tuition || 0,
           billing_month: currentMonth01,
           status: 'unpaid'
         });
-        createdCount++;
       }
     }
+
+    if (newPayments.length > 0) {
+      await paymentApi.create(newPayments);
+      alert(`${newPayments.length}명의 수납 기록이 생성되었습니다.`);
+    } else {
+      alert('이미 모든 학생의 이번 달 수납 기록이 존재합니다.');
+    }
     
-    alert(`${createdCount}명의 수납 기록이 생성되었습니다.`);
     fetchPayments();
   } catch (err) {
     alert('수납 기록 생성 중 오류가 발생했습니다.');

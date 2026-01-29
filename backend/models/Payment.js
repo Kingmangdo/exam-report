@@ -64,6 +64,27 @@ export class Payment {
     return inserted;
   }
 
+  // 결제 기록 대량 생성
+  static async bulkCreate(paymentsArray) {
+    if (!paymentsArray || paymentsArray.length === 0) return [];
+    
+    const { data, error } = await supabase
+      .from('payments')
+      .insert(paymentsArray.map(p => ({
+        student_id: p.student_id,
+        amount: p.amount,
+        billing_month: p.billing_month,
+        status: p.status || 'unpaid',
+        payment_date: p.payment_date,
+        payment_method: p.payment_method,
+        remarks: p.remarks
+      })))
+      .select('*');
+
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
   // 결제 기록 수정
   static async update(id, data) {
     const { amount, billing_month, status, payment_date, payment_method, remarks } = data;

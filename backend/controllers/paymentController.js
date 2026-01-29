@@ -21,6 +21,10 @@ export const getStudentPayments = async (req, res) => {
 
 export const createPayment = async (req, res) => {
   try {
+    if (Array.isArray(req.body)) {
+      const payments = await Payment.bulkCreate(req.body);
+      return res.status(201).json({ success: true, data: payments });
+    }
     const payment = await Payment.create(req.body);
     res.status(201).json({ success: true, data: payment });
   } catch (error) {

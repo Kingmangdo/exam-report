@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { supabase } from './models/supabase.js';
 
@@ -15,6 +16,7 @@ if (!supabase) {
 }
 
 // Middleware
+app.use(compression()); // 응답 압축 추가
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
   .split(',')
   .map(origin => origin.trim())

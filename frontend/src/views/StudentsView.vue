@@ -37,7 +37,7 @@
           type="text"
           placeholder="학생 이름 검색"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          @input="fetchStudents"
+          @input="handleSearchInput"
         />
         <select
           v-model="filters.class_name"
@@ -490,6 +490,17 @@ const filters = ref({
   class_name: '',
   grade: ''
 });
+
+// 검색 디바운스용 타이머
+let searchTimer: any = null;
+
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    fetchStudents();
+  }, 500); // 0.5초 대기 후 검색
+};
+
 const selectedStudents = ref<number[]>([]);
 const showClassMoveModal = ref(false);
 const targetClasses = ref<string[]>([]);
