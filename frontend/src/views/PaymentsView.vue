@@ -146,7 +146,7 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">청구월 <span class="text-red-500">*</span></label>
-                <input v-model="form.billing_month" type="month" required class="w-full px-4 py-2 border rounded-lg" />
+                <input v-model="form.billing_month" type="date" required class="w-full px-4 py-2 border rounded-lg" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">금액 <span class="text-red-500">*</span></label>
@@ -220,65 +220,65 @@ const loading = ref(true);
 const showModal = ref(false);
 const modalMode = ref<'create' | 'edit'>('create');
 const selectedPaymentName = ref('');
-const form = ref<any>({
-  student_id: '',
-  amount: 0,
-  billing_month: new Date().toISOString().slice(0, 7),
-  status: 'unpaid',
-  payment_date: '',
-  payment_method: '카드',
-  remarks: ''
-});
+        const form = ref<any>({
+          student_id: '',
+          amount: 0,
+          billing_month: new Date().toISOString().split('T')[0],
+          status: 'unpaid',
+          payment_date: '',
+          payment_method: '카드',
+          remarks: ''
+        });
 
-const filters = ref({
-  student_name: '',
-  billing_month: '',
-  status: ''
-});
+        const filters = ref({
+          student_name: '',
+          billing_month: '',
+          status: ''
+        });
 
-const fetchPayments = async () => {
-  try {
-    loading.value = true;
-    const response = await paymentApi.getAll(filters.value);
-    if (response.data.success) {
-      payments.value = response.data.data || [];
-    }
-  } catch (err) {
-    console.error('수납 내역 로드 실패:', err);
-  } finally {
-    loading.value = false;
-  }
-};
+        const fetchPayments = async () => {
+          try {
+            loading.value = true;
+            const response = await paymentApi.getAll(filters.value);
+            if (response.data.success) {
+              payments.value = response.data.data || [];
+            }
+          } catch (err) {
+            console.error('수납 내역 로드 실패:', err);
+          } finally {
+            loading.value = false;
+          }
+        };
 
-const fetchStudents = async () => {
-  try {
-    const response = await studentApi.getAll();
-    if (response.data.success) {
-      students.value = response.data.data || [];
-    }
-  } catch (err) {
-    console.error('학생 목록 로드 실패:', err);
-  }
-};
+        const fetchStudents = async () => {
+          try {
+            const response = await studentApi.getAll();
+            if (response.data.success) {
+              students.value = response.data.data || [];
+            }
+          } catch (err) {
+            console.error('학생 목록 로드 실패:', err);
+          }
+        };
 
-const openModal = (mode: 'create' | 'edit', payment?: any) => {
-  modalMode.value = mode;
-  if (mode === 'edit' && payment) {
-    form.value = { ...payment };
-    selectedPaymentName.value = payment.student_name;
-  } else {
-    form.value = {
-      student_id: '',
-      amount: 250000, // 기본 수강료 예시
-      billing_month: new Date().toISOString().slice(0, 7),
-      status: 'unpaid',
-      payment_date: new Date().toISOString().split('T')[0],
-      payment_method: '카드',
-      remarks: ''
-    };
-  }
-  showModal.value = true;
-};
+        const openModal = (mode: 'create' | 'edit', payment?: any) => {
+          modalMode.value = mode;
+          if (mode === 'edit' && payment) {
+            form.value = { ...payment };
+            selectedPaymentName.value = payment.student_name;
+          } else {
+            form.value = {
+              student_id: '',
+              amount: 250000, // 기본 수강료 예시
+              billing_month: new Date().toISOString().split('T')[0],
+              status: 'unpaid',
+              payment_date: new Date().toISOString().split('T')[0],
+              payment_method: '카드',
+              remarks: ''
+            };
+          }
+          showModal.value = true;
+        };
 
 const closeModal = () => {
   showModal.value = false;

@@ -179,7 +179,11 @@ const selectedStudentIds = ref<number[]>([]);
 
 const filteredAllStudents = computed(() => {
   if (!studentSearchSearch.value) return allStudents.value;
-  return allStudents.value.filter(s => s.name.includes(studentSearchSearch.value));
+  const search = studentSearchSearch.value.toLowerCase();
+  return allStudents.value.filter(s => 
+    s.name.toLowerCase().includes(search) || 
+    (s.school && s.school.toLowerCase().includes(search))
+  );
 });
 
 const fetchClasses = async () => {
@@ -207,12 +211,18 @@ const fetchAllStudents = async () => {
 const selectClass = async (item: any) => {
   selectedClass.value = item;
   try {
+    loading.value = true;
     const response = await classApi.getStudents(item.name);
     if (response.data.success) {
-      classStudents.value = response.data.data || [];
+      // 서버 필터링 외에 프론트엔드에서도 정확히 매칭되는 학생만 필터 (중복 이름 방지)
+      classStudents.value = (response.data.data || []).filter((s: any) => 
+        s.class_name?.split(',').map((c: string) => c.trim()).includes(item.name)
+      );
     }
   } catch (err) {
     console.error('반 학생 로드 실패:', err);
+  } finally {
+    loading.value = false;
   }
 };
 

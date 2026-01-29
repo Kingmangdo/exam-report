@@ -764,20 +764,36 @@ const resetFilters = () => {
 const downloadTemplate = async () => {
   try {
     const response = await excelApi.downloadTemplate();
-    const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    
+    // Axios response.data가 Blob인지 확인 (api.ts에서 responseType: 'blob' 설정 필요)
+    const blob = new Blob([response.data], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
     });
+    
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = '학생명단_양식.xlsx';
+    
+    // 서버에서 보낸 파일명 추출 시도
+    const contentDisposition = response.headers['content-disposition'];
+    let fileName = '학생명단_양식.xlsx';
+    if (contentDisposition) {
+      const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (fileNameMatch && fileNameMatch[1]) {
+        fileName = decodeURIComponent(fileNameMatch[1].replace(/['"]/g, '').replace('UTF-8\'\'', ''));
+      }
+    }
+    
+    link.setAttribute('download', fileName);
     document.body.appendChild(link);
     link.click();
+    
+    // 메모리 해제
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (err: any) {
-    alert(err.response?.data?.message || '양식 다운로드 중 오류가 발생했습니다.');
-    console.error(err);
+    console.error('Download error:', err);
+    alert('양식 다운로드 중 오류가 발생했습니다.');
   }
 };
 

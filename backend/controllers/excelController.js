@@ -6,11 +6,17 @@ export const downloadTemplate = (req, res) => {
   try {
     const buffer = generateTemplate();
     
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=학생명단_양식.xlsx');
+    // 파일명 인코딩 문제 해결 (한글 깨짐 방지)
+    const fileName = encodeURIComponent('학생명단_양식.xlsx');
     
-    res.send(buffer);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${fileName}`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition'); // 프론트에서 파일명 접근 허용
+    
+    res.status(200).send(buffer);
   } catch (error) {
+    console.error('Template Download Error:', error);
     res.status(500).json({
       success: false,
       message: '양식 생성 중 오류가 발생했습니다.',
