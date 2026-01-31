@@ -92,13 +92,6 @@ export const createScore = async (req, res) => {
       });
     }
 
-    if (attitude_score < 0 || attitude_score > 100) {
-      return res.status(400).json({
-        success: false,
-        message: '수업태도 점수는 0-100점 사이여야 합니다.'
-      });
-    }
-
     // 날짜 형식 검증 (yy-mm-dd)
     const dateRegex = /^\d{2}-\d{2}-\d{2}$/;
     if (!dateRegex.test(exam_date)) {
@@ -169,13 +162,6 @@ export const updateScore = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: '과제점수는 0-100점 사이여야 합니다.'
-      });
-    }
-
-    if (attitude_score < 0 || attitude_score > 100) {
-      return res.status(400).json({
-        success: false,
-        message: '수업태도 점수는 0-100점 사이여야 합니다.'
       });
     }
 

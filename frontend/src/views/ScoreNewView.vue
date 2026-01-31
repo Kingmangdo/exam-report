@@ -288,6 +288,16 @@ const onClassChange = () => {
 };
 
 const loadExistingScores = async () => {
+  // 상태 초기화 (시험일자 변경 시 기본값으로)
+  scoreForms.value = classStudents.value.map(() => ({
+    rt_details: rtTestTypes.value.map(() => ({ correct: 0 })),
+    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    assignment_grade: '',
+    assignment_score: 0,
+    comment: ''
+  }));
+  calculatedScores.value = classStudents.value.map(() => ({ total: 0, average: 0 }));
+
   // 임시저장 먼저 확인
   const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
   const draft = localStorage.getItem(key);
