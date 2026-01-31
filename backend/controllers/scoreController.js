@@ -109,12 +109,14 @@ export const createScore = async (req, res) => {
       student_id,
       exam_date,
       class_name,
-      rt_total,
-      rt_correct,
-      word_total,
-      word_correct,
-      assignment_score,
-      comment
+      rt_total: rt_total || 0,
+      rt_correct: rt_correct || 0,
+      word_total: word_total || 0,
+      word_correct: word_correct || 0,
+      rt_details: req.body.rt_details || [],
+      word_details: req.body.word_details || [],
+      assignment_score: assignment_score || 0,
+      comment: comment || ''
     });
 
     res.status(isUpdate ? 200 : 201).json({
@@ -165,12 +167,14 @@ export const updateScore = async (req, res) => {
     }
 
     const score = await Score.update(id, {
-      rt_total,
-      rt_correct,
-      word_total,
-      word_correct,
-      assignment_score,
-      comment
+      rt_total: rt_total || 0,
+      rt_correct: rt_correct || 0,
+      word_total: word_total || 0,
+      word_correct: word_correct || 0,
+      rt_details: req.body.rt_details || [],
+      word_details: req.body.word_details || [],
+      assignment_score: assignment_score || 0,
+      comment: comment || ''
     });
 
     res.json({

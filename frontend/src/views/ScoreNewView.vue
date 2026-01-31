@@ -376,8 +376,29 @@ const saveAllScores = async () => {
 };
 
 const resetAllScores = () => {
-  if (!confirm('정말 초기화하시겠습니까?')) return;
-  onClassChange();
+  if (!confirm('정말 초기화하시겠습니까? 입력 중인 모든 데이터가 삭제됩니다.')) return;
+  
+  // 현재 반의 임시저장 데이터 삭제
+  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
+  localStorage.removeItem(key);
+  
+  // 입력 폼 및 계산 결과 초기화
+  scoreForms.value = classStudents.value.map(() => ({
+    rt_details: rtTestTypes.value.map(() => ({ correct: 0 })),
+    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    assignment_grade: '',
+    assignment_score: 0,
+    comment: ''
+  }));
+  
+  calculatedScores.value = classStudents.value.map(() => ({ 
+    rtScore: 0, 
+    wordScore: 0, 
+    total: 0, 
+    average: 0 
+  }));
+  
+  showToast('데이터가 초기화되었습니다.');
 };
 
 const showToast = (msg: string) => {

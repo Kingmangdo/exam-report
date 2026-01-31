@@ -171,11 +171,11 @@ export class Score {
       student_id,
       exam_date,
       class_name: targetClassName,
-      rt_total: rt_total || null,
-      rt_correct: rt_correct ?? null,
+      rt_total: rt_total || 0,
+      rt_correct: rt_correct ?? 0,
       rt_score: rtScore,
-      word_total: word_total || null,
-      word_correct: word_correct ?? null,
+      word_total: word_total || 0,
+      word_correct: word_correct ?? 0,
       word_score: wordScore,
       rt_details: rt_details || [],
       word_details: word_details || [],
@@ -183,7 +183,7 @@ export class Score {
       total_score: total,
       average_score: average,
       class_average: classAverage,
-      comment: comment || null,
+      comment: comment || '',
       updated_at: new Date().toISOString()
     };
 
@@ -233,19 +233,19 @@ export class Score {
     const { error } = await supabase
       .from('scores')
       .update({
-        rt_total,
-        rt_correct,
+        rt_total: rt_total || 0,
+        rt_correct: rt_correct || 0,
         rt_score: rtScore,
-        word_total,
-        word_correct,
+        word_total: word_total || 0,
+        word_correct: word_correct || 0,
         word_score: wordScore,
         rt_details: rt_details || [],
         word_details: word_details || [],
-        assignment_score,
+        assignment_score: assignment_score || 0,
         total_score: total,
         average_score: average,
         class_average: classAverage,
-        comment,
+        comment: comment || '',
         updated_at: new Date().toISOString()
       })
       .eq('id', id);
