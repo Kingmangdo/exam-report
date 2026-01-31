@@ -33,7 +33,13 @@
             </button>
           </div>
         </div>
-        <p class="text-sm text-gray-600 mb-4 h-10 overflow-hidden">{{ item.description || '설명 없음' }}</p>
+        
+        <div class="space-y-2 mb-4">
+          <p class="text-sm text-gray-600"><span class="font-bold">진도:</span> {{ item.progress || '-' }}</p>
+          <p class="text-sm text-gray-600"><span class="font-bold">교재:</span> {{ item.textbook || '-' }}</p>
+          <p class="text-sm text-gray-600"><span class="font-bold">숙제:</span> {{ item.homework || '-' }}</p>
+        </div>
+
         <div class="flex justify-between items-center text-xs text-gray-400">
           <span>등록 학생: {{ item.student_count || 0 }}명</span>
           <span>생성일: {{ item.created_at?.split('T')[0] }}</span>
@@ -53,6 +59,25 @@
         >
           + 학생 추가/변경
         </button>
+        <div class="space-y-4 border-l pl-6">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-sm font-bold text-gray-700">반별 학습 관리</label>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">진도</label>
+              <input v-model="selectedClass.progress" type="text" class="w-full px-3 py-2 text-sm border rounded" placeholder="현재 진도 입력" @change="updateClassInfo" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">교재</label>
+              <input v-model="selectedClass.textbook" type="text" class="w-full px-3 py-2 text-sm border rounded" placeholder="사용 교재 입력" @change="updateClassInfo" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">숙제</label>
+              <textarea v-model="selectedClass.homework" rows="2" class="w-full px-3 py-2 text-sm border rounded" placeholder="오늘의 숙제 입력" @change="updateClassInfo"></textarea>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -108,8 +133,20 @@
             <input v-model="classForm.teacher_name" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="선생님 이름" />
           </div>
           <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">진도</label>
+            <input v-model="classForm.progress" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="현재 진도" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">교재</label>
+            <input v-model="classForm.textbook" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="사용 교재" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">숙제</label>
+            <input v-model="classForm.homework" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="오늘의 숙제" />
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
-            <textarea v-model="classForm.description" rows="3" class="w-full px-4 py-2 border rounded-lg" placeholder="반에 대한 설명 입력"></textarea>
+            <textarea v-model="classForm.description" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="반에 대한 설명 입력"></textarea>
           </div>
           <div class="flex justify-end space-x-3 mt-6">
             <button type="button" @click="closeClassModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">취소</button>
@@ -171,7 +208,14 @@ const loading = ref(false);
 
 const showClassModal = ref(false);
 const classModalMode = ref<'create' | 'edit'>('create');
-const classForm = ref({ name: '', teacher_name: '', description: '' });
+const classForm = ref({ 
+  name: '', 
+  teacher_name: '', 
+  description: '',
+  progress: '',
+  textbook: '',
+  homework: ''
+});
 
 const showStudentAssignModal = ref(false);
 const studentSearchSearch = ref('');
@@ -229,9 +273,21 @@ const selectClass = async (item: any) => {
 const openClassModal = (mode: 'create' | 'edit', item?: any) => {
   classModalMode.value = mode;
   if (mode === 'edit' && item) {
-    classForm.value = { ...item };
+    classForm.value = { 
+      ...item,
+      progress: item.progress || '',
+      textbook: item.textbook || '',
+      homework: item.homework || ''
+    };
   } else {
-    classForm.value = { name: '', teacher_name: '', description: '' };
+    classForm.value = { 
+      name: '', 
+      teacher_name: '', 
+      description: '',
+      progress: '',
+      textbook: '',
+      homework: ''
+    };
   }
   showClassModal.value = true;
 };
@@ -311,6 +367,20 @@ const assignStudents = async () => {
     alert('학생 배정 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message));
   } finally {
     loading.value = false;
+  }
+};
+
+const updateClassInfo = async () => {
+  if (!selectedClass.value) return;
+  try {
+    await classApi.update(selectedClass.value.id, {
+      progress: selectedClass.value.progress,
+      textbook: selectedClass.value.textbook,
+      homework: selectedClass.value.homework
+    });
+    fetchClasses();
+  } catch (err) {
+    console.error('반 정보 업데이트 실패:', err);
   }
 };
 

@@ -27,12 +27,27 @@ export interface Score {
   word_total?: number;
   word_correct?: number;
   word_score?: number;
+  rt_details?: any[];
+  word_details?: any[];
   assignment_score: number;
-  attitude_score: number;
   total_score?: number;
   average_score?: number;
   class_average?: number;
   comment?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 반 타입
+export interface Class {
+  id: number;
+  name: string;
+  description?: string;
+  teacher_name?: string;
+  progress?: string;
+  textbook?: string;
+  homework?: string;
+  student_count?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -69,7 +84,6 @@ export interface ReportData {
       retest: boolean;
     };
     assignment: number;
-    attitude: number;
     total: number;
     average: number;
     class_average: number;
@@ -91,7 +105,6 @@ export interface ReportData {
     rt_score: number;
     word_score: number;
     assignment_score: number;
-    attitude_score: number;
     total_score: number;
     average_score: number;
     class_average: number;

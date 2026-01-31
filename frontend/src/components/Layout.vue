@@ -56,7 +56,6 @@ const navItems = ref([
   { name: '반 관리', path: '/classes', adminOnly: false },
   { name: '성적 입력', path: '/scores/new', adminOnly: false },
   { name: '성적 조회', path: '/scores', adminOnly: false },
-  { name: '수납 관리', path: '/payments', adminOnly: true },
   { name: '설정', path: '/settings', adminOnly: true }
 ]);
 

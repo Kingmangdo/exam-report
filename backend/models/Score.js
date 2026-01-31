@@ -85,9 +85,9 @@ export class Score {
   }
 
   // 총점 및 평균 계산
-  static calculateTotalAndAverage(rtScore, wordScore, assignmentScore, attitudeScore) {
-    const total = rtScore + wordScore + assignmentScore + attitudeScore;
-    const average = total / 4; // 가중치 25% 동일
+  static calculateTotalAndAverage(rtScore, wordScore, assignmentScore) {
+    const total = rtScore + wordScore + assignmentScore;
+    const average = total / 3; // 수업태도 제거로 3개 항목 평균
     return {
       total: Math.round(total * 100) / 100,
       average: Math.round(average * 100) / 100
@@ -118,8 +118,9 @@ export class Score {
       rt_correct,
       word_total,
       word_correct,
+      rt_details,
+      word_details,
       assignment_score,
-      attitude_score,
       comment
     } = data;
 
@@ -135,8 +136,7 @@ export class Score {
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,
-      assignment_score,
-      attitude_score
+      assignment_score
     );
 
     // 학생 정보 조회 (반 평균 계산용)
@@ -177,8 +177,9 @@ export class Score {
       word_total: word_total || null,
       word_correct: word_correct ?? null,
       word_score: wordScore,
+      rt_details: rt_details || [],
+      word_details: word_details || [],
       assignment_score: assignment_score || 0,
-      attitude_score: attitude_score || 0,
       total_score: total,
       average_score: average,
       class_average: classAverage,
@@ -208,8 +209,9 @@ export class Score {
       rt_correct,
       word_total,
       word_correct,
+      rt_details,
+      word_details,
       assignment_score,
-      attitude_score,
       comment
     } = data;
 
@@ -223,8 +225,7 @@ export class Score {
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,
-      assignment_score,
-      attitude_score
+      assignment_score
     );
 
     const classAverage = await this.calculateClassAverage(existing.class_name || null, existing.exam_date);
@@ -238,8 +239,9 @@ export class Score {
         word_total,
         word_correct,
         word_score: wordScore,
+        rt_details: rt_details || [],
+        word_details: word_details || [],
         assignment_score,
-        attitude_score,
         total_score: total,
         average_score: average,
         class_average: classAverage,

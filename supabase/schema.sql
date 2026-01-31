@@ -26,8 +26,9 @@ create table if not exists public.scores (
   word_total integer,
   word_correct integer,
   word_score numeric,
+  rt_details jsonb default '[]'::jsonb,
+  word_details jsonb default '[]'::jsonb,
   assignment_score numeric,
-  attitude_score numeric,
   total_score numeric,
   average_score numeric,
   class_average numeric,
@@ -72,6 +73,9 @@ create table if not exists public.classes (
   name text not null unique,
   description text,
   teacher_name text,
+  progress text,
+  textbook text,
+  homework text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -98,19 +102,8 @@ create table if not exists public.users (
   updated_at timestamptz not null default now()
 );
 
--- 학원비 결제 기록 테이블
-create table if not exists public.payments (
-  id bigserial primary key,
-  student_id bigint not null references public.students(id) on delete cascade,
-  amount integer not null,
-  billing_month text not null, -- YYYY-MM 형식
-  payment_date date,
-  payment_method text, -- 카드, 계좌이체, 현금 등
-  status text not null default 'unpaid' check (status in ('paid', 'unpaid')),
-  remarks text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- 학원비 결제 기록 테이블 (삭제됨)
+-- create table if not exists public.payments ( ... );
 
 create index if not exists idx_students_parent_phone on public.students(parent_phone);
 create index if not exists idx_users_username on public.users(username);
@@ -148,17 +141,12 @@ create trigger trg_users_updated_at
 before update on public.users
 for each row execute function public.set_updated_at();
 
-drop trigger if exists trg_payments_updated_at on public.payments;
-create trigger trg_payments_updated_at
-before update on public.payments
+drop trigger if exists trg_classes_updated_at on public.classes;
+create trigger trg_classes_updated_at
+before update on public.classes
 for each row execute function public.set_updated_at();
 
 drop trigger if exists trg_counseling_logs_updated_at on public.counseling_logs;
 create trigger trg_counseling_logs_updated_at
 before update on public.counseling_logs
-for each row execute function public.set_updated_at();
-
-drop trigger if exists trg_classes_updated_at on public.classes;
-create trigger trg_classes_updated_at
-before update on public.classes
 for each row execute function public.set_updated_at();

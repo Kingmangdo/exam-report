@@ -39,12 +39,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/ScoresView.vue')
       },
       {
-        path: 'payments',
-        name: 'payments',
-        component: () => import('../views/PaymentsView.vue'),
-        meta: { adminOnly: true }
-      },
-      {
         path: 'settings',
         name: 'settings',
         component: () => import('../views/SettingsView.vue'),

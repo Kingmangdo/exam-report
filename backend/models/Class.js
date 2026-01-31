@@ -48,10 +48,10 @@ export class Class {
 
   // 반 생성
   static async create(classData) {
-    const { name, description, teacher_name } = classData;
+    const { name, description, teacher_name, progress, textbook, homework } = classData;
     const { data, error } = await supabase
       .from('classes')
-      .insert({ name, description, teacher_name })
+      .insert({ name, description, teacher_name, progress, textbook, homework })
       .select('*')
       .single();
     
@@ -61,10 +61,18 @@ export class Class {
 
   // 반 수정
   static async update(id, classData) {
-    const { name, description, teacher_name } = classData;
+    const { name, description, teacher_name, progress, textbook, homework } = classData;
     const { data, error } = await supabase
       .from('classes')
-      .update({ name, description, teacher_name, updated_at: new Date().toISOString() })
+      .update({ 
+        name, 
+        description, 
+        teacher_name, 
+        progress, 
+        textbook, 
+        homework, 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', id)
       .select('*')
       .single();

@@ -48,7 +48,6 @@ import reportsRouter from './routes/reports.js';
 import excelRouter from './routes/excel.js';
 import counselingRouter from './routes/counseling.js';
 import authRouter from './routes/auth.js';
-import paymentRouter from './routes/payments.js';
 import classesRouter from './routes/classes.js';
 
 app.use('/api/students', studentsRouter);
@@ -60,7 +59,6 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/excel', excelRouter);
 app.use('/api/counseling', counselingRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/payments', paymentRouter);
 app.use('/api/classes', classesRouter);
 
 // Start server

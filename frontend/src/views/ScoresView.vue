@@ -65,7 +65,6 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RT</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">단어</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">수업태도</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">평균</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">성적 미리보기</th>
           </tr>
@@ -87,9 +86,6 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ score.attitude_score !== null ? score.attitude_score.toFixed(1) : '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-primary">
               {{ score.average_score !== null ? score.average_score.toFixed(1) : '-' }}
@@ -202,14 +198,6 @@
                 {{ reportData.score.assignment?.toFixed(1) || '0.0' }}점
               </p>
             </div>
-
-            <!-- 수업태도 -->
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <p class="font-semibold text-gray-800">수업태도</p>
-              <p class="text-2xl font-bold text-primary">
-                {{ reportData.score.attitude?.toFixed(1) || '0.0' }}점
-              </p>
-            </div>
           </div>
 
           <!-- 총점 및 평균 -->
@@ -289,12 +277,6 @@
                 <p class="text-xs text-gray-500">과제 점수</p>
                 <p class="text-base font-semibold" :class="trendColor(assignmentDelta.trend)">
                   {{ formatDelta(assignmentDelta.diff) }}
-                </p>
-              </div>
-              <div class="p-3 bg-white border rounded-lg">
-                <p class="text-xs text-gray-500">수업태도</p>
-                <p class="text-base font-semibold" :class="trendColor(attitudeDelta.trend)">
-                  {{ formatDelta(attitudeDelta.diff) }}
                 </p>
               </div>
               <div class="p-3 bg-white border rounded-lg">
@@ -512,8 +494,7 @@ const assignmentDelta = computed(() => {
 });
 
 const attitudeDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.attitude_score, latestPair.value.previous.attitude_score);
+  return { diff: 0, trend: 'stable' as const };
 });
 
 const totalDelta = computed(() => {

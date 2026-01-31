@@ -2,50 +2,55 @@
   <div>
     <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 입력</h2>
 
-    <!-- 반 선택 및 날짜 -->
+    <!-- 반 선택 및 날짜, 공통 설정 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- 반 선택 -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            반 선택 <span class="text-red-500">*</span>
-          </label>
-          <select
-            v-model="selectedClass"
-            required
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            @change="onClassChange"
-          >
-            <option value="">반을 선택하세요</option>
-            <option
-              v-for="className in classList"
-              :key="className"
-              :value="className"
-            >
-              {{ className }}
-            </option>
-          </select>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 반 및 날짜 -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">반 선택 <span class="text-red-500">*</span></label>
+            <select v-model="selectedClass" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="onClassChange">
+              <option value="">반을 선택하세요</option>
+              <option v-for="className in classList" :key="className" :value="className">{{ className }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">시험일자 <span class="text-red-500">*</span></label>
+            <input v-model="examDateInput" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
         </div>
 
-        <!-- 날짜 선택 -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            시험일자 <span class="text-red-500">*</span>
-          </label>
-          <input
-            v-model="examDateInput"
-            type="date"
-            required
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <p class="text-xs text-gray-500 mt-1">캘린더에서 날짜를 선택하세요</p>
+        <!-- 테스트 종류 관리 (RT, 단어) -->
+        <div class="space-y-4 border-l pl-6">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-sm font-bold text-gray-700">RT 테스트 설정</label>
+              <button @click="addTestType('rt')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100">+ 추가</button>
+            </div>
+            <div v-for="(test, idx) in rtTestTypes" :key="idx" class="flex items-center gap-2 mb-2">
+              <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
+              <input v-model.number="test.total" type="number" placeholder="총 문제" class="w-16 px-2 py-1 text-xs border rounded" @input="updateGlobalTotals" />
+              <button @click="removeTestType('rt', idx)" class="text-red-500 text-xs">삭제</button>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-sm font-bold text-gray-700">단어 테스트 설정</label>
+              <button @click="addTestType('word')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100">+ 추가</button>
+            </div>
+            <div v-for="(test, idx) in wordTestTypes" :key="idx" class="flex items-center gap-2 mb-2">
+              <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
+              <input v-model.number="test.total" type="number" placeholder="총 문제" class="w-16 px-2 py-1 text-xs border rounded" @input="updateGlobalTotals" />
+              <button @click="removeTestType('word', idx)" class="text-red-500 text-xs">삭제</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 성적 입력 테이블 -->
     <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-      <div class="p-4 border-b bg-gray-50">
+      <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">
           {{ selectedClass }} 성적 입력 ({{ classStudents.length }}명)
         </h3>
@@ -55,228 +60,90 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">
-                학생명
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">학생명</th>
+              
+              <!-- RT 테스트 컬럼들 -->
+              <th v-for="(test, idx) in rtTestTypes" :key="'rt-h-'+idx" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                RT: {{ test.name || '미지정' }} ({{ test.total || 0 }})
               </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase" colspan="2">
-                RT점수
+
+              <!-- 단어 테스트 컬럼들 -->
+              <th v-for="(test, idx) in wordTestTypes" :key="'word-h-'+idx" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                단어: {{ test.name || '미지정' }} ({{ test.total || 0 }})
               </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase" colspan="2">
-                단어시험
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                과제점수
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                수업태도
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                총점
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                평균
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                코멘트
-              </th>
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                저장
-              </th>
-            </tr>
-            <tr class="bg-gray-100">
-              <th class="px-4 py-2 text-left text-xs text-gray-600 sticky left-0 bg-gray-100 z-10"></th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">총 문제</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">맞춘 문제</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">총 문제</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">맞춘 문제</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">(0-100)</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600">(0-100)</th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600"></th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600"></th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600"></th>
-              <th class="px-2 py-2 text-center text-xs text-gray-600"></th>
+
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제점수</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">평균</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">코멘트</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="(student, index) in classStudents"
-              :key="student.id"
-              class="hover:bg-gray-50"
-            >
+            <tr v-for="(student, sIdx) in classStudents" :key="student.id" class="hover:bg-gray-50">
               <!-- 학생명 -->
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
                 {{ student.name }}
               </td>
 
-              <!-- RT점수 -->
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].rt_total"
-                  type="number"
-                  min="0"
-                  placeholder="총 문제"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
-              </td>
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].rt_correct"
-                  type="number"
-                  min="0"
-                  placeholder="맞춘 문제"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
+              <!-- RT 맞춘 문제 입력 -->
+              <td v-for="(test, tIdx) in rtTestTypes" :key="'rt-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
+                <input v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center" @input="calculateScore(sIdx)" />
               </td>
 
-              <!-- 단어시험 -->
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].word_total"
-                  type="number"
-                  min="0"
-                  placeholder="총 문제"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100"
-                  :disabled="scoreForms[index].word_retest"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
-              </td>
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].word_correct"
-                  type="number"
-                  min="0"
-                  placeholder="맞춘 문제"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100"
-                  :disabled="scoreForms[index].word_retest"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
-                <button
-                  type="button"
-                  @click="toggleWordRetest(index)"
-                  class="mt-2 w-20 px-2 py-1 text-xs rounded border transition"
-                  :class="scoreForms[index].word_retest ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
-                >
-                  {{ scoreForms[index].word_retest ? '재시험 해제' : '재시험' }}
-                </button>
+              <!-- 단어 맞춘 문제 입력 -->
+              <td v-for="(test, tIdx) in wordTestTypes" :key="'word-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <input v-model.number="scoreForms[sIdx].word_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-100" :disabled="scoreForms[sIdx].word_details[tIdx].retest" @input="calculateScore(sIdx)" />
+                  <button @click="toggleRetest(sIdx, tIdx)" class="text-[10px] px-1 rounded border" :class="scoreForms[sIdx].word_details[tIdx].retest ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200'">재시험</button>
+                </div>
               </td>
 
-              <!-- 과제점수 -->
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].assignment_score"
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="0-100"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
-              </td>
-
-              <!-- 수업태도 -->
-              <td class="px-2 py-3">
-                <input
-                  v-model.number="scoreForms[index].attitude_score"
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="0-100"
-                  class="w-20 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                  @keydown.up.prevent
-                  @keydown.down.prevent
-                  @input="calculateScore(index)"
-                />
-              </td>
-
-              <!-- 총점 -->
-              <td class="px-2 py-3 text-center text-sm font-semibold text-gray-700">
-                {{ calculatedScores[index]?.total?.toFixed(1) || '-' }}
+              <!-- 과제점수 (A, B, C, F) -->
+              <td class="px-2 py-3 text-center">
+                <div class="flex gap-1 justify-center">
+                  <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" class="w-8 h-8 text-xs font-bold rounded-full border transition" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
+                    {{ grade }}
+                  </button>
+                </div>
               </td>
 
               <!-- 평균 -->
               <td class="px-2 py-3 text-center text-sm font-semibold text-primary">
-                {{ calculatedScores[index]?.average?.toFixed(1) || '-' }}
+                {{ calculatedScores[sIdx]?.average?.toFixed(1) || '-' }}
               </td>
 
               <!-- 코멘트 -->
               <td class="px-2 py-3">
-                <textarea
-                  v-model="scoreForms[index].comment"
-                  rows="2"
-                  placeholder="코멘트를 입력하세요"
-                  class="w-56 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-                ></textarea>
-              </td>
-
-              <!-- 임시저장 / 저장 버튼 -->
-              <td class="px-2 py-3 text-center">
-                <div class="flex flex-col gap-1">
-                  <button
-                    type="button"
-                    @click="saveDraft(index)"
-                    class="px-3 py-1 text-xs bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                  >
-                    임시저장
-                  </button>
-                  <button
-                    @click="saveStudentScore(index, student.id)"
-                    :disabled="saving[index]"
-                    class="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary-dark transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {{ saving[index] ? '저장중...' : '저장' }}
-                  </button>
-                </div>
+                <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- 일괄 저장 버튼 -->
-      <div class="p-4 border-t bg-gray-50 flex justify-end space-x-3">
-        <button
-          @click="resetAllScores"
-          class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-        >
-          전체 초기화
-        </button>
-        <button
-          @click="saveAllScores"
-          :disabled="savingAll"
-          class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
-        >
-          {{ savingAll ? '저장 중...' : '전체 저장' }}
-        </button>
+      <!-- 하단 버튼 영역 -->
+      <div class="p-4 border-t bg-gray-50 flex justify-end items-center">
+        <div class="flex gap-2">
+          <button @click="resetAllScores" class="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">전체 초기화</button>
+          <button @click="saveDraftAll" class="px-4 py-2 text-sm bg-orange-100 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-200 transition">임시저장</button>
+          <button @click="saveAllScores" :disabled="savingAll" class="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50">
+            {{ savingAll ? '저장 중...' : '성적 전체 저장' }}
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- 반 선택 안내 -->
-    <div v-else-if="!selectedClass" class="bg-white rounded-lg shadow p-8 text-center">
-      <p class="text-gray-500">반을 선택하면 해당 반 학생들의 성적을 입력할 수 있습니다.</p>
+    <div v-else-if="!selectedClass" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+      반을 선택하면 해당 반 학생들의 성적을 입력할 수 있습니다.
     </div>
 
     <!-- 학생 없음 -->
-    <div v-else class="bg-white rounded-lg shadow p-8 text-center">
-      <p class="text-gray-500">선택한 반에 등록된 학생이 없습니다.</p>
+    <div v-else class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+      선택한 반에 등록된 학생이 없습니다.
     </div>
 
-    <!-- 저장 성공 알림 -->
-    <div
-      v-if="saveSuccessMessage"
-      class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50"
-    >
+    <!-- 알림 메시지 -->
+    <div v-if="saveSuccessMessage" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
       {{ saveSuccessMessage }}
     </div>
   </div>
@@ -291,413 +158,248 @@ import type { Student } from '../types';
 const selectedClass = ref<string>('');
 const examDate = ref<string>(getToday());
 const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
+
+const rtTestTypes = ref<Array<{ name: string; total: number }>>([{ name: 'RT 1', total: 10 }]);
+const wordTestTypes = ref<Array<{ name: string; total: number }>>([{ name: '단어 1', total: 50 }]);
+
 const allStudents = ref<Student[]>([]);
 const classStudents = ref<Student[]>([]);
-const scoreForms = ref<Array<{
-  rt_total?: number;
-  rt_correct?: number;
-  word_total?: number;
-  word_correct?: number;
-  assignment_score?: number;
-  attitude_score?: number;
-  word_retest?: boolean;
-  comment?: string;
-}>>([]);
-
-const saving = ref<Record<number, boolean>>({});
+const scoreForms = ref<any[]>([]);
+const calculatedScores = ref<any[]>([]);
 const savingAll = ref(false);
 const saveSuccessMessage = ref<string>('');
 
-const getDraftKey = () => {
-  if (!selectedClass.value || !examDate.value) return '';
-  return `scoreDraft:${selectedClass.value}:${examDate.value}`;
-};
+const assignmentMap: Record<string, number> = { 'A': 100, 'B': 85, 'C': 70, 'F': 50 };
 
-const resetScoreForms = () => {
-  scoreForms.value = classStudents.value.map(() => ({
-    rt_total: undefined,
-    rt_correct: undefined,
-    word_total: undefined,
-    word_correct: undefined,
-    assignment_score: undefined,
-    attitude_score: undefined,
-    word_retest: false,
-    comment: ''
-  }));
-
-  calculatedScores.value = classStudents.value.map(() => ({
-    rtScore: 0,
-    wordScore: 0,
-    total: 0,
-    average: 0
-  }));
-};
-
-const loadDraftScores = () => {
-  const key = getDraftKey();
-  if (!key || typeof window === 'undefined') return false;
-  const raw = window.localStorage.getItem(key);
-  if (!raw) return false;
-  try {
-    const draft = JSON.parse(raw);
-    if (!Array.isArray(draft)) return false;
-    if (draft.length !== classStudents.value.length) return false;
-    scoreForms.value = draft.map((item: any) => ({
-      rt_total: item.rt_total ?? undefined,
-      rt_correct: item.rt_correct ?? undefined,
-      word_total: item.word_total ?? undefined,
-      word_correct: item.word_correct ?? undefined,
-      assignment_score: item.assignment_score ?? undefined,
-      attitude_score: item.attitude_score ?? undefined,
-      word_retest: Boolean(item.word_retest),
-      comment: item.comment || ''
-    }));
-    scoreForms.value.forEach((_, index) => calculateScore(index));
-    return true;
-  } catch {
-    return false;
+const addTestType = (type: 'rt' | 'word') => {
+  if (type === 'rt') {
+    rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, total: 10 });
+  } else {
+    wordTestTypes.value.push({ name: `단어 ${wordTestTypes.value.length + 1}`, total: 50 });
   }
+  updateAllScoreForms();
 };
 
-const clearDraftScores = () => {
-  const key = getDraftKey();
-  if (!key || typeof window === 'undefined') return;
-  window.localStorage.removeItem(key);
+const removeTestType = (type: 'rt' | 'word', index: number) => {
+  if (type === 'rt') {
+    rtTestTypes.value.splice(index, 1);
+  } else {
+    wordTestTypes.value.splice(index, 1);
+  }
+  updateAllScoreForms();
 };
 
-// 반 목록 (중복 반 고려)
-const classList = computed(() => {
-  const classesSet = new Set<string>();
-  allStudents.value.forEach(student => {
-    // 중복 반 지원: classes 배열 또는 class_name 문자열
-    if ((student as any).classes && Array.isArray((student as any).classes)) {
-      (student as any).classes.forEach((c: string) => {
-        if (c) classesSet.add(c);
-      });
-    } else if (student.class_name) {
-      // 기존 데이터 호환성: 콤마로 구분된 문자열
-      student.class_name.split(',').forEach(c => {
-        const trimmed = c.trim();
-        if (trimmed) classesSet.add(trimmed);
-      });
+const updateAllScoreForms = () => {
+  scoreForms.value.forEach((form, sIdx) => {
+    // RT details sync
+    while (form.rt_details.length < rtTestTypes.value.length) form.rt_details.push({ correct: 0 });
+    if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
+    
+    // Word details sync
+    while (form.word_details.length < wordTestTypes.value.length) form.word_details.push({ correct: 0, retest: false });
+    if (form.word_details.length > wordTestTypes.value.length) form.word_details.splice(wordTestTypes.value.length);
+    
+    calculateScore(sIdx);
+  });
+};
+
+const setAssignmentGrade = (sIdx: number, grade: string) => {
+  scoreForms.value[sIdx].assignment_grade = grade;
+  scoreForms.value[sIdx].assignment_score = assignmentMap[grade];
+  calculateScore(sIdx);
+};
+
+const toggleRetest = (sIdx: number, tIdx: number) => {
+  const detail = scoreForms.value[sIdx].word_details[tIdx];
+  detail.retest = !detail.retest;
+  if (detail.retest) detail.correct = 0;
+  calculateScore(sIdx);
+};
+
+const calculateScore = (sIdx: number) => {
+  const form = scoreForms.value[sIdx];
+  
+  // RT 평균 점수
+  let rtSum = 0;
+  rtTestTypes.value.forEach((test, tIdx) => {
+    if (test.total > 0) {
+      rtSum += (form.rt_details[tIdx].correct / test.total) * 100;
     }
   });
-  return Array.from(classesSet).sort();
-});
+  const rtAvg = rtTestTypes.value.length > 0 ? rtSum / rtTestTypes.value.length : 0;
 
-// 계산된 점수들
-const calculatedScores = ref<Array<{
-  rtScore: number;
-  wordScore: number;
-  total: number;
-  average: number;
-}>>([]);
+  // 단어 평균 점수
+  let wordSum = 0;
+  let retestFound = false;
+  wordTestTypes.value.forEach((test, tIdx) => {
+    const detail = form.word_details[tIdx];
+    if (detail.retest) {
+      retestFound = true;
+    } else if (test.total > 0) {
+      const score = (detail.correct / test.total) * 100;
+      wordSum += score;
+      if (score <= 84) retestFound = true;
+    }
+  });
+  const wordAvg = wordTestTypes.value.length > 0 ? wordSum / wordTestTypes.value.length : 0;
 
-const toDateInputValue = (value: string) => {
-  if (!value) return '';
-  const parts = value.split('-');
-  if (parts.length !== 3) return '';
-  const [yy, mm, dd] = parts;
-  if (!yy || !mm || !dd) return '';
-  return `20${yy}-${mm}-${dd}`;
-};
+  // 총점 및 평균 (RT, 단어, 과제 3개 항목)
+  const total = rtAvg + wordAvg + (form.assignment_score || 0);
+  const average = total / 3;
 
-const toExamDateValue = (value: string) => {
-  if (!value) return '';
-  const [yyyy, mm, dd] = value.split('-');
-  if (!yyyy || !mm || !dd) return '';
-  return `${yyyy.slice(-2)}-${mm}-${dd}`;
-};
-
-const examDateInput = computed({
-  get: () => toDateInputValue(examDate.value),
-  set: (value: string) => {
-    examDate.value = toExamDateValue(value);
-  }
-});
-
-// 점수 계산
-const calculateScore = (index: number) => {
-  const form = scoreForms.value[index];
-  
-  // RT 점수 계산
-  const rtScore = form.rt_total && form.rt_correct !== undefined
-    ? Math.round((form.rt_correct / form.rt_total) * 100 * 100) / 100
-    : 0;
-
-  // 단어시험 점수 계산 (재시험이면 입력 생략)
-  const wordScore = form.word_retest
-    ? 0
-    : form.word_total && form.word_correct !== undefined
-      ? Math.round((form.word_correct / form.word_total) * 100 * 100) / 100
-      : 0;
-
-  // 총점 및 평균
-  const total = rtScore + wordScore + (form.assignment_score || 0) + (form.attitude_score || 0);
-  const average = total / 4;
-
+  // 코멘트 자동 추가 (재시험 시)
   const normalizedComment = (form.comment || '').trim();
-  if (form.word_retest) {
+  if (retestFound) {
     if (!normalizedComment.includes(retestComment)) {
-      form.comment = normalizedComment
-        ? `${normalizedComment} ${retestComment}`
-        : retestComment;
+      form.comment = normalizedComment ? `${normalizedComment} ${retestComment}` : retestComment;
     }
-  } else {
-    if (wordScore > 0 && wordScore <= 84) {
-      if (!normalizedComment.includes(retestComment)) {
-        form.comment = normalizedComment
-          ? `${normalizedComment} ${retestComment}`
-          : retestComment;
-      }
-    } else if (normalizedComment === retestComment) {
-      form.comment = '';
-    }
+  } else if (normalizedComment === retestComment) {
+    form.comment = '';
   }
 
-  calculatedScores.value[index] = {
-    rtScore,
-    wordScore,
+  calculatedScores.value[sIdx] = {
+    rtScore: rtAvg,
+    wordScore: wordAvg,
     total: Math.round(total * 100) / 100,
     average: Math.round(average * 100) / 100
   };
 };
 
-// 반 변경 시
 const onClassChange = () => {
   if (!selectedClass.value) {
     classStudents.value = [];
     scoreForms.value = [];
-    calculatedScores.value = [];
     return;
   }
-
-  // 선택한 반의 학생 목록 (중복 반 고려)
   classStudents.value = allStudents.value
-    .filter(s => {
-      // 중복 반 지원
-      if ((s as any).classes && Array.isArray((s as any).classes)) {
-        return (s as any).classes.includes(selectedClass.value);
-      } else if (s.class_name) {
-        // 기존 데이터 호환성
-        return s.class_name.split(',').map(c => c.trim()).includes(selectedClass.value);
-      }
-      return false;
-    })
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    .filter(s => s.class_name?.split(',').map(c => c.trim()).includes(selectedClass.value))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  // 성적 입력 폼 초기화
-  resetScoreForms();
-
-  // 기존 성적 불러오기 (선택사항)
+  scoreForms.value = classStudents.value.map(() => ({
+    rt_details: rtTestTypes.value.map(() => ({ correct: 0 })),
+    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    assignment_grade: '',
+    assignment_score: 0,
+    comment: ''
+  }));
+  
+  calculatedScores.value = classStudents.value.map(() => ({ total: 0, average: 0 }));
   loadExistingScores();
 };
 
-// 기존 성적 불러오기
 const loadExistingScores = async () => {
-  if (!examDate.value || !selectedClass.value) return;
+  // 임시저장 먼저 확인
+  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
+  const draft = localStorage.getItem(key);
+  if (draft) {
+    const parsed = JSON.parse(draft);
+    if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
+    if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
+    if (parsed.scoreForms) scoreForms.value = parsed.scoreForms;
+    scoreForms.value.forEach((_, i) => calculateScore(i));
+    return;
+  }
 
-  // 0. 먼저 현재 입력 폼을 초기화 (날짜 변경 시 기존 데이터 잔류 방지)
-  resetScoreForms();
-
-  // 1. 임시저장(Draft)이 있는지 먼저 확인
-  const loadedDraft = loadDraftScores();
-  if (loadedDraft) return;
-
-  // 2. 임시저장이 없으면 서버에서 기존 성적 가져오기
+  // 서버 데이터 확인
   try {
-    const response = await scoreApi.getAll({
-      class_name: selectedClass.value,
-      exam_date: examDate.value
-    });
-
-    if (response.data.success && response.data.data) {
-      const existingScores = response.data.data;
-
-      classStudents.value.forEach((student, index) => {
-        // 같은 반의 성적만 찾기
-        const existing = existingScores.find((s: any) =>
-          s.student_id === student.id && s.class_name === selectedClass.value
-        );
-        if (existing) {
-          scoreForms.value[index] = {
-            rt_total: existing.rt_total || undefined,
-            rt_correct: existing.rt_correct || undefined,
-            word_total: existing.word_total || undefined,
-            word_correct: existing.word_correct || undefined,
-            assignment_score: existing.assignment_score || 0,
-            attitude_score: existing.attitude_score || 0,
-            word_retest: Boolean(existing.comment && existing.comment.includes(retestComment)),
-            comment: existing.comment || ''
+    const res = await scoreApi.getAll({ class_name: selectedClass.value, exam_date: examDate.value });
+    if (res.data.success && res.data.data.length > 0) {
+      const data = res.data.data;
+      classStudents.value.forEach((student, sIdx) => {
+        const score = data.find((s: any) => s.student_id === student.id);
+        if (score) {
+          scoreForms.value[sIdx] = {
+            rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(() => ({ correct: 0 })),
+            word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+            assignment_score: score.assignment_score || 0,
+            assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
+            comment: score.comment || ''
           };
-          calculateScore(index);
+          calculateScore(sIdx);
         }
       });
     }
   } catch (err) {
-    console.error('기존 성적 불러오기 실패:', err);
+    console.error('기존 성적 로드 실패', err);
   }
 };
 
-// 학생별 성적 저장
-const saveStudentScore = async (index: number, studentId: number) => {
-  try {
-    saving.value[index] = true;
-
-    const form = scoreForms.value[index];
-    const scoreData: any = {
-      student_id: studentId,
-      exam_date: examDate.value,
-      class_name: selectedClass.value, // 선택한 반 저장
-      assignment_score: form.assignment_score || 0,
-      attitude_score: form.attitude_score || 0,
-      comment: form.comment || ''
-    };
-
-    if (form.rt_total && form.rt_correct !== undefined) {
-      scoreData.rt_total = form.rt_total;
-      scoreData.rt_correct = form.rt_correct;
-    }
-
-    if (form.word_total && form.word_correct !== undefined) {
-      scoreData.word_total = form.word_total;
-      scoreData.word_correct = form.word_correct;
-    }
-
-    await scoreApi.create(scoreData);
-    
-    saveSuccessMessage.value = `${classStudents.value[index].name} 학생의 성적이 저장되었습니다.`;
-    setTimeout(() => {
-      saveSuccessMessage.value = '';
-    }, 3000);
-  } catch (err: any) {
-    const errorMessage = err.response?.data?.message || err.response?.data?.error || '저장 중 오류가 발생했습니다.';
-    alert(errorMessage);
-    console.error('성적 저장 에러:', err);
-  } finally {
-    saving.value[index] = false;
-  }
+const saveDraftAll = () => {
+  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
+  localStorage.setItem(key, JSON.stringify({
+    rtTestTypes: rtTestTypes.value,
+    wordTestTypes: wordTestTypes.value,
+    scoreForms: scoreForms.value
+  }));
+  showToast('임시저장 되었습니다.');
 };
 
-// 임시 저장
-const saveDraft = (index: number) => {
-  if (!selectedClass.value || !examDate.value) {
-    alert('반과 시험일자를 먼저 선택해주세요.');
-    return;
-  }
-
-  if (typeof window === 'undefined') return;
-  const key = getDraftKey();
-  if (!key) return;
-
-  window.localStorage.setItem(key, JSON.stringify(scoreForms.value));
-  saveSuccessMessage.value = `${classStudents.value[index].name} 학생의 성적이 임시저장되었습니다.`;
-  setTimeout(() => {
-    saveSuccessMessage.value = '';
-  }, 3000);
-};
-
-// 전체 저장
 const saveAllScores = async () => {
-  if (!confirm(`선택한 반의 모든 학생 성적을 저장하시겠습니까?`)) return;
-
+  if (!confirm('모든 학생의 성적을 저장하시겠습니까?')) return;
+  savingAll.value = true;
   try {
-    savingAll.value = true;
-    let successCount = 0;
-    let failCount = 0;
-
     for (let i = 0; i < classStudents.value.length; i++) {
-      try {
-        await saveStudentScore(i, classStudents.value[i].id);
-        successCount++;
-      } catch (err) {
-        failCount++;
-        console.error(`학생 ${classStudents.value[i].name} 저장 실패:`, err);
-      }
+      const form = scoreForms.value[i];
+      const calc = calculatedScores.value[i];
+      const payload = {
+        student_id: classStudents.value[i].id,
+        exam_date: examDate.value,
+        class_name: selectedClass.value,
+        rt_total: rtTestTypes.value.reduce((acc, t) => acc + t.total, 0),
+        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + d.correct, 0),
+        word_total: wordTestTypes.value.reduce((acc, t) => acc + t.total, 0),
+        word_correct: form.word_details.reduce((acc: number, d: any) => acc + d.correct, 0),
+        rt_details: form.rt_details,
+        word_details: form.word_details,
+        assignment_score: form.assignment_score,
+        comment: form.comment
+      };
+      await scoreApi.create(payload);
     }
-
-    if (failCount === 0) {
-      clearDraftScores();
-    }
-
-    saveSuccessMessage.value = `${successCount}명 저장 완료${failCount > 0 ? `, ${failCount}명 실패` : ''}`;
-    setTimeout(() => {
-      saveSuccessMessage.value = '';
-    }, 5000);
+    localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
+    showToast('모든 성적이 저장되었습니다.');
   } catch (err) {
-    console.error('전체 저장 에러:', err);
+    alert('저장 중 오류가 발생했습니다.');
   } finally {
     savingAll.value = false;
   }
 };
 
-// 전체 초기화
 const resetAllScores = () => {
-  if (!confirm('입력한 모든 성적을 초기화하시겠습니까?')) return;
-
-  resetScoreForms();
+  if (!confirm('정말 초기화하시겠습니까?')) return;
+  onClassChange();
 };
 
-const toggleWordRetest = (index: number) => {
-  const form = scoreForms.value[index];
-  form.word_retest = !form.word_retest;
-  if (form.word_retest) {
-    form.word_total = undefined;
-    form.word_correct = undefined;
-  }
-  calculateScore(index);
+const showToast = (msg: string) => {
+  saveSuccessMessage.value = msg;
+  setTimeout(() => saveSuccessMessage.value = '', 3000);
 };
 
-// 학생 목록 불러오기
 const fetchStudents = async () => {
-  try {
-    const response = await studentApi.getAll();
-    if (response.data.success && response.data.data) {
-      allStudents.value = response.data.data;
-    }
-  } catch (err) {
-    console.error('학생 목록 불러오기 실패:', err);
-  }
+  const res = await studentApi.getAll();
+  if (res.data.success) allStudents.value = res.data.data;
 };
 
-// 날짜 변경 시 기존 성적 불러오기
-watch(examDate, () => {
-  if (selectedClass.value) {
-    loadExistingScores();
-  }
+const classList = computed(() => {
+  const set = new Set<string>();
+  allStudents.value.forEach(s => s.class_name?.split(',').forEach(c => set.add(c.trim())));
+  return Array.from(set).sort();
 });
 
-onMounted(() => {
-  fetchStudents();
+const toDateInputValue = (v: string) => v ? `20${v}` : '';
+const toExamDateValue = (v: string) => v ? v.slice(2) : '';
+const examDateInput = computed({
+  get: () => toDateInputValue(examDate.value),
+  set: (v) => examDate.value = toExamDateValue(v)
 });
+
+onMounted(fetchStudents);
+watch(examDate, loadExistingScores);
 </script>
 
 <style scoped>
-.text-primary {
-  color: #1e3a8a;
-}
-
-.bg-primary {
-  background-color: #1e3a8a;
-}
-
-.bg-primary-dark {
-  background-color: #1e40af;
-}
-
-/* 숫자 입력 스피너 숨김 */
 input[type='number']::-webkit-outer-spin-button,
-input[type='number']::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type='number'] {
-  -moz-appearance: textfield;
-}
-
-/* 테이블 스크롤 시 학생명 고정 */
-.sticky {
-  position: sticky;
-}
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
+.sticky { position: sticky; }
 </style>
