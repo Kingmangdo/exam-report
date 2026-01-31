@@ -350,26 +350,26 @@ const saveAllScores = async () => {
   try {
     for (let i = 0; i < classStudents.value.length; i++) {
       const form = scoreForms.value[i];
-      const calc = calculatedScores.value[i];
       const payload = {
         student_id: classStudents.value[i].id,
         exam_date: examDate.value,
         class_name: selectedClass.value,
-        rt_total: rtTestTypes.value.reduce((acc, t) => acc + t.total, 0),
-        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + d.correct, 0),
-        word_total: wordTestTypes.value.reduce((acc, t) => acc + t.total, 0),
-        word_correct: form.word_details.reduce((acc: number, d: any) => acc + d.correct, 0),
+        rt_total: rtTestTypes.value.reduce((acc, t) => acc + (t.total || 0), 0),
+        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (d.correct || 0), 0),
+        word_total: wordTestTypes.value.reduce((acc, t) => acc + (t.total || 0), 0),
+        word_correct: form.word_details.reduce((acc: number, d: any) => acc + (d.correct || 0), 0),
         rt_details: form.rt_details,
         word_details: form.word_details,
-        assignment_score: form.assignment_score,
-        comment: form.comment
+        assignment_score: form.assignment_score || 0,
+        comment: form.comment || ''
       };
       await scoreApi.create(payload);
     }
     localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
     showToast('모든 성적이 저장되었습니다.');
-  } catch (err) {
-    alert('저장 중 오류가 발생했습니다.');
+  } catch (err: any) {
+    console.error('성적 저장 오류 상세:', err.response?.data || err.message);
+    alert('저장 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message));
   } finally {
     savingAll.value = false;
   }

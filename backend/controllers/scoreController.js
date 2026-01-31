@@ -114,7 +114,6 @@ export const createScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
-      attitude_score,
       comment
     });
 
@@ -171,7 +170,6 @@ export const updateScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
-      attitude_score,
       comment
     });
 
