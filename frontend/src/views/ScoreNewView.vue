@@ -192,11 +192,15 @@ const removeTestType = (type: 'rt' | 'word', index: number) => {
 const updateAllScoreForms = () => {
   scoreForms.value.forEach((form, sIdx) => {
     // RT details sync
-    while (form.rt_details.length < rtTestTypes.value.length) form.rt_details.push({ correct: 0 });
+    while (form.rt_details.length < rtTestTypes.value.length) {
+      form.rt_details.push({ correct: 0, name: '', total: 0 });
+    }
     if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
     
     // Word details sync
-    while (form.word_details.length < wordTestTypes.value.length) form.word_details.push({ correct: 0, retest: false });
+    while (form.word_details.length < wordTestTypes.value.length) {
+      form.word_details.push({ correct: 0, retest: false, name: '', total: 0 });
+    }
     if (form.word_details.length > wordTestTypes.value.length) form.word_details.splice(wordTestTypes.value.length);
     
     calculateScore(sIdx);
@@ -276,8 +280,8 @@ const onClassChange = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   scoreForms.value = classStudents.value.map(() => ({
-    rt_details: rtTestTypes.value.map(() => ({ correct: 0 })),
-    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, total: t.total })),
+    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
     comment: ''
@@ -288,15 +292,24 @@ const onClassChange = () => {
 };
 
 const loadExistingScores = async () => {
+  // 테스트 종류 초기화 (기본값으로)
+  rtTestTypes.value = [{ name: 'RT 1', total: 10 }];
+  wordTestTypes.value = [{ name: '단어 1', total: 50 }];
+
   // 상태 초기화 (시험일자 변경 시 기본값으로)
   scoreForms.value = classStudents.value.map(() => ({
-    rt_details: rtTestTypes.value.map(() => ({ correct: 0 })),
-    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, total: t.total })),
+    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
     comment: ''
   }));
-  calculatedScores.value = classStudents.value.map(() => ({ total: 0, average: 0 }));
+  calculatedScores.value = classStudents.value.map(() => ({ 
+    rtScore: 0, 
+    wordScore: 0, 
+    total: 0, 
+    average: 0 
+  }));
 
   // 임시저장 먼저 확인
   const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
@@ -305,7 +318,10 @@ const loadExistingScores = async () => {
     const parsed = JSON.parse(draft);
     if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
     if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
-    if (parsed.scoreForms) scoreForms.value = parsed.scoreForms;
+    if (parsed.scoreForms) {
+      // 저장된 폼 데이터 적용 전 구조 동기화
+      scoreForms.value = parsed.scoreForms;
+    }
     scoreForms.value.forEach((_, i) => calculateScore(i));
     return;
   }
@@ -315,6 +331,22 @@ const loadExistingScores = async () => {
     const res = await scoreApi.getAll({ class_name: selectedClass.value, exam_date: examDate.value });
     if (res.data.success && res.data.data.length > 0) {
       const data = res.data.data;
+      
+      // 첫 번째 성적 데이터에서 테스트 종류 복원 (있다면)
+      const firstScore = data[0];
+      if (firstScore.rt_details?.length) {
+        rtTestTypes.value = firstScore.rt_details.map((d: any, i: number) => ({ 
+          name: `RT ${i+1}`, 
+          total: firstScore.rt_total / firstScore.rt_details.length // 단순 추정치
+        }));
+      }
+      if (firstScore.word_details?.length) {
+        wordTestTypes.value = firstScore.word_details.map((d: any, i: number) => ({ 
+          name: `단어 ${i+1}`, 
+          total: firstScore.word_total / firstScore.word_details.length // 단순 추정치
+        }));
+      }
+
       classStudents.value.forEach((student, sIdx) => {
         const score = data.find((s: any) => s.student_id === student.id);
         if (score) {
@@ -348,28 +380,48 @@ const saveAllScores = async () => {
   if (!confirm('모든 학생의 성적을 저장하시겠습니까?')) return;
   savingAll.value = true;
   try {
+    // 순차적으로 저장하여 서버 부하 및 충돌 방지
     for (let i = 0; i < classStudents.value.length; i++) {
+      const student = classStudents.value[i];
       const form = scoreForms.value[i];
+      
+      // 상세 정보에 현재 설정된 이름과 총 문제 수 주입
+      const finalRtDetails = form.rt_details.map((d: any, idx: number) => ({
+        ...d,
+        name: rtTestTypes.value[idx]?.name || `RT ${idx + 1}`,
+        total: Number(rtTestTypes.value[idx]?.total) || 0
+      }));
+      
+      const finalWordDetails = form.word_details.map((d: any, idx: number) => ({
+        ...d,
+        name: wordTestTypes.value[idx]?.name || `단어 ${idx + 1}`,
+        total: Number(wordTestTypes.value[idx]?.total) || 0
+      }));
+      
       const payload = {
-        student_id: classStudents.value[i].id,
+        student_id: student.id,
         exam_date: examDate.value,
         class_name: selectedClass.value,
-        rt_total: rtTestTypes.value.reduce((acc, t) => acc + (t.total || 0), 0),
-        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (d.correct || 0), 0),
-        word_total: wordTestTypes.value.reduce((acc, t) => acc + (t.total || 0), 0),
-        word_correct: form.word_details.reduce((acc: number, d: any) => acc + (d.correct || 0), 0),
-        rt_details: form.rt_details,
-        word_details: form.word_details,
-        assignment_score: form.assignment_score || 0,
+        rt_total: rtTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
+        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+        word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
+        word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+        rt_details: finalRtDetails,
+        word_details: finalWordDetails,
+        assignment_score: Number(form.assignment_score) || 0,
         comment: form.comment || ''
       };
+      
+      console.log('저장 시도 데이터:', payload);
       await scoreApi.create(payload);
     }
+    
     localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
     showToast('모든 성적이 저장되었습니다.');
   } catch (err: any) {
     console.error('성적 저장 오류 상세:', err.response?.data || err.message);
-    alert('저장 중 오류가 발생했습니다: ' + (err.response?.data?.message || err.message));
+    const errorMsg = err.response?.data?.message || err.message;
+    alert(`저장 중 오류가 발생했습니다: ${errorMsg}`);
   } finally {
     savingAll.value = false;
   }
@@ -381,6 +433,10 @@ const resetAllScores = () => {
   // 현재 반의 임시저장 데이터 삭제
   const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
   localStorage.removeItem(key);
+  
+  // 테스트 종류 초기화
+  rtTestTypes.value = [{ name: 'RT 1', total: 10 }];
+  wordTestTypes.value = [{ name: '단어 1', total: 50 }];
   
   // 입력 폼 및 계산 결과 초기화
   scoreForms.value = classStudents.value.map(() => ({

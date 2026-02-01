@@ -167,10 +167,9 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학교/학년</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반/담임</th>
-            <th v-if="isAdmin" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">수강료</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 이름</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 연락처</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
+            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">상담내용</th>
+            <th v-if="isAdmin" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">관리</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -204,22 +203,18 @@
                 <span class="text-xs text-gray-400 mt-1">{{ student.teacher_name ? `담임: ${student.teacher_name}` : '' }}</span>
               </div>
             </td>
-            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-              ₩{{ (student.monthly_tuition || 0).toLocaleString() }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ student.parent_name || '-' }}
-            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ formatPhone(student.parent_phone) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
               <button
                 @click="openCounselingModal(student)"
-                class="text-green-600 hover:text-green-800 mr-3"
+                class="text-green-600 hover:text-green-800 font-bold"
               >
                 상담
               </button>
+            </td>
+            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
               <button
                 @click="openModal('edit', student)"
                 class="text-primary hover:text-primary-dark mr-3"

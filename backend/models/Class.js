@@ -103,4 +103,70 @@ export class Class {
     if (error) throw new Error(error.message);
     return data || [];
   }
+
+  // 일자별 학습 로그 조회
+  static async getLearningLog(classId, date) {
+    const { data, error } = await supabase
+      .from('class_learning_logs')
+      .select('*')
+      .eq('class_id', classId)
+      .eq('log_date', date)
+      .maybeSingle();
+    
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  // 일자별 학습 로그 저장 (upsert)
+  static async saveLearningLog(logData) {
+    const { class_id, log_date, progress, textbook, homework, homework_deadline } = logData;
+    
+    const { data, error } = await supabase
+      .from('class_learning_logs')
+      .upsert({ 
+        class_id, 
+        log_date, 
+        progress, 
+        textbook, 
+        homework,
+        homework_deadline,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'class_id,log_date'
+      })
+      .select('*')
+      .single();
+    
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  // 특정 반의 모든 학습 로그 조회
+  static async getAllLogs(classId) {
+    const { data, error } = await supabase
+      .from('class_learning_logs')
+      .select('*')
+      .eq('class_id', classId)
+      .order('log_date', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  // 최근 학습 로그 날짜 목록 조회
+  static async getRecentLogDates(classId, days = 14) {
+    const dateLimit = new Date();
+    dateLimit.setDate(dateLimit.getDate() - days);
+    const dateStr = dateLimit.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('class_learning_logs')
+      .select('log_date')
+      .eq('class_id', classId)
+      .gte('log_date', dateStr)
+      .order('log_date', { ascending: false });
+    
+    if (error) throw new Error(error.message);
+    return data.map(d => d.log_date);
+  }
 }

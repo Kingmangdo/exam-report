@@ -16,12 +16,14 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'dashboard',
-        component: () => import('../views/DashboardView.vue')
+        component: () => import('../views/DashboardView.vue'),
+        meta: { adminOnly: true }
       },
       {
         path: 'students',
         name: 'students',
-        component: () => import('../views/StudentsView.vue')
+        component: () => import('../views/StudentsView.vue'),
+        meta: { adminOnly: true }
       },
       {
         path: 'classes',
@@ -78,7 +80,7 @@ router.beforeEach((to, from, next) => {
   // 관리자 전용 페이지 권한 확인
   if (to.meta.adminOnly && user?.role !== 'admin') {
     alert('관리자 권한이 필요합니다.');
-    return next('/');
+    return next('/classes'); // 대시보드 대신 반 관리로 이동
   }
 
   next();

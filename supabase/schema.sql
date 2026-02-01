@@ -80,6 +80,20 @@ create table if not exists public.classes (
   updated_at timestamptz not null default now()
 );
 
+-- 반별 일자별 학습 로그 테이블
+create table if not exists public.class_learning_logs (
+  id bigserial primary key,
+  class_id bigint not null references public.classes(id) on delete cascade,
+  log_date text not null, -- 'YYYY-MM-DD' 형식
+  progress text,
+  textbook text,
+  homework text,
+  homework_deadline text, -- 숙제 검사 예정일 추가
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (class_id, log_date)
+);
+
 create table if not exists public.counseling_logs (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
@@ -149,4 +163,9 @@ for each row execute function public.set_updated_at();
 drop trigger if exists trg_counseling_logs_updated_at on public.counseling_logs;
 create trigger trg_counseling_logs_updated_at
 before update on public.counseling_logs
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_class_learning_logs_updated_at on public.class_learning_logs;
+create trigger trg_class_learning_logs_updated_at
+before update on public.class_learning_logs
 for each row execute function public.set_updated_at();

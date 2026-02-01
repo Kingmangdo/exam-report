@@ -63,4 +63,36 @@ export class User {
     if (error) throw new Error(error.message);
     return data || [];
   }
+
+  // 사용자 정보 수정 (관리자용)
+  static async update(id, userData) {
+    const { name, role, password } = userData;
+    const updateData = { name, role, updated_at: new Date().toISOString() };
+    
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw new Error(error.message);
+    const { password: _, ...userWithoutPassword } = data;
+    return userWithoutPassword;
+  }
+
+  // 사용자 삭제 (관리자용)
+  static async delete(id) {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+    return true;
+  }
 }

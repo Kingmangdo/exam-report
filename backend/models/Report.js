@@ -148,6 +148,8 @@ export class Report {
           score: score.word_score || 0,
           retest: wordRetest
         },
+        rt_details: score.rt_details || [],
+        word_details: score.word_details || [],
         assignment: score.assignment_score || 0,
         attitude: score.attitude_score || 0,
         total: score.total_score || 0,

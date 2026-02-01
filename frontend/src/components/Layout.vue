@@ -51,8 +51,8 @@ const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
 
 const navItems = ref([
-  { name: '대시보드', path: '/', adminOnly: false },
-  { name: '학생 관리', path: '/students', adminOnly: false },
+  { name: '대시보드', path: '/', adminOnly: true },
+  { name: '학생 관리', path: '/students', adminOnly: true },
   { name: '반 관리', path: '/classes', adminOnly: false },
   { name: '성적 입력', path: '/scores/new', adminOnly: false },
   { name: '성적 조회', path: '/scores', adminOnly: false },

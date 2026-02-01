@@ -65,7 +65,6 @@ export const createScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
-      attitude_score,
       comment
     } = req.body;
 
@@ -109,29 +108,29 @@ export const createScore = async (req, res) => {
       student_id,
       exam_date,
       class_name,
-      rt_total: rt_total || 0,
-      rt_correct: rt_correct || 0,
-      word_total: word_total || 0,
-      word_correct: word_correct || 0,
+      rt_total: Number(rt_total) || 0,
+      rt_correct: Number(rt_correct) || 0,
+      word_total: Number(word_total) || 0,
+      word_correct: Number(word_correct) || 0,
       rt_details: req.body.rt_details || [],
       word_details: req.body.word_details || [],
-      assignment_score: assignment_score || 0,
+      assignment_score: Number(assignment_score) || 0,
       comment: comment || ''
     });
 
     res.status(isUpdate ? 200 : 201).json({
       success: true,
       message: isUpdate 
-        ? '성적이 업데이트되었습니다. (같은 날짜의 기존 성적을 덮어씁니다.)'
+        ? '성적이 업데이트되었습니다.'
         : '성적이 등록되었습니다.',
       data: score,
       isUpdate
     });
   } catch (error) {
+    console.error('성적 등록 에러 상세:', error);
     res.status(500).json({
       success: false,
-      message: '성적 등록 중 오류가 발생했습니다.',
-      error: error.message
+      message: `성적 등록 실패: ${error.message}`
     });
   }
 };
@@ -146,7 +145,6 @@ export const updateScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
-      attitude_score,
       comment
     } = req.body;
 
@@ -158,22 +156,14 @@ export const updateScore = async (req, res) => {
       });
     }
 
-    // 점수 범위 검증
-    if (assignment_score < 0 || assignment_score > 100) {
-      return res.status(400).json({
-        success: false,
-        message: '과제점수는 0-100점 사이여야 합니다.'
-      });
-    }
-
     const score = await Score.update(id, {
-      rt_total: rt_total || 0,
-      rt_correct: rt_correct || 0,
-      word_total: word_total || 0,
-      word_correct: word_correct || 0,
+      rt_total: Number(rt_total) || 0,
+      rt_correct: Number(rt_correct) || 0,
+      word_total: Number(word_total) || 0,
+      word_correct: Number(word_correct) || 0,
       rt_details: req.body.rt_details || [],
       word_details: req.body.word_details || [],
-      assignment_score: assignment_score || 0,
+      assignment_score: Number(assignment_score) || 0,
       comment: comment || ''
     });
 
@@ -183,10 +173,10 @@ export const updateScore = async (req, res) => {
       data: score
     });
   } catch (error) {
+    console.error('성적 수정 에러 상세:', error);
     res.status(500).json({
       success: false,
-      message: '성적 수정 중 오류가 발생했습니다.',
-      error: error.message
+      message: `성적 수정 실패: ${error.message}`
     });
   }
 };

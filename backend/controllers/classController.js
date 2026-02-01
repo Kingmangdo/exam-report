@@ -59,3 +59,45 @@ export const assignStudentsToClass = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getLearningLog = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.query;
+    const log = await Class.getLearningLog(id, date);
+    res.json({ success: true, data: log });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const saveLearningLog = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const logData = { ...req.body, class_id: id };
+    const savedLog = await Class.saveLearningLog(logData);
+    res.json({ success: true, data: savedLog });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllLearningLogs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const logs = await Class.getAllLogs(id);
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getRecentLogDates = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dates = await Class.getRecentLogDates(id);
+    res.json({ success: true, data: dates });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -12,5 +12,9 @@ router.post('/', classController.createClass);
 router.put('/:id', classController.updateClass);
 router.delete('/:id', classController.deleteClass);
 router.post('/assign-students', classController.assignStudentsToClass);
+router.get('/:id/learning-log', classController.getLearningLog);
+router.post('/:id/learning-log', classController.saveLearningLog);
+router.get('/:id/learning-logs', classController.getAllLearningLogs);
+router.get('/:id/learning-log/recent-dates', classController.getRecentLogDates);
 
 export default router;

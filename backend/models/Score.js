@@ -67,7 +67,7 @@ export class Score {
 
   // 학생 ID와 날짜로 조회
   static async getByStudentAndDate(studentId, examDate, className = null) {
-    let query = supabase.from('scores').select('*').eq('student_id', studentId).eq('exam_date', examDate);
+    let query = supabase.from('scores').select('*').eq('student_id', Number(studentId)).eq('exam_date', examDate);
     if (className) {
       query = query.eq('class_name', className).maybeSingle();
     } else {
@@ -80,14 +80,19 @@ export class Score {
 
   // 점수 계산 함수
   static calculateScore(correct, total) {
-    if (!total || total === 0) return 0;
-    return Math.round((correct / total) * 100 * 100) / 100; // 소수점 2자리
+    const c = Number(correct) || 0;
+    const t = Number(total) || 0;
+    if (t === 0) return 0;
+    return Math.round((c / t) * 100 * 100) / 100; // 소수점 2자리
   }
 
   // 총점 및 평균 계산
   static calculateTotalAndAverage(rtScore, wordScore, assignmentScore) {
-    const total = rtScore + wordScore + assignmentScore;
-    const average = total / 3; // 수업태도 제거로 3개 항목 평균
+    const s1 = Number(rtScore) || 0;
+    const s2 = Number(wordScore) || 0;
+    const s3 = Number(assignmentScore) || 0;
+    const total = s1 + s2 + s3;
+    const average = total / 3;
     return {
       total: Math.round(total * 100) / 100,
       average: Math.round(average * 100) / 100
@@ -124,15 +129,24 @@ export class Score {
       comment
     } = data;
 
-    // 점수 계산 (null/undefined 처리)
-    const rtScore = rt_total && rt_correct !== undefined
-      ? this.calculateScore(rt_correct, rt_total)
-      : 0;
-    const wordScore = word_total && word_correct !== undefined
-      ? this.calculateScore(word_correct, word_total)
-      : 0;
+    // 카테고리별 점수 계산 (상세 내역이 있으면 개별 테스트의 평균 백분율로 계산)
+    let rtScore = 0;
+    if (rt_details && rt_details.length > 0) {
+      const rtPercentages = rt_details.map(rt => (rt.total > 0 ? (rt.correct / rt.total) * 100 : 0));
+      rtScore = rtPercentages.reduce((a, b) => a + b, 0) / rt_details.length;
+    } else {
+      rtScore = rt_total > 0 ? (rt_correct / rt_total) * 100 : 0;
+    }
 
-    // 총점 및 평균 계산
+    let wordScore = 0;
+    if (word_details && word_details.length > 0) {
+      const wordPercentages = word_details.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
+      wordScore = wordPercentages.reduce((a, b) => a + b, 0) / word_details.length;
+    } else {
+      wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
+    }
+
+    // 총점 및 평균 계산 (RT, 단어, 과제 3개 카테고리 동일 비율)
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,
@@ -143,12 +157,12 @@ export class Score {
     const { data: student, error: studentError } = await supabase
       .from('students')
       .select('class_name')
-      .eq('id', student_id)
+      .eq('id', Number(student_id))
       .single();
     if (studentError || !student) throw new Error('학생을 찾을 수 없습니다.');
 
     const targetClassName = class_name || (student.class_name ? student.class_name.split(',')[0].trim() : null);
-    const existing = await this.getByStudentAndDate(student_id, exam_date, targetClassName);
+    const existing = await this.getByStudentAndDate(Number(student_id), exam_date, targetClassName);
 
     let classAverage = 0;
     if (targetClassName) {
@@ -168,18 +182,18 @@ export class Score {
     }
 
     const payload = {
-      student_id,
+      student_id: Number(student_id),
       exam_date,
       class_name: targetClassName,
-      rt_total: rt_total || 0,
-      rt_correct: rt_correct ?? 0,
+      rt_total: Number(rt_total) || 0,
+      rt_correct: Number(rt_correct) || 0,
       rt_score: rtScore,
-      word_total: word_total || 0,
-      word_correct: word_correct ?? 0,
+      word_total: Number(word_total) || 0,
+      word_correct: Number(word_correct) || 0,
       word_score: wordScore,
       rt_details: rt_details || [],
       word_details: word_details || [],
-      assignment_score: assignment_score || 0,
+      assignment_score: Number(assignment_score) || 0,
       total_score: total,
       average_score: average,
       class_average: classAverage,
@@ -220,8 +234,23 @@ export class Score {
       return null;
     }
 
-    const rtScore = this.calculateScore(rt_correct, rt_total);
-    const wordScore = this.calculateScore(word_correct, word_total);
+    // 카테고리별 점수 계산
+    let rtScore = 0;
+    if (rt_details && rt_details.length > 0) {
+      const rtPercentages = rt_details.map(rt => (rt.total > 0 ? (rt.correct / rt.total) * 100 : 0));
+      rtScore = rtPercentages.reduce((a, b) => a + b, 0) / rt_details.length;
+    } else {
+      rtScore = rt_total > 0 ? (rt_correct / rt_total) * 100 : 0;
+    }
+
+    let wordScore = 0;
+    if (word_details && word_details.length > 0) {
+      const wordPercentages = word_details.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
+      wordScore = wordPercentages.reduce((a, b) => a + b, 0) / word_details.length;
+    } else {
+      wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
+    }
+
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,

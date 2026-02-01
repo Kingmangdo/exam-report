@@ -79,7 +79,13 @@ const handleLogin = async () => {
       const { user, token } = response.data.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      router.push('/');
+      
+      // 권한에 따른 초기 페이지 이동
+      if (user.role === 'admin') {
+        router.push('/');
+      } else {
+        router.push('/classes');
+      }
     }
   } catch (err: any) {
     error.value = err.response?.data?.message || '로그인에 실패했습니다.';

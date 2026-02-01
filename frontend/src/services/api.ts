@@ -50,6 +50,15 @@ export const authApi = {
   },
   initAdmin: () => {
     return api.post<ApiResponse<any>>('/auth/init-admin');
+  },
+  getAllUsers: () => {
+    return api.get<ApiResponse<any[]>>('/auth/users');
+  },
+  updateUser: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/auth/users/${id}`, data);
+  },
+  deleteUser: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/auth/users/${id}`);
   }
 };
 
@@ -116,6 +125,18 @@ export const classApi = {
       student_ids: studentIds,
       class_names: classNames
     });
+  },
+  getLearningLog: (id: number, date: string) => {
+    return api.get<ApiResponse<any>>(`/classes/${id}/learning-log`, { params: { date } });
+  },
+  saveLearningLog: (id: number, data: any) => {
+    return api.post<ApiResponse<any>>(`/classes/${id}/learning-log`, data);
+  },
+  getAllLogs: (id: number) => {
+    return api.get<ApiResponse<any[]>>(`/classes/${id}/learning-logs`);
+  },
+  getRecentLogDates: (id: number) => {
+    return api.get<ApiResponse<string[]>>(`/classes/${id}/learning-log/recent-dates`);
   }
 };
 

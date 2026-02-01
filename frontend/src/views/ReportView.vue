@@ -77,15 +77,47 @@
           </div>
         </div>
 
+        <!-- 평균 및 반 평균 (상단으로 이동) -->
+        <div class="mx-6 mt-6 p-6 bg-primary text-white rounded-lg shadow-md">
+          <div class="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <p class="text-sm opacity-90">평균 점수</p>
+              <p class="text-3xl font-bold">{{ reportData.score.average.toFixed(1) }}점</p>
+            </div>
+            <div>
+              <p class="text-sm opacity-90">반 평균</p>
+              <p class="text-3xl font-bold">{{ reportData.score.class_average.toFixed(1) }}점</p>
+            </div>
+          </div>
+        </div>
+
         <!-- 성적 정보 -->
         <div class="p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">성적 정보</h2>
           
           <div class="space-y-4">
-            <!-- RT점수 -->
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+            <!-- RT 테스트 상세 -->
+            <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
+              <div class="flex justify-between items-end mb-2">
+                <p class="text-sm font-bold text-gray-600">RT 테스트 상세</p>
+                <p class="text-sm font-bold text-primary">RT 평균: {{ reportData.score.rt.score.toFixed(1) }}점</p>
+              </div>
+              <div class="grid grid-cols-1 gap-2">
+                <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                  <div>
+                    <p class="font-semibold text-gray-800">{{ rt.name || `RT ${idx + 1}` }}</p>
+                    <p class="text-sm text-gray-500">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                  </div>
+                  <p class="text-2xl font-bold text-primary">
+                    {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
+                  </p>
+                </div>
+              </div>
+            </div>
+            <!-- RT 합산 (상세가 없을 경우 대비) -->
+            <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
               <div>
-                <p class="font-semibold text-gray-800">RT점수</p>
+                <p class="font-semibold text-gray-800">RT점수 (평균)</p>
                 <p class="text-sm text-gray-500">
                   {{ reportData.score.rt.correct }} / {{ reportData.score.rt.total }}
                 </p>
@@ -93,11 +125,35 @@
               <p class="text-2xl font-bold text-primary">{{ reportData.score.rt.score.toFixed(1) }}점</p>
             </div>
 
-            <!-- 단어시험 -->
-            <div class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
+            <!-- 단어 테스트 상세 -->
+            <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
+              <div class="flex justify-between items-end mb-2">
+                <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
+                <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word.score.toFixed(1) }}점</p>
+              </div>
+              <div class="grid grid-cols-1 gap-2">
+                <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
+                  class="flex justify-between items-center p-4 rounded-lg border"
+                  :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'"
+                >
+                  <div>
+                    <p class="font-semibold" :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-gray-800'">
+                      {{ word.name || `단어 ${idx + 1}` }}
+                      <span v-if="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84)" class="ml-2 text-red-600 font-bold">(재시험)</span>
+                    </p>
+                    <p class="text-sm text-gray-500">{{ word.correct }} / {{ word.total || 50 }}</p>
+                  </div>
+                  <p class="text-2xl font-bold" :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-primary'">
+                    {{ (Number(word.total) || 0) > 0 ? ((Number(word.correct) / Number(word.total)) * 100).toFixed(1) : '0.0' }}점
+                  </p>
+                </div>
+              </div>
+            </div>
+            <!-- 단어 합산 (상세가 없을 경우 대비) -->
+            <div v-else class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
               <div>
                 <p class="font-semibold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-gray-800'">
-                  단어시험
+                  단어시험 (평균)
                   <span v-if="reportData.score.word.retest" class="ml-2 text-red-600 font-bold">(재시험)</span>
                 </p>
                 <p class="text-sm text-gray-500">
@@ -110,32 +166,9 @@
             </div>
 
             <!-- 과제점수 -->
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
               <p class="font-semibold text-gray-800">과제점수</p>
               <p class="text-2xl font-bold text-primary">{{ reportData.score.assignment.toFixed(1) }}점</p>
-            </div>
-
-            <!-- 수업태도 -->
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <p class="font-semibold text-gray-800">수업태도</p>
-              <p class="text-2xl font-bold text-primary">{{ reportData.score.attitude.toFixed(1) }}점</p>
-            </div>
-          </div>
-
-          <!-- 총점 및 평균 -->
-          <div class="mt-6 p-6 bg-primary text-white rounded-lg">
-            <div class="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p class="text-sm opacity-90">총점</p>
-                <p class="text-3xl font-bold">{{ reportData.score.total.toFixed(1) }}점</p>
-              </div>
-              <div>
-                <p class="text-sm opacity-90">평균</p>
-                <p class="text-3xl font-bold">{{ reportData.score.average.toFixed(1) }}점</p>
-              </div>
-            </div>
-            <div class="mt-4 text-center">
-              <p class="text-sm opacity-90">반 평균: {{ reportData.score.class_average.toFixed(1) }}점</p>
             </div>
           </div>
 
@@ -197,12 +230,6 @@
                 <p class="text-xs text-gray-500">과제 점수</p>
                 <p class="text-base font-semibold" :class="trendColor(assignmentDelta.trend)">
                   {{ formatDelta(assignmentDelta.diff) }}
-                </p>
-              </div>
-              <div class="p-3 bg-white border rounded-lg">
-                <p class="text-xs text-gray-500">수업태도</p>
-                <p class="text-base font-semibold" :class="trendColor(attitudeDelta.trend)">
-                  {{ formatDelta(attitudeDelta.diff) }}
                 </p>
               </div>
               <div class="p-3 bg-white border rounded-lg">
