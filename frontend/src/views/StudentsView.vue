@@ -165,8 +165,10 @@
               />
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학교/학년</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반/담임</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학교</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학년</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">담임</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 연락처</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">상담내용</th>
             <th v-if="isAdmin" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">관리</th>
@@ -186,22 +188,25 @@
               {{ student.name }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ student.school || '-' }} / {{ student.grade || '-' }}
+              {{ student.school || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <div class="flex flex-col">
-                <span v-if="student.classes && student.classes.length > 0">
-                  <span
-                    v-for="(className, idx) in student.classes"
-                    :key="idx"
-                    class="inline-block mr-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
-                  >
-                    {{ className }}
-                  </span>
+              {{ student.grade || '-' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <div v-if="student.classes && student.classes.length > 0" class="flex flex-wrap gap-1">
+                <span
+                  v-for="(className, idx) in student.classes"
+                  :key="idx"
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                >
+                  {{ className }}
                 </span>
-                <span v-else>-</span>
-                <span class="text-xs text-gray-400 mt-1">{{ student.teacher_name ? `담임: ${student.teacher_name}` : '' }}</span>
               </div>
+              <span v-else>-</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ student.teacher_name || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {{ formatPhone(student.parent_phone) }}
@@ -617,10 +622,18 @@ const fetchStudents = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await studentApi.getAll(filters.value);
+    
+    // 필터에서 빈 값은 제외하고 전송
+    const activeFilters: any = {};
+    if (filters.value.search) activeFilters.search = filters.value.search;
+    if (filters.value.class_name) activeFilters.class_name = filters.value.class_name;
+    if (filters.value.grade) activeFilters.grade = filters.value.grade;
+
+    const response = await studentApi.getAll(activeFilters);
     if (response.data.success && response.data.data) {
       students.value = response.data.data;
-      // 필터 목록 업데이트
+      // 필터 목록 업데이트 (검색/필터링된 결과가 아닌 전체 목록 기반으로 유지하기 위해 조건부 업데이트 고려 가능)
+      // 여기서는 사용자가 선택할 수 있는 옵션을 갱신합니다.
       updateAvailableFilters();
     }
   } catch (err: any) {
