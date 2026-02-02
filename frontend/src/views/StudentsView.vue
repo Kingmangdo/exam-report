@@ -59,9 +59,9 @@
           @change="fetchStudents"
         >
           <option value="">전체 학년</option>
-          <option value="1">1학년</option>
-          <option value="2">2학년</option>
-          <option value="3">3학년</option>
+          <option v-for="grade in availableGrades" :key="grade" :value="grade">
+            {{ grade }}학년
+          </option>
         </select>
         <button
           @click="resetFilters"
@@ -585,6 +585,34 @@ const formatPhone = (phone: string) => {
   return phone;
 };
 
+const availableGrades = ref<string[]>([]);
+
+// 사용 가능한 반 및 학년 목록 업데이트
+const updateAvailableFilters = () => {
+  const classesSet = new Set<string>();
+  const gradesSet = new Set<string>();
+  
+  students.value.forEach(student => {
+    // 반 목록 추출
+    if (student.classes && student.classes.length > 0) {
+      student.classes.forEach(c => classesSet.add(c));
+    } else if (student.class_name) {
+      student.class_name.split(',').forEach(c => {
+        const trimmed = c.trim();
+        if (trimmed) classesSet.add(trimmed);
+      });
+    }
+    
+    // 학년 목록 추출
+    if (student.grade) {
+      gradesSet.add(student.grade.toString());
+    }
+  });
+  
+  availableClasses.value = Array.from(classesSet).sort();
+  availableGrades.value = Array.from(gradesSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+};
+
 const fetchStudents = async () => {
   try {
     loading.value = true;
@@ -592,8 +620,8 @@ const fetchStudents = async () => {
     const response = await studentApi.getAll(filters.value);
     if (response.data.success && response.data.data) {
       students.value = response.data.data;
-      // 사용 가능한 반 목록 업데이트
-      updateAvailableClasses();
+      // 필터 목록 업데이트
+      updateAvailableFilters();
     }
   } catch (err: any) {
     error.value = err.response?.data?.message || '학생 목록을 불러오는 중 오류가 발생했습니다.';
@@ -601,23 +629,6 @@ const fetchStudents = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-// 사용 가능한 반 목록 업데이트
-const updateAvailableClasses = () => {
-  const classesSet = new Set<string>();
-  students.value.forEach(student => {
-    if (student.classes && student.classes.length > 0) {
-      student.classes.forEach(c => classesSet.add(c));
-    } else if (student.class_name) {
-      // 기존 데이터 호환성
-      student.class_name.split(',').forEach(c => {
-        const trimmed = c.trim();
-        if (trimmed) classesSet.add(trimmed);
-      });
-    }
-  });
-  availableClasses.value = Array.from(classesSet).sort();
 };
 
 // 전체 선택/해제

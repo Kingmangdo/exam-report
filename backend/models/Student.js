@@ -19,10 +19,13 @@ export class Student {
 
     if (filters.class_name) {
       const className = filters.class_name;
-      const patternStart = `${className},%`;
-      const patternMiddle = `%,${className},%`;
+      // class_name이 쉼표로 구분된 문자열이므로, 정확한 일치를 위해 like 패턴 사용
+      // 1. "A" (정확히 일치)
+      // 2. "A,..." (시작)
+      // 3. "...,A,..." (중간)
+      // 4. "...,A" (끝)
       query = query.or(
-        `class_name.like.${patternStart},class_name.like.${patternMiddle},class_name.eq.${className}`
+        `class_name.eq."${className}",class_name.like."${className},%",class_name.like."%,${className},%",class_name.like."%,${className}"`
       );
     }
 
