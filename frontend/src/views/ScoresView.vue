@@ -167,6 +167,12 @@
                 미리보기
               </button>
               <button
+                @click="sendKakao(score.id)"
+                class="text-green-600 hover:text-green-800 mr-3"
+              >
+                알림톡 발송
+              </button>
+              <button
                 @click="deleteScore(score.id)"
                 class="text-red-600 hover:text-red-800"
               >
@@ -459,7 +465,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { studentApi, scoreApi, reportApi } from '../services/api';
+import { studentApi, scoreApi, reportApi, kakaoApi } from '../services/api';
 import type { Student, Score, ReportData } from '../types';
 import { Line } from 'vue-chartjs';
 import {
@@ -713,6 +719,20 @@ const viewReport = async (scoreId: number) => {
     console.error('성적표 미리보기 실패:', err);
   } finally {
     loadingReport.value = false;
+  }
+};
+
+const sendKakao = async (scoreId: number) => {
+  if (!confirm('해당 학생의 학부모님께 성적표 알림톡을 발송하시겠습니까?')) return;
+  
+  try {
+    const response = await kakaoApi.sendReport(scoreId);
+    if (response.data.success) {
+      alert('알림톡이 성공적으로 발송되었습니다.');
+    }
+  } catch (err: any) {
+    alert(err.response?.data?.message || '알림톡 발송에 실패했습니다.');
+    console.error('알림톡 발송 실패:', err);
   }
 };
 

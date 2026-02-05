@@ -49,6 +49,7 @@ import excelRouter from './routes/excel.js';
 import counselingRouter from './routes/counseling.js';
 import authRouter from './routes/auth.js';
 import classesRouter from './routes/classes.js';
+import kakaoRouter from './routes/kakao.js';
 
 app.use('/api/students', studentsRouter);
 app.use('/api/scores', scoresRouter);
@@ -60,6 +61,7 @@ app.use('/api/excel', excelRouter);
 app.use('/api/counseling', counselingRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/classes', classesRouter);
+app.use('/api/kakao', kakaoRouter);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
