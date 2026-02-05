@@ -450,7 +450,13 @@
         </div>
 
         <!-- 모달 닫기 버튼 -->
-        <div class="p-4 border-t flex justify-end">
+        <div class="p-4 border-t flex justify-between items-center bg-gray-50">
+          <button
+            @click="copyReportLink"
+            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 font-bold shadow-sm"
+          >
+            <span>🔗 성적표 링크 복사</span>
+          </button>
           <button
             @click="showReportModal = false"
             class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
@@ -766,6 +772,22 @@ const deleteSelectedScores = async () => {
     fetchScores();
   } finally {
     loading.value = false;
+  }
+};
+
+const copyReportLink = async () => {
+  if (!reportData.value) return;
+  
+  try {
+    const response = await reportApi.generateLink(reportData.value.score.id);
+    if (response.data.success) {
+      const fullUrl = `${window.location.origin}/report/${response.data.data.token}`;
+      await navigator.clipboard.writeText(fullUrl);
+      alert('성적표 링크가 클립보드에 복사되었습니다.\n원하는 곳에 붙여넣기(Ctrl+V) 하세요.');
+    }
+  } catch (err: any) {
+    alert('링크 생성 및 복사에 실패했습니다.');
+    console.error('Link copy error:', err);
   }
 };
 
