@@ -159,8 +159,8 @@ const selectedClass = ref<string>('');
 const examDate = ref<string>(getToday());
 const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
 
-const rtTestTypes = ref<Array<{ name: string; total: number }>>([{ name: 'RT 1', total: 10 }]);
-const wordTestTypes = ref<Array<{ name: string; total: number }>>([{ name: '단어 1', total: 50 }]);
+const rtTestTypes = ref<Array<{ name: string; total: number | null }>>([{ name: 'RT 1', total: null }]);
+const wordTestTypes = ref<Array<{ name: string; total: number | null }>>([{ name: '단어 1', total: null }]);
 
 const allStudents = ref<Student[]>([]);
 const classStudents = ref<Student[]>([]);
@@ -173,9 +173,9 @@ const assignmentMap: Record<string, number> = { 'A': 100, 'B': 85, 'C': 70, 'F':
 
 const addTestType = (type: 'rt' | 'word') => {
   if (type === 'rt') {
-    rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, total: 10 });
+    rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, total: null });
   } else {
-    wordTestTypes.value.push({ name: `단어 ${wordTestTypes.value.length + 1}`, total: 50 });
+    wordTestTypes.value.push({ name: `단어 ${wordTestTypes.value.length + 1}`, total: null });
   }
   updateAllScoreForms();
 };
@@ -293,8 +293,8 @@ const onClassChange = () => {
 
 const loadExistingScores = async () => {
   // 테스트 종류 초기화 (기본값으로)
-  rtTestTypes.value = [{ name: 'RT 1', total: 10 }];
-  wordTestTypes.value = [{ name: '단어 1', total: 50 }];
+  rtTestTypes.value = [{ name: 'RT 1', total: null }];
+  wordTestTypes.value = [{ name: '단어 1', total: null }];
 
   // 상태 초기화 (시험일자 변경 시 기본값으로)
   scoreForms.value = classStudents.value.map(() => ({
@@ -435,8 +435,8 @@ const resetAllScores = () => {
   localStorage.removeItem(key);
   
   // 테스트 종류 초기화
-  rtTestTypes.value = [{ name: 'RT 1', total: 10 }];
-  wordTestTypes.value = [{ name: '단어 1', total: 50 }];
+  rtTestTypes.value = [{ name: 'RT 1', total: null }];
+  wordTestTypes.value = [{ name: '단어 1', total: null }];
   
   // 입력 폼 및 계산 결과 초기화
   scoreForms.value = classStudents.value.map(() => ({

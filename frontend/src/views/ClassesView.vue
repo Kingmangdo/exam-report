@@ -81,7 +81,7 @@
                 </td>
                 <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                   <div class="flex flex-col gap-1.5">
-                    <span class="font-bold">학: {{ formatPhone(student.phone) }}</span>
+                    <span class="font-bold">학: {{ formatPhone(student.student_no) }}</span>
                     <span class="font-extrabold text-blue-700">부: {{ formatPhone(student.parent_phone) }}</span>
                   </div>
                 </td>
@@ -283,24 +283,39 @@
     <div v-if="showStudentAssignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeStudentAssignModal">
       <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
         <h3 class="text-xl font-bold mb-4">{{ selectedClass?.name }} 학생 배정</h3>
-        <div class="mb-4">
-          <input v-model="studentSearchSearch" type="text" placeholder="학생 이름 검색" class="w-full px-4 py-2 border rounded-lg" />
+        
+        <!-- 필터 영역 추가 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <input v-model="studentSearchSearch" type="text" placeholder="학생 이름 검색" class="px-4 py-2 border rounded-lg text-sm" />
+          <select v-model="assignModalFilters.school" class="px-4 py-2 border rounded-lg text-sm">
+            <option value="">전체 학교</option>
+            <option v-for="school in allAvailableSchools" :key="school" :value="school">{{ school }}</option>
+          </select>
+          <select v-model="assignModalFilters.grade" class="px-4 py-2 border rounded-lg text-sm">
+            <option value="">전체 학년</option>
+            <option v-for="n in 6" :key="n" :value="n.toString()">{{ n }}학년</option>
+          </select>
         </div>
+
         <div class="flex-1 overflow-y-auto mb-4 border rounded-lg">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50 sticky top-0">
               <tr>
                 <th class="px-4 py-2 text-left">선택</th>
                 <th class="px-4 py-2 text-left">이름</th>
+                <th class="px-4 py-2 text-left">학교/학년</th>
+                <th class="px-4 py-2 text-left">학생 연락처</th>
                 <th class="px-4 py-2 text-left">현재 반</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="s in filteredAllStudents" :key="s.id" class="hover:bg-gray-50">
                 <td class="px-4 py-2">
-                  <input type="checkbox" :value="s.id" v-model="selectedStudentIds" />
+                  <input type="checkbox" :value="s.id" v-model="selectedStudentIds" class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" />
                 </td>
-                <td class="px-4 py-2 font-medium">{{ s.name }} ({{ s.school }})</td>
+                <td class="px-4 py-2 font-medium">{{ s.name }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{{ s.school || '-' }} / {{ s.grade ? s.grade + '학년' : '-' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{{ formatPhone(s.student_no) }}</td>
                 <td class="px-4 py-2 text-xs text-gray-500">{{ s.class_name || '-' }}</td>
               </tr>
             </tbody>
@@ -464,14 +479,39 @@ const classForm = ref({
 const showStudentAssignModal = ref(false);
 const studentSearchSearch = ref('');
 const selectedStudentIds = ref<number[]>([]);
+const assignModalFilters = ref({
+  school: '',
+  grade: ''
+});
+
+const allAvailableSchools = computed(() => {
+  const schools = new Set<string>();
+  allStudents.value.forEach(s => {
+    if (s.school) schools.add(s.school);
+  });
+  return Array.from(schools).sort();
+});
 
 const filteredAllStudents = computed(() => {
-  if (!studentSearchSearch.value) return allStudents.value;
-  const search = studentSearchSearch.value.toLowerCase();
-  return allStudents.value.filter(s => 
-    s.name.toLowerCase().includes(search) || 
-    (s.school && s.school.toLowerCase().includes(search))
-  );
+  let filtered = allStudents.value;
+  
+  if (studentSearchSearch.value) {
+    const search = studentSearchSearch.value.toLowerCase();
+    filtered = filtered.filter(s => 
+      s.name.toLowerCase().includes(search) || 
+      (s.school && s.school.toLowerCase().includes(search))
+    );
+  }
+  
+  if (assignModalFilters.value.school) {
+    filtered = filtered.filter(s => s.school === assignModalFilters.value.school);
+  }
+  
+  if (assignModalFilters.value.grade) {
+    filtered = filtered.filter(s => s.grade === assignModalFilters.value.grade);
+  }
+  
+  return filtered;
 });
 
 const fetchClasses = async () => {

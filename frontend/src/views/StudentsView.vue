@@ -31,6 +31,12 @@
 
     <!-- 검색 및 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <div class="text-sm font-medium text-gray-600">
+          전체 학생 수: <span class="text-primary font-bold">{{ totalStudentCount }}</span>명 | 
+          검색 결과: <span class="text-green-600 font-bold">{{ students.length }}</span>명
+        </div>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           v-model="filters.search"
@@ -46,7 +52,7 @@
         >
           <option value="">전체 반</option>
           <option
-            v-for="className in availableClasses"
+            v-for="className in allAvailableClasses"
             :key="className"
             :value="className"
           >
@@ -59,7 +65,7 @@
           @change="fetchStudents"
         >
           <option value="">전체 학년</option>
-          <option v-for="grade in availableGrades" :key="grade" :value="grade">
+          <option v-for="grade in allAvailableGrades" :key="grade" :value="grade">
             {{ grade }}학년
           </option>
         </select>
@@ -84,7 +90,7 @@
           선택한 {{ selectedStudents.length }}명의 학생을 이동할 반을 선택하세요.
         </p>
         <div class="space-y-3 mb-4">
-          <div v-for="className in availableClasses" :key="className" class="flex items-center">
+          <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
             <input
               :id="`class-${className}`"
               type="checkbox"
@@ -145,12 +151,21 @@
         <span class="text-sm font-medium text-gray-700">
           {{ selectedStudents.length }}명 선택됨
         </span>
-        <button
-          @click="openClassMoveModal"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-        >
-          반 이동
-        </button>
+        <div class="flex space-x-3">
+          <button
+            @click="openClassMoveModal"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+          >
+            반 이동
+          </button>
+          <button
+            v-if="isAdmin"
+            @click="deleteSelectedStudents"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+          >
+            선택 삭제
+          </button>
+        </div>
       </div>
 
       <table class="min-w-full divide-y divide-gray-200">
@@ -161,17 +176,18 @@
                 type="checkbox"
                 @change="toggleSelectAll"
                 :checked="selectedStudents.length === students.length && students.length > 0"
-                class="rounded border-gray-300"
+                class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
             </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학교</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학년</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">반</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">담임</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">학부모 연락처</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">상담내용</th>
-            <th v-if="isAdmin" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">관리</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">이름</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학교</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학년</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">반</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">담임</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학생 연락처</th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학부모 연락처</th>
+            <th class="px-6 py-3 text-center text-base font-bold text-gray-700 uppercase">상담내용</th>
+            <th v-if="isAdmin" class="px-6 py-3 text-center text-base font-bold text-gray-700 uppercase">관리</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -181,37 +197,47 @@
                 type="checkbox"
                 :value="student.id"
                 v-model="selectedStudents"
-                class="rounded border-gray-300"
+                class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
               {{ student.name }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
               {{ student.school || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
               {{ student.grade || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
               <div v-if="student.classes && student.classes.length > 0" class="flex flex-wrap gap-1">
                 <span
                   v-for="(className, idx) in student.classes"
                   :key="idx"
-                  class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs"
+                  class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium"
                 >
                   {{ className }}
                 </span>
               </div>
               <span v-else>-</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
               {{ student.teacher_name || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ formatPhone(student.parent_phone) }}
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
+              {{ formatPhone(student.student_no) || '-' }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
+              <div class="flex flex-col">
+                <span :class="student.phone ? 'text-blue-600 font-medium' : 'text-gray-600'">
+                  {{ formatPhone(student.parent_phone) }}
+                </span>
+                <span v-if="student.phone" class="text-gray-500 text-sm mt-1">
+                  {{ formatPhone(student.phone) }}
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-base text-center">
               <button
                 @click="openCounselingModal(student)"
                 class="text-green-600 hover:text-green-800 font-bold"
@@ -219,7 +245,7 @@
                 상담
               </button>
             </td>
-            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-sm text-center font-medium">
+            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-base text-center font-medium">
               <button
                 @click="openModal('edit', student)"
                 class="text-primary hover:text-primary-dark mr-3"
@@ -256,9 +282,7 @@
         <form @submit.prevent="saveStudent">
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                학생 이름 <span class="text-red-500">*</span>
-              </label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">학생 이름 <span class="text-red-500">*</span></label>
               <input
                 v-model="form.name"
                 type="text"
@@ -268,48 +292,71 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">학교</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">학생 연락처</label>
               <input
-                v-model="form.school"
-                type="text"
-                placeholder="학교명 입력"
+                v-model="form.student_no"
+                type="tel"
+                placeholder="01012345678"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">학교</label>
+              <select
+                v-model="form.school"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+                @change="handleSchoolChange"
+              >
+                <option value="">학교 선택</option>
+                <option value="청수초">청수초</option>
+                <option value="하늘빛초">하늘빛초</option>
+                <option value="하늘빛중">하늘빛중</option>
+                <option value="모담중">모담중</option>
+                <option value="푸른솔중">푸른솔중</option>
+                <option value="제일고">제일고</option>
+                <option value="운양고">운양고</option>
+                <option value="운유고">운유고</option>
+                <option value="custom">직접입력</option>
+              </select>
+              <input
+                v-if="showCustomSchoolInput"
+                v-model="customSchoolName"
+                type="text"
+                placeholder="학교명 직접 입력"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                @input="updateCustomSchool"
               />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">학년</label>
-              <input
+              <select
                 v-model="form.grade"
-                type="text"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              >
+                <option value="">학년 선택</option>
+                <option v-for="n in 6" :key="n" :value="n.toString()">{{ n }}학년</option>
+              </select>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">담임 선생님</label>
-              <input
+              <select
                 v-model="form.teacher_name"
-                type="text"
-                placeholder="선생님 성함 입력"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div v-if="isAdmin">
-              <label class="block text-sm font-medium text-gray-700 mb-1">매월 수강료</label>
-              <input
-                v-model.number="form.monthly_tuition"
-                type="number"
-                placeholder="수강료 금액(원) 입력"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              >
+                <option value="">선생님 선택</option>
+                <option value="댄T">댄T</option>
+                <option value="마이크T">마이크T</option>
+                <option value="첼시원장">첼시원장</option>
+              </select>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">반 (중복 선택 가능)</label>
               <div class="space-y-2">
-                <div v-for="className in availableClasses" :key="className" class="flex items-center">
+                <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
                   <input
                     :id="`form-class-${className}`"
                     type="checkbox"
@@ -342,31 +389,23 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">학생 연락처</label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">학부모 이름</label>
-              <input
-                v-model="form.parent_name"
-                type="text"
-                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                학부모 연락처 <span class="text-red-500">*</span>
+                학부모 연락처 1 <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="form.parent_phone"
                 type="tel"
                 required
+                placeholder="01012345678"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">학부모 연락처 2</label>
+              <input
+                v-model="form.phone"
+                type="tel"
                 placeholder="01012345678"
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -472,7 +511,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { studentApi, excelApi, counselingApi } from '../services/api';
+import { studentApi, excelApi, counselingApi, classApi } from '../services/api';
 import type { Student } from '../types';
 
 const userJson = localStorage.getItem('user');
@@ -480,6 +519,7 @@ const user = userJson ? JSON.parse(userJson) : null;
 const isAdmin = user?.role === 'admin';
 
 const students = ref<Student[]>([]);
+const totalStudentCount = ref(0);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const showModal = ref(false);
@@ -507,6 +547,24 @@ const targetClasses = ref<string[]>([]);
 const showNewClassInput = ref(false);
 const newClassName = ref('');
 const availableClasses = ref<string[]>([]);
+
+// 학교 직접 입력 관련
+const showCustomSchoolInput = ref(false);
+const customSchoolName = ref('');
+
+const handleSchoolChange = () => {
+  if (form.value.school === 'custom') {
+    showCustomSchoolInput.value = true;
+    form.value.school = '';
+  } else {
+    showCustomSchoolInput.value = false;
+    customSchoolName.value = '';
+  }
+};
+
+const updateCustomSchool = () => {
+  form.value.school = customSchoolName.value;
+};
 
 // 상담일지 관련 상태
 const showCounselingModal = ref(false);
@@ -591,31 +649,37 @@ const formatPhone = (phone: string) => {
 };
 
 const availableGrades = ref<string[]>([]);
+const allAvailableClasses = ref<string[]>([]);
+const allAvailableGrades = ref<string[]>([]);
+const registeredClasses = ref<any[]>([]);
 
-// 사용 가능한 반 및 학년 목록 업데이트
-const updateAvailableFilters = () => {
-  const classesSet = new Set<string>();
-  const gradesSet = new Set<string>();
-  
-  students.value.forEach(student => {
-    // 반 목록 추출
-    if (student.classes && student.classes.length > 0) {
-      student.classes.forEach(c => classesSet.add(c));
-    } else if (student.class_name) {
-      student.class_name.split(',').forEach(c => {
-        const trimmed = c.trim();
-        if (trimmed) classesSet.add(trimmed);
+// 필터 목록 초기화 (전체 학생 기반)
+const initFilterOptions = async () => {
+  try {
+    // 1. 반 관리에서 등록된 실제 반 목록 가져오기
+    const classResponse = await classApi.getAll();
+    if (classResponse.data.success) {
+      registeredClasses.value = classResponse.data.data;
+      allAvailableClasses.value = classResponse.data.data.map((c: any) => c.name).sort();
+    }
+
+    // 2. 학생 데이터를 기반으로 학년 목록 가져오기
+    const studentResponse = await studentApi.getAll({});
+    if (studentResponse.data.success && studentResponse.data.data) {
+      const allStudents = studentResponse.data.data;
+      const gradesSet = new Set<string>();
+      
+      allStudents.forEach((student: any) => {
+        if (student.grade) {
+          gradesSet.add(student.grade.toString());
+        }
       });
+      
+      allAvailableGrades.value = Array.from(gradesSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     }
-    
-    // 학년 목록 추출
-    if (student.grade) {
-      gradesSet.add(student.grade.toString());
-    }
-  });
-  
-  availableClasses.value = Array.from(classesSet).sort();
-  availableGrades.value = Array.from(gradesSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  } catch (err) {
+    console.error('필터 옵션 초기화 실패:', err);
+  }
 };
 
 const fetchStudents = async () => {
@@ -623,7 +687,6 @@ const fetchStudents = async () => {
     loading.value = true;
     error.value = null;
     
-    // 필터에서 빈 값은 제외하고 전송
     const activeFilters: any = {};
     if (filters.value.search) activeFilters.search = filters.value.search;
     if (filters.value.class_name) activeFilters.class_name = filters.value.class_name;
@@ -632,9 +695,17 @@ const fetchStudents = async () => {
     const response = await studentApi.getAll(activeFilters);
     if (response.data.success && response.data.data) {
       students.value = response.data.data;
-      // 필터 목록 업데이트 (검색/필터링된 결과가 아닌 전체 목록 기반으로 유지하기 위해 조건부 업데이트 고려 가능)
-      // 여기서는 사용자가 선택할 수 있는 옵션을 갱신합니다.
-      updateAvailableFilters();
+      
+      // 필터가 없을 때의 전체 학생 수 업데이트
+      if (!filters.value.search && !filters.value.class_name && !filters.value.grade) {
+        totalStudentCount.value = response.data.data.length;
+      } else if (totalStudentCount.value === 0) {
+        // 처음 로딩 시 필터가 있더라도 전체 수를 알기 위해 별도 호출하거나 초기값 설정
+        const totalRes = await studentApi.getAll({});
+        if (totalRes.data.success) {
+          totalStudentCount.value = totalRes.data.data.length;
+        }
+      }
     }
   } catch (err: any) {
     error.value = err.response?.data?.message || '학생 목록을 불러오는 중 오류가 발생했습니다.';
@@ -670,9 +741,9 @@ const openClassMoveModal = () => {
 const addNewClass = () => {
   if (newClassName.value.trim()) {
     const className = newClassName.value.trim();
-    if (!availableClasses.value.includes(className)) {
-      availableClasses.value.push(className);
-      availableClasses.value.sort();
+    if (!allAvailableClasses.value.includes(className)) {
+      allAvailableClasses.value.push(className);
+      allAvailableClasses.value.sort();
     }
     if (!targetClasses.value.includes(className)) {
       targetClasses.value.push(className);
@@ -717,11 +788,21 @@ const moveStudentsToClasses = async () => {
 
 const openModal = (mode: 'create' | 'edit', student?: Student) => {
   modalMode.value = mode;
+  showCustomSchoolInput.value = false;
+  customSchoolName.value = '';
+  
   if (mode === 'edit' && student) {
     form.value = {
       ...student,
       classes: (student as any).classes || (student.class_name ? student.class_name.split(',').map(c => c.trim()).filter(c => c) : [])
     };
+    
+    // 기존 학교가 목록에 없는 경우 직접 입력 모드로 전환
+    const defaultSchools = ['청수초', '하늘빛초', '하늘빛중', '모담중', '푸른솔중', '제일고', '운양고', '운유고'];
+    if (student.school && !defaultSchools.includes(student.school)) {
+      showCustomSchoolInput.value = true;
+      customSchoolName.value = student.school;
+    }
   } else {
     form.value = { classes: [] };
   }
@@ -746,14 +827,11 @@ const saveStudent = async () => {
       if (!form.value.classes.includes(className)) {
         form.value.classes.push(className);
       }
-      if (!availableClasses.value.includes(className)) {
-        availableClasses.value.push(className);
-        availableClasses.value.sort();
-      }
     }
 
     const studentData: any = {
       name: form.value.name,
+      student_no: form.value.student_no,
       grade: form.value.grade,
       school: form.value.school,
       teacher_name: form.value.teacher_name,
@@ -770,6 +848,8 @@ const saveStudent = async () => {
       await studentApi.update(form.value.id, studentData);
     }
     closeModal();
+    // 학생 저장 후 필터 옵션도 갱신 (새로운 반/학년이 추가되었을 수 있으므로)
+    await initFilterOptions();
     fetchStudents();
   } catch (err: any) {
     alert(err.response?.data?.message || '저장 중 오류가 발생했습니다.');
@@ -782,10 +862,39 @@ const deleteStudent = async (id: number) => {
 
   try {
     await studentApi.delete(id);
+    // 학생 삭제 후 필터 옵션도 갱신
+    await initFilterOptions();
     fetchStudents();
   } catch (err: any) {
     alert(err.response?.data?.message || '삭제 중 오류가 발생했습니다.');
     console.error(err);
+  }
+};
+
+// 선택된 학생 일괄 삭제
+const deleteSelectedStudents = async () => {
+  if (selectedStudents.value.length === 0) return;
+  
+  if (!confirm(`선택한 ${selectedStudents.value.length}명의 학생을 정말 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+    return;
+  }
+
+  try {
+    loading.value = true;
+    // 순차적으로 삭제 처리 (또는 백엔드에 일괄 삭제 API 추가 가능)
+    for (const id of selectedStudents.value) {
+      await studentApi.delete(id);
+    }
+    
+    alert('선택한 학생들의 삭제가 완료되었습니다.');
+    selectedStudents.value = [];
+    await initFilterOptions();
+    await fetchStudents();
+  } catch (err: any) {
+    alert('일부 학생 삭제 중 오류가 발생했습니다.');
+    console.error(err);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -883,6 +992,7 @@ const handleFileUpload = async (event: Event) => {
 };
 
 onMounted(() => {
+  initFilterOptions();
   fetchStudents();
 });
 </script>
