@@ -267,4 +267,11 @@ export const paymentApi = {
   }
 };
 
+// 카카오 알림톡 API
+export const kakaoApi = {
+  sendReport: (scoreId: number) => {
+    return api.post<ApiResponse<any>>('/kakao/send-report', { score_id: scoreId });
+  }
+};
+
 export default api;
