@@ -17,13 +17,23 @@ if (!supabase) {
 
 // Middleware
 app.use(compression()); // 응답 압축 추가
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://exam-report.vercel.app',
+  process.env.CORS_ORIGIN
+].filter(Boolean);
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // origin이 없으면 (예: 모바일 앱, curl 등) 허용
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
