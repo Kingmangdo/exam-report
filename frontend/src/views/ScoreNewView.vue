@@ -336,14 +336,14 @@ const loadExistingScores = async () => {
       const firstScore = data[0];
       if (firstScore.rt_details?.length) {
         rtTestTypes.value = firstScore.rt_details.map((d: any, i: number) => ({ 
-          name: `RT ${i+1}`, 
-          total: firstScore.rt_total / firstScore.rt_details.length // 단순 추정치
+          name: d.name || `RT ${i+1}`, 
+          total: d.total !== undefined ? d.total : null
         }));
       }
       if (firstScore.word_details?.length) {
         wordTestTypes.value = firstScore.word_details.map((d: any, i: number) => ({ 
-          name: `단어 ${i+1}`, 
-          total: firstScore.word_total / firstScore.word_details.length // 단순 추정치
+          name: d.name || `단어 ${i+1}`, 
+          total: d.total !== undefined ? d.total : null
         }));
       }
 
