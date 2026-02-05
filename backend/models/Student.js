@@ -56,13 +56,14 @@ export class Student {
 
   // 학생 등록
   static async create(data) {
-    const { name, grade, school, teacher_name, class_name, phone, parent_name, parent_phone, monthly_tuition } = data;
+    const { name, student_no, grade, school, teacher_name, class_name, phone, parent_name, parent_phone, monthly_tuition } = data;
     const classNames = toClassNames(class_name);
 
     const { data: inserted, error } = await supabase
       .from('students')
       .insert({
         name,
+        student_no: student_no || null,
         grade: grade || null,
         school: school || null,
         teacher_name: teacher_name || null,
@@ -86,6 +87,7 @@ export class Student {
     };
 
     if (data.name !== undefined) updateData.name = data.name;
+    if (data.student_no !== undefined) updateData.student_no = data.student_no || null;
     if (data.grade !== undefined) updateData.grade = data.grade || null;
     if (data.school !== undefined) updateData.school = data.school || null;
     if (data.teacher_name !== undefined) updateData.teacher_name = data.teacher_name || null;
