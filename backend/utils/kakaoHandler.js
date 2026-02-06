@@ -13,12 +13,21 @@ export const sendAligoAlimtalk = async (data) => {
     button_1
   } = data;
 
+  // IP 확인을 위해 외부 서비스 호출
+  try {
+    const ipRes = await axios.get('https://api64.ipify.org?format=json', { timeout: 5000 });
+    console.log('[DEBUG] Current Server External IP:', ipRes.data.ip);
+  } catch (ipErr) {
+    console.log('[DEBUG] Failed to get external IP:', ipErr.message);
+  }
+
   const form = new FormData();
   
-  // 환경변수 값 확인 (로그에는 앞 4자리만 출력하여 보안 유지)
+  // 환경변수 값 확인 (보안을 위해 앞 4자리만)
   console.log('Aligo Auth Check:', {
     userid: process.env.ALIGO_USER_ID,
-    key_prefix: process.env.ALIGO_API_KEY?.substring(0, 4)
+    key_prefix: process.env.ALIGO_API_KEY?.substring(0, 4),
+    sender: process.env.ALIGO_SENDER
   });
 
   form.append('apikey', String(process.env.ALIGO_API_KEY || '').trim());
