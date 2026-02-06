@@ -29,8 +29,9 @@ export const sendAligoAlimtalk = async (data) => {
   }
 
   try {
-    const response = await axios.post('https://alimtalk-api.aligo.in/akv10/alimtalk/send/', form, {
-      headers: form.getHeaders()
+    const response = await axios.post('https://kakaoapi.aligo.in/akv10/alimtalk/send/', form, {
+      headers: form.getHeaders(),
+      timeout: 10000 // 10초 타임아웃 추가
     });
     return response.data;
   } catch (error) {
