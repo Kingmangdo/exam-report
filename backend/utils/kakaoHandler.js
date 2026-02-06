@@ -2,7 +2,7 @@ import axios from 'axios';
 import FormData from 'form-data';
 
 /**
- * 알리고 알림톡 발송 유틸리티 (토큰 발급 방식 적용)
+ * 알리고 알림톡 발송 유틸리티 (이전 직접 발송 방식)
  */
 export const sendAligoAlimtalk = async (data) => {
   const {
@@ -13,60 +13,49 @@ export const sendAligoAlimtalk = async (data) => {
     button_1
   } = data;
 
+  // IP 확인 로그 추가 (고객센터 문의 시 필요할 수 있음)
+  try {
+    const ipRes = await axios.get('https://api64.ipify.org?format=json', { timeout: 5000 });
+    console.log('[DEBUG] Current Server External IP:', ipRes.data.ip);
+  } catch (ipErr) {
+    console.log('[DEBUG] Failed to get external IP:', ipErr.message);
+  }
+
   const apiKey = String(process.env.ALIGO_API_KEY || '').trim();
   const userId = String(process.env.ALIGO_USER_ID || '').trim();
   const sender = String(process.env.ALIGO_SENDER || '').trim();
   const senderKey = String(process.env.ALIGO_SENDER_KEY || '').trim();
   const templateCode = String(tpl_code || process.env.ALIGO_TEMPLATE_CODE || '').trim();
 
+  const form = new FormData();
+  form.append('apikey', apiKey);
+  form.append('userid', userId);
+  form.append('senderkey', senderKey);
+  form.append('tpl_code', templateCode);
+  form.append('sender', sender);
+  form.append('receiver_1', receiver_1);
+  form.append('subject_1', subject_1);
+  form.append('message_1', message_1);
+  
+  if (button_1) {
+    form.append('button_1', JSON.stringify(button_1));
+  }
+
+  // 환경변수 값 확인 로그
+  console.log('Aligo Auth Check:', {
+    userid: userId,
+    key_prefix: apiKey.substring(0, 4),
+    sender: sender
+  });
+
   try {
-    // 1. 토큰 생성 요청 (인증 오류 방지를 위해 먼저 토큰을 받아옵니다)
-    const tokenForm = new FormData();
-    tokenForm.append('apikey', apiKey);
-    tokenForm.append('userid', userId);
-    tokenForm.append('type', 'h'); // 유효시간 타입: h(시)
-    tokenForm.append('time', '1'); // 유효시간: 1시간
-
-    console.log('[DEBUG] Requesting Aligo Token...');
-    const tokenResponse = await axios.post('https://kakaoapi.aligo.in/akv10/token/create/1/h/', tokenForm, {
-      headers: tokenForm.getHeaders(),
+    const response = await axios.post('https://kakaoapi.aligo.in/akv10/alimtalk/send/', form, {
+      headers: form.getHeaders(),
       timeout: 10000
     });
-
-    if (tokenResponse.data.code !== 0) {
-      console.error('[DEBUG] Token Creation Failed:', tokenResponse.data);
-      // 토큰 생성 실패 시에도 IP 에러가 날 수 있으므로 상세 에러 출력
-      throw new Error(`토큰 생성 실패: ${tokenResponse.data.message} (Code: ${tokenResponse.data.code})`);
-    }
-
-    const token = tokenResponse.data.token;
-    console.log('[DEBUG] Token Created Successfully');
-
-    // 2. 알림톡 발송 요청 (받아온 토큰 사용)
-    const sendForm = new FormData();
-    sendForm.append('apikey', apiKey);
-    sendForm.append('userid', userId);
-    sendForm.append('token', token); // 발급받은 토큰 추가
-    sendForm.append('senderkey', senderKey);
-    sendForm.append('tpl_code', templateCode);
-    sendForm.append('sender', sender);
-    sendForm.append('receiver_1', receiver_1);
-    sendForm.append('subject_1', subject_1);
-    sendForm.append('message_1', message_1);
-
-    if (button_1) {
-      sendForm.append('button_1', JSON.stringify(button_1));
-    }
-
-    console.log('[DEBUG] Sending Alimtalk with Token...');
-    const response = await axios.post('https://kakaoapi.aligo.in/akv10/alimtalk/send/', sendForm, {
-      headers: sendForm.getHeaders(),
-      timeout: 10000
-    });
-
     return response.data;
   } catch (error) {
-    console.error('알리고 API 호출 최종 에러:', error.response?.data || error.message);
+    console.error('알리고 API 호출 에러:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || error.message);
   }
 };
