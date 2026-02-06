@@ -14,11 +14,18 @@ export const sendAligoAlimtalk = async (data) => {
   } = data;
 
   const form = new FormData();
-  form.append('apikey', process.env.ALIGO_API_KEY);
-  form.append('userid', process.env.ALIGO_USER_ID);
-  form.append('sender', process.env.ALIGO_SENDER);
-  form.append('tpl_code', tpl_code || process.env.ALIGO_TEMPLATE_CODE);
-  form.append('sender_key', process.env.ALIGO_SENDER_KEY || ''); // 알리고에서 발급받은 발신프로필 키 (필요시)
+  
+  // 환경변수 값 확인 (로그에는 앞 4자리만 출력하여 보안 유지)
+  console.log('Aligo Auth Check:', {
+    userid: process.env.ALIGO_USER_ID,
+    key_prefix: process.env.ALIGO_API_KEY?.substring(0, 4)
+  });
+
+  form.append('apikey', String(process.env.ALIGO_API_KEY).trim());
+  form.append('userid', String(process.env.ALIGO_USER_ID).trim());
+  form.append('sender', String(process.env.ALIGO_SENDER).trim());
+  form.append('tpl_code', (tpl_code || process.env.ALIGO_TEMPLATE_CODE).trim());
+  form.append('sender_key', String(process.env.ALIGO_SENDER_KEY || '').trim());
   
   form.append('receiver_1', receiver_1);
   form.append('subject_1', subject_1);
