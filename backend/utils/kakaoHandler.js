@@ -21,10 +21,10 @@ export const sendAligoAlimtalk = async (data) => {
     key_prefix: process.env.ALIGO_API_KEY?.substring(0, 4)
   });
 
-  form.append('apikey', String(process.env.ALIGO_API_KEY).trim());
-  form.append('userid', String(process.env.ALIGO_USER_ID).trim());
-  form.append('sender', String(process.env.ALIGO_SENDER).trim());
-  form.append('tpl_code', (tpl_code || process.env.ALIGO_TEMPLATE_CODE).trim());
+  form.append('apikey', String(process.env.ALIGO_API_KEY || '').trim());
+  form.append('userid', String(process.env.ALIGO_USER_ID || '').trim());
+  form.append('sender', String(process.env.ALIGO_SENDER || '').trim());
+  form.append('tpl_code', String(tpl_code || process.env.ALIGO_TEMPLATE_CODE || '').trim());
   form.append('sender_key', String(process.env.ALIGO_SENDER_KEY || '').trim());
   
   form.append('receiver_1', receiver_1);
