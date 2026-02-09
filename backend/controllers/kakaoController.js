@@ -66,18 +66,26 @@ ${reportUrl}
 
     // 4. 알림톡 발송
     const result = await sendAligoAlimtalk(aligoData);
+    
+    // 알리고 응답 로그 확인
+    console.log('Aligo Send Result:', result);
 
     // 5. 발송 이력 저장
     await supabase.from('kakao_send_history').insert({
       student_id: student.id,
       score_id: score.id,
       parent_phone: student.parent_phone,
-      send_status: result.result_code === '1' ? 'success' : 'fail',
+      send_status: String(result.result_code) === '1' ? 'success' : 'fail',
       error_message: result.message || null
     });
 
-    if (result.result_code !== '1') {
-      throw new Error(result.message || '알림톡 발송 실패');
+    // result_code가 1(성공)이 아니면 에러로 처리
+    if (String(result.result_code) !== '1') {
+      return res.status(400).json({
+        success: false,
+        message: result.message || '알림톡 발송 실패',
+        data: result
+      });
     }
 
     res.json({
