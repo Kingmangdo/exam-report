@@ -30,28 +30,22 @@ export const sendScoreReport = async (req, res) => {
     // 실제 배정된 도메인 주소로 변경 필요 (현재는 Vercel 주소 기준)
     const reportUrl = `https://exam-report.vercel.app/report/${token}`;
 
-    // 3. 알림톡 메시지 구성 (알리고 승인 템플릿 문구와 100% 일치해야 함)
-    // 줄바꿈, 띄어쓰기, 특수문자까지 모두 일치해야 발송 성공합니다.
+    // 3. 알림톡 메시지 구성 (승인된 이미지 템플릿과 100% 일치)
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
 
+    // 이미지상 줄바꿈이 없는 형태 그대로 구성 (빈 줄 모두 제거)
     const message = `[독강영어학원 성적표 안내]
-
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
-
 오늘 실시한 일일 테스트 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
-
 ▶ 시험일자: ${score.exam_date}
 ▶ 평균점수: ${avgScore}점
 ▶ 반 평균: ${classAvgScore}점
-
 [상세 성적표 확인하기]
 ${reportUrl}
-
 ※ 링크 접속 시 학생 이름과 학부모님 연락처 뒷 4자리로 본인 인증이 필요합니다.
-
 오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.
 학생의 성장을 위해 최선을 다하겠습니다.`;
 
@@ -60,8 +54,18 @@ ${reportUrl}
       subject_1: '성적표 안내',
       message_1: message,
       tpl_code: process.env.ALIGO_TEMPLATE_CODE,
-      // 버튼을 사용하지 않는 템플릿 문구이므로 button_1은 제외하거나 템플릿 설정에 맞춰야 합니다.
-      // 현재 문구에 링크가 포함되어 있으므로 버튼 설정은 제외합니다.
+      // 이미지에 등록된 버튼 설정 추가 (버튼 이름: 성적표 확인하기)
+      button_1: {
+        button: [
+          {
+            name: '성적표 확인하기',
+            linkType: 'WL',
+            linkTypeName: '웹링크',
+            linkMo: reportUrl,
+            linkPc: reportUrl
+          }
+        ]
+      }
     };
 
     // 4. 알림톡 발송
