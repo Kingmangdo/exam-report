@@ -30,25 +30,25 @@ export const sendScoreReport = async (req, res) => {
     // 실제 배정된 도메인 주소로 변경 필요 (현재는 Vercel 주소 기준)
     const reportUrl = `https://exam-report.vercel.app/report/${token}`;
 
-    // 3. 알림톡 메시지 구성 (이미지 템플릿과 글자 하나하나 대조)
+    // 3. 알림톡 메시지 구성 (사용자가 주신 템플릿과 100% 일치하도록 재구성)
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
 
-    // 이미지 텍스트와 100% 일치하도록 구성
-    // 주의: 줄바꿈, 띄어쓰기, 변수 위치 엄격 준수
+    // 사용자가 주신 텍스트 그대로 (줄바꿈 포함)
     const message = `[독강영어학원 성적표 안내]
+
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
+
 오늘 실시한 일일 테스트 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
+
 ▶ 시험일자: ${score.exam_date}
 ▶ 평균점수: ${avgScore}점
 ▶ 반 평균: ${classAvgScore}점
+
 [상세 성적표 확인하기]
-${reportUrl}
-※ 링크 접속 시 학생 이름과 학부모님 연락처 뒷 4자리로 본인 인증이 필요합니다.
-오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.
-학생의 성장을 위해 최선을 다하겠습니다.`;
+${reportUrl}`;
 
     const aligoData = {
       receiver_1: student.parent_phone,
