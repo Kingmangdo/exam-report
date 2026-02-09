@@ -71,8 +71,10 @@ ${reportUrl}
     // 4. 알림톡 발송
     const result = await sendAligoAlimtalk(aligoData);
     
-    // 알리고 응답 로그 확인
-    console.log('Aligo Send Result:', result);
+    // [CRITICAL LOG] 알리고의 실제 응답을 서버 로그에 아주 크게 찍습니다.
+    console.log('================================================');
+    console.log('ALIGO API RESPONSE:', JSON.stringify(result, null, 2));
+    console.log('================================================');
 
     // 5. 발송 이력 저장
     await supabase.from('kakao_send_history').insert({
@@ -83,18 +85,10 @@ ${reportUrl}
       error_message: result.message || null
     });
 
-    // result_code가 1(성공)이 아니면 에러로 처리
-    if (String(result.result_code) !== '1') {
-      return res.status(400).json({
-        success: false,
-        message: result.message || '알림톡 발송 실패',
-        data: result
-      });
-    }
-
-    res.json({
-      success: true,
-      message: '알림톡이 발송되었습니다.',
+    // 성공/실패 여부와 상관없이 알리고의 메시지를 그대로 전달
+    return res.json({
+      success: String(result.result_code) === '1',
+      message: result.message,
       data: result
     });
   } catch (error) {
