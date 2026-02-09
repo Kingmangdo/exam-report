@@ -733,15 +733,15 @@ const sendKakao = async (scoreId: number) => {
   
   try {
     const response = await kakaoApi.sendReport(scoreId);
+    // 백엔드에서 온 메시지를 그대로 팝업으로 보여줌
+    alert(`알리고 응답: ${response.data.message}`);
+    
     if (response.data.success) {
-      alert('알림톡이 성공적으로 발송되었습니다.');
-    } else {
-      alert(`알림톡 발송 실패: ${response.data.message}`);
+      console.log('발송 성공 데이터:', response.data.data);
     }
   } catch (err: any) {
-    const errorMsg = err.response?.data?.message || err.message || '알림톡 발송에 실패했습니다.';
-    alert(`알림톡 발송 중 오류가 발생했습니다: ${errorMsg}`);
-    console.error('알림톡 발송 실패:', err);
+    const errorMsg = err.response?.data?.message || err.message || '알림톡 발송 중 시스템 오류가 발생했습니다.';
+    alert(`시스템 오류: ${errorMsg}`);
   }
 };
 
