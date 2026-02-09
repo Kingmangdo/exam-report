@@ -2,12 +2,25 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
+import axios from 'axios';
 import { supabase } from './models/supabase.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// 서버 시작 시 외부 IP 로깅 (알리고 등록용)
+const logExternalIP = async () => {
+  try {
+    const response = await axios.get('https://api.ipify.org?format=json');
+    console.log('================================================');
+    console.log(`[ALIGO_IP_CHECK] Current Server External IP: ${response.data.ip}`);
+    console.log('================================================');
+  } catch (error) {
+    console.error('[ALIGO_IP_CHECK] Failed to get external IP:', error.message);
+  }
+};
 
 // Supabase 연결 확인
 if (!supabase) {
@@ -78,6 +91,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
   console.log(`📡 API 엔드포인트: http://localhost:${PORT}/api`);
   console.log(`💚 Health Check: http://localhost:${PORT}/api/health`);
+  logExternalIP();
 }).on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
     console.error(`❌ 포트 ${PORT}가 이미 사용 중입니다.`);
