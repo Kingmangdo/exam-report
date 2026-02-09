@@ -30,11 +30,12 @@ export const sendScoreReport = async (req, res) => {
     // 실제 배정된 도메인 주소로 변경 필요 (현재는 Vercel 주소 기준)
     const reportUrl = `https://exam-report.vercel.app/report/${token}`;
 
-    // 3. 알림톡 메시지 구성 (승인된 이미지 템플릿과 100% 일치)
+    // 3. 알림톡 메시지 구성 (이미지 템플릿과 글자 하나하나 대조)
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
 
-    // 이미지상 줄바꿈이 없는 형태 그대로 구성 (빈 줄 모두 제거)
+    // 이미지 텍스트와 100% 일치하도록 구성
+    // 주의: 줄바꿈, 띄어쓰기, 변수 위치 엄격 준수
     const message = `[독강영어학원 성적표 안내]
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
@@ -54,7 +55,6 @@ ${reportUrl}
       subject_1: '성적표 안내',
       message_1: message,
       tpl_code: process.env.ALIGO_TEMPLATE_CODE,
-      // 이미지에 등록된 버튼 설정 추가 (버튼 이름: 성적표 확인하기)
       button_1: {
         button: [
           {
