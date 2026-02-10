@@ -16,6 +16,7 @@ const logExternalIP = async () => {
     const response = await axios.get('https://api.ipify.org?format=json');
     console.log('================================================');
     console.log(`[ALIGO_IP_CHECK] Current Server External IP: ${response.data.ip}`);
+    console.log(`[ALIGO_IP_CHECK] 👉 이 IP를 알리고 [인증IP관리]에 등록하세요!`);
     console.log(`[ALIGO_IP_CHECK] Force Update: ${new Date().getTime()}`);
     console.log('================================================');
   } catch (error) {
