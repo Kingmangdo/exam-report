@@ -34,15 +34,15 @@ export const sendScoreReport = async (req, res) => {
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
     
-    // 날짜 형식을 26-02-10에서 2026-02-10으로 변환 (필요 시)
+    // 날짜 형식 (템플릿에 따라 26-02-10 또는 2026-02-10 중 선택)
+    // 일단 2026-02-10 형식을 유지하되, 템플릿과 대조 필요
     let displayDate = score.exam_date;
     if (displayDate && displayDate.length === 8 && displayDate.includes('-')) {
       displayDate = '20' + displayDate;
     }
     
-    // 템플릿과 한 글자도 틀리지 않게 구성 (줄바꿈 포함)
+    // 템플릿 텍스트와 줄바꿈을 극한으로 일치시킴 (불필요한 빈 줄 제거 시도)
     const message = `[독강영어학원 성적표 안내]
-
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
 
@@ -72,7 +72,8 @@ ${reportUrl}`;
           },
           {
             name: '채널추가하기',
-            linkType: 'AC'
+            linkType: 'AC',
+            linkTypeName: '채널추가'
           }
         ]
       }
