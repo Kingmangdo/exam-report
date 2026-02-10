@@ -38,7 +38,10 @@ export const sendAligoAlimtalk = async (data) => {
   form.append('message_1', message_1);
   
   if (button_1) {
-    form.append('button_1', JSON.stringify(button_1));
+    // 알리고 가이드에 따라 JSON 문자열을 최대한 단순하게(공백 없이) 변환하여 전송
+    const buttonString = JSON.stringify(button_1);
+    form.append('button_1', buttonString);
+    console.log('[DEBUG] Aligo Button_1 String:', buttonString);
   }
 
   // 환경변수 값 확인 로그

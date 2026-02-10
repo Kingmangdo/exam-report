@@ -63,6 +63,10 @@ ${reportUrl}`;
             linkTypeName: '웹링크',
             linkMo: reportUrl,
             linkPc: reportUrl
+          },
+          {
+            name: '채널추가하기',
+            linkType: 'AC'
           }
         ]
       }
