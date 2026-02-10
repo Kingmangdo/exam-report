@@ -34,6 +34,12 @@ export const sendScoreReport = async (req, res) => {
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
     
+    // 날짜 형식을 26-02-10에서 2026-02-10으로 변환 (필요 시)
+    let displayDate = score.exam_date;
+    if (displayDate && displayDate.length === 8 && displayDate.includes('-')) {
+      displayDate = '20' + displayDate;
+    }
+    
     // 템플릿과 한 글자도 틀리지 않게 구성 (줄바꿈 포함)
     const message = `[독강영어학원 성적표 안내]
 
@@ -43,7 +49,7 @@ export const sendScoreReport = async (req, res) => {
 오늘 실시한 일일 테스트 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
 
-▶ 시험일자: ${score.exam_date}
+▶ 시험일자: ${displayDate}
 ▶ 평균점수: ${avgScore}점
 ▶ 반 평균: ${classAvgScore}점
 
