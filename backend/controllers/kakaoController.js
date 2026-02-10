@@ -30,11 +30,7 @@ export const sendScoreReport = async (req, res) => {
     // 실제 배정된 도메인 주소로 변경 필요 (현재는 Vercel 주소 기준)
     const reportUrl = `https://exam-report.vercel.app/report/${token}`;
 
-    // 3. 알림톡 메시지 구성 (사용자가 주신 템플릿과 100% 일치하도록 재구성)
-    const avgScore = score.average_score || 0;
-    const classAvgScore = score.class_average || 0;
-
-    // 사용자가 주신 텍스트 그대로 (줄바꿈 포함)
+    // 3. 알림톡 메시지 구성 (공백/들여쓰기 절대 금지 - 템플릿과 100% 일치해야 함)
     const message = `[독강영어학원 성적표 안내]
 
 안녕하세요, ${student.name} 학생 학부모님.
