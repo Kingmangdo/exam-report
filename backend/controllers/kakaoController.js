@@ -34,6 +34,7 @@ export const sendScoreReport = async (req, res) => {
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
     
+    // 템플릿과 한 글자도 틀리지 않게 구성 (줄바꿈 포함)
     const message = `[독강영어학원 성적표 안내]
 
 안녕하세요, ${student.name} 학생 학부모님.
