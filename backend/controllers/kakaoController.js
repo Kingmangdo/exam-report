@@ -27,8 +27,8 @@ export const sendScoreReport = async (req, res) => {
     const phoneLast4 = student.parent_phone.slice(-4);
     const token = await Report.createAccessLink(score_id, student.name, phoneLast4);
     
-    // 실제 배정된 도메인 주소로 변경 필요 (현재는 Vercel 주소 기준)
-    const reportUrl = `https://exam-report.vercel.app/report/${token}`;
+    // 알리고 템플릿 설정에 맞춰 http:// 사용 (고객센터 가이드 반영)
+    const reportUrl = `http://exam-report.vercel.app/report/${token}`;
 
     // 3. 알림톡 메시지 구성 (공백/들여쓰기 절대 금지 - 템플릿과 100% 일치해야 함)
     const avgScore = score.average_score || 0;
