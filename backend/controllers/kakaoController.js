@@ -34,13 +34,13 @@ export const sendScoreReport = async (req, res) => {
     const avgScore = score.average_score || 0;
     const classAvgScore = score.class_average || 0;
     
-    // 날짜 형식 (템플릿에 따라 26-02-10 또는 2026-02-10 중 선택)
+    // 날짜 형식 (2026-02-10)
     let displayDate = score.exam_date;
     if (displayDate && displayDate.length === 8 && displayDate.includes('-')) {
       displayDate = '20' + displayDate;
     }
     
-    // 템플릿 텍스트와 줄바꿈을 극한으로 일치시킴 (첫 줄 빈 줄 추가)
+    // 템플릿 텍스트와 줄바꿈을 극한으로 일치시킴 (하단 안내 문구 포함)
     const message = `[독강영어학원 성적표 안내]
 
 안녕하세요, ${student.name} 학생 학부모님.
@@ -54,7 +54,12 @@ export const sendScoreReport = async (req, res) => {
 ▶ 반 평균: ${classAvgScore}점
 
 [상세 성적표 확인하기]
-${reportUrl}`;
+${reportUrl}
+
+※ 링크 접속 시 학생 이름과 학부모님 연락처 뒷 4자리로 본인 인증이 필요합니다.
+
+오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.
+학생의 성장을 위해 최선을 다하겠습니다.`;
 
     const aligoData = {
       receiver_1: student.parent_phone,
