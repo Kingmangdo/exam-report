@@ -208,9 +208,12 @@
     >
       <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
         <!-- 모달 헤더 -->
-        <div class="bg-primary text-white p-6 flex flex-col items-center">
-          <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 mb-3 shadow-md" />
-          <h3 class="text-xl font-bold">성적표 미리보기</h3>
+        <div class="bg-primary text-white p-6 flex items-center justify-center space-x-6">
+          <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 shadow-md" />
+          <div class="text-left">
+            <h1 class="text-3xl font-bold mb-1">독강영어학원</h1>
+            <p class="text-lg opacity-90 font-medium tracking-wide">영어 성적표</p>
+          </div>
           <button
             @click="showReportModal = false"
             class="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold"
