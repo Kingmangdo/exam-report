@@ -55,11 +55,11 @@
       <!-- 성적표 -->
       <div v-else-if="reportData" class="bg-white rounded-lg shadow-lg overflow-hidden">
         <!-- 헤더 -->
-        <div class="bg-primary text-white p-6 flex items-center justify-center space-x-6">
+        <div class="bg-primary text-white p-6 flex items-center justify-start space-x-6">
           <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 shadow-md" />
-          <div class="text-left">
+          <div class="text-left font-serif">
             <h1 class="text-3xl font-bold mb-1">독강영어학원</h1>
-            <p class="text-lg opacity-90 font-medium tracking-wide">Daily Report</p>
+            <p class="text-lg opacity-90 font-medium tracking-wide italic" style="font-family: 'Times New Roman', Times, serif;">Daily Report</p>
           </div>
         </div>
 
