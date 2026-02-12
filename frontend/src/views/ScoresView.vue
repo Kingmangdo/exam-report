@@ -53,6 +53,13 @@
           >
             선택 삭제 ({{ selectedIds.length }})
           </button>
+          <button
+            v-if="selectedIds.length > 0"
+            @click="sendBulkKakao"
+            class="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200 transition font-bold"
+          >
+            선택 알림톡 발송 ({{ selectedIds.length }})
+          </button>
         </div>
         <div class="text-sm text-gray-500">
           조회된 성적: <span class="font-bold text-primary">{{ scores.length }}</span>건
@@ -767,6 +774,29 @@ const sendKakao = async (scoreId: number) => {
     const errorMsg = err.response?.data?.message || err.message || '알림톡 발송 중 시스템 오류가 발생했습니다.';
     alert(`시스템 오류: ${errorMsg}`);
   }
+};
+
+const sendBulkKakao = async () => {
+  if (!confirm(`선택한 ${selectedIds.value.length}명의 학생에게 알림톡을 발송하시겠습니까?`)) return;
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const id of selectedIds.value) {
+    try {
+      const response = await kakaoApi.sendReport(id);
+      if (response.data.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (err) {
+      failCount++;
+    }
+  }
+
+  alert(`발송 완료\n성공: ${successCount}건\n실패: ${failCount}건`);
+  selectedIds.value = [];
 };
 
 const deleteScore = async (id: number) => {
