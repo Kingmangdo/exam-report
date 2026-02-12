@@ -7,7 +7,7 @@
           <div class="flex items-center space-x-4">
             <router-link to="/" class="flex items-center space-x-4 hover:text-gray-200 transition">
               <img src="/logo.png" alt="독강영어 로고" class="h-16 w-16 object-contain rounded-full bg-white p-1 shadow-sm" />
-              <span class="text-2xl font-bold">독강영어학원 성적표 시스템</span>
+              <span class="text-2xl font-bold">독강영어 관리 리포트</span>
             </router-link>
           </div>
           <div class="flex items-center space-x-4">

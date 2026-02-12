@@ -59,7 +59,7 @@
           <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 shadow-md" />
           <div class="text-left">
             <h1 class="text-3xl font-bold mb-1">독강영어학원</h1>
-            <p class="text-lg opacity-90 font-medium tracking-wide">영어 성적표</p>
+            <p class="text-lg opacity-90 font-medium tracking-wide">Daily Report</p>
           </div>
         </div>
 
@@ -97,11 +97,6 @@
 
         <!-- 성적 정보 -->
         <div class="p-6 relative">
-          <!-- 워터마크 로고 -->
-          <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.2] z-0">
-            <img src="/logo.png" alt="워터마크" class="w-2/3 object-contain" />
-          </div>
-          
           <div class="relative z-10">
             <h2 class="text-xl font-bold text-gray-800 mb-4">성적 정보</h2>
             
