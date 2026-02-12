@@ -18,13 +18,12 @@
         </div>
 
         <div>
-          <label class="block text-xs text-gray-500 mb-1">시험일자 (yy-mm-dd)</label>
+          <label class="block text-xs text-gray-500 mb-1">시험일자</label>
           <input
-            v-model="filters.exam_date"
-            type="text"
-            placeholder="26-01-31"
+            v-model="examDateInput"
+            type="date"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            @input="handleSearchInput"
+            @change="fetchScores"
           />
         </div>
 
@@ -514,11 +513,31 @@ const toggleSelectAll = () => {
 
 const filters = ref({
   search: '',
-  exam_date: '',
+  exam_date: getToday(), // 오늘 날짜로 초기화
   class_name: '',
   start_date: '',
   end_date: ''
 });
+
+// 날짜 변환 헬퍼 (yy-mm-dd <-> yyyy-mm-dd)
+const toDateInputValue = (v: string) => v ? `20${v}` : '';
+const toExamDateValue = (v: string) => v ? v.slice(2) : '';
+
+const examDateInput = computed({
+  get: () => toDateInputValue(filters.value.exam_date),
+  set: (v) => {
+    filters.value.exam_date = toExamDateValue(v);
+  }
+});
+
+// 오늘 날짜 가져오기 함수 (기존 utils/date 활용 또는 직접 정의)
+function getToday() {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
 
 // 검색 디바운스용 타이머
 let searchTimer: any = null;
