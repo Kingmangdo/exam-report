@@ -231,22 +231,22 @@
 
           <div class="relative z-10">
             <!-- 학생 정보 -->
-          <div class="mb-6 border-b pb-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p class="text-sm text-gray-500">학생 이름</p>
-                <p class="text-lg font-semibold text-gray-800">{{ reportData.student.name }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500">반</p>
-                <p class="text-lg font-semibold text-gray-800">{{ reportData.student.class_name || '-' }}</p>
-              </div>
-              <div>
-                <p class="text-sm text-gray-500">시험일자</p>
-                <p class="text-lg font-semibold text-gray-800">{{ reportData.score.exam_date }}</p>
+            <div class="mb-6 border-b pb-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">학생 이름</p>
+                  <p class="text-lg font-semibold text-gray-800">{{ reportData.student.name }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">반</p>
+                  <p class="text-lg font-semibold text-gray-800">{{ reportData.student.class_name || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">시험일자</p>
+                  <p class="text-lg font-semibold text-gray-800">{{ reportData.score.exam_date }}</p>
+                </div>
               </div>
             </div>
-          </div>
 
           <!-- 평균 및 반 평균 (상단으로 이동) -->
           <div class="p-6 bg-primary text-white rounded-lg mb-6 shadow-md">
