@@ -206,13 +206,14 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       @click.self="showReportModal = false"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
         <!-- 모달 헤더 -->
-        <div class="bg-primary text-white p-4 flex justify-between items-center">
+        <div class="bg-primary text-white p-6 flex flex-col items-center">
+          <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 mb-3 shadow-md" />
           <h3 class="text-xl font-bold">성적표 미리보기</h3>
           <button
             @click="showReportModal = false"
-            class="text-white hover:text-gray-200 text-2xl font-bold"
+            class="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold"
           >
             ×
           </button>
