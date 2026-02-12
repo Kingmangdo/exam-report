@@ -5,7 +5,7 @@ export class Score {
   static async getAll(filters = {}) {
     let query = supabase
       .from('scores')
-      .select('*, students!inner(name,class_name,grade)')
+      .select('*, students!inner(name,class_name,grade), kakao_send_history(send_status)')
       .order('exam_date', { ascending: false })
       .order('name', { foreignTable: 'students', ascending: true });
 
@@ -34,12 +34,18 @@ export class Score {
     if (error) throw new Error(error.message);
 
     return (data || []).map(row => {
-      const { students, ...score } = row;
+      const { students, kakao_send_history, ...score } = row;
+      // 가장 최근의 발송 상태를 가져옴
+      const kakaoStatus = kakao_send_history && kakao_send_history.length > 0 
+        ? kakao_send_history[kakao_send_history.length - 1].send_status 
+        : null;
+
       return {
         ...score,
         student_name: students?.name,
         student_class_name: students?.class_name,
-        grade: students?.grade
+        grade: students?.grade,
+        kakao_status: kakaoStatus
       };
     });
   }

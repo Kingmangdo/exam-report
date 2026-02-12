@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 조회</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 조회 및 발송</h2>
 
     <!-- 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
@@ -109,6 +109,7 @@
 
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">평균</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">발송 상태</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">성적 미리보기</th>
           </tr>
         </thead>
@@ -164,6 +165,11 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-primary">
               {{ score.average_score !== null ? score.average_score.toFixed(1) : '-' }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span v-if="score.kakao_status === 'success'" class="text-green-600 font-bold">발송완료</span>
+              <span v-else-if="score.kakao_status === 'fail'" class="text-red-500">발송실패</span>
+              <span v-else class="text-gray-400">-</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
               <button
