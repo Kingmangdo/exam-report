@@ -96,10 +96,16 @@
         </div>
 
         <!-- 성적 정보 -->
-        <div class="p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">성적 정보</h2>
+        <div class="p-6 relative">
+          <!-- 워터마크 로고 -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05] z-0">
+            <img src="/logo.png" alt="워터마크" class="w-2/3 object-contain" />
+          </div>
           
-          <div class="space-y-4">
+          <div class="relative z-10">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">성적 정보</h2>
+            
+            <div class="space-y-4">
             <!-- RT 테스트 상세 -->
             <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
               <div class="flex justify-between items-end mb-2">

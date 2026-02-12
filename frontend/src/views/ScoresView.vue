@@ -223,8 +223,14 @@
         </div>
 
         <!-- 성적표 내용 -->
-        <div v-if="reportData" class="p-6">
-          <!-- 학생 정보 -->
+        <div v-if="reportData" class="p-6 relative">
+          <!-- 워터마크 로고 -->
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.05] z-0">
+            <img src="/logo.png" alt="워터마크" class="w-1/2 object-contain" />
+          </div>
+
+          <div class="relative z-10">
+            <!-- 학생 정보 -->
           <div class="mb-6 border-b pb-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
