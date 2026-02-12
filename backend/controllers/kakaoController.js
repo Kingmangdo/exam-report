@@ -76,9 +76,8 @@ ${reportUrl}
             linkPc: reportUrl
           },
           {
-            name: '채널추가하기',
-            linkType: 'AC',
-            linkTypeName: '채널추가'
+            name: '채널 추가',
+            linkType: 'AC'
           }
         ]
       }
