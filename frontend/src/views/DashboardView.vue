@@ -11,29 +11,24 @@
       <p class="text-red-600">{{ error }}</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-2">전체 학생</h3>
         <p class="text-3xl font-bold text-primary">{{ statistics?.total_students || 0 }}명</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-2">전체 성적</h3>
-        <p class="text-3xl font-bold text-primary">{{ statistics?.total_scores || 0 }}건</p>
+        <h3 class="text-sm font-medium text-gray-500 mb-2">오늘 등원 총원</h3>
+        <p class="text-3xl font-bold text-blue-600">{{ statistics?.attending_students || 0 }}명</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-2">오늘 입력</h3>
+        <h3 class="text-sm font-medium text-gray-500 mb-2">오늘 입력 성적</h3>
         <p class="text-3xl font-bold text-green-600">{{ statistics?.today_scores || 0 }}건</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-2">최근 7일</h3>
-        <p class="text-3xl font-bold text-blue-600">{{ statistics?.recent_scores || 0 }}건</p>
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-sm font-medium text-gray-500 mb-2">오늘 발송</h3>
+        <h3 class="text-sm font-medium text-gray-500 mb-2">오늘 발송 성적</h3>
         <p class="text-3xl font-bold text-purple-600">{{ statistics?.today_sends || 0 }}건</p>
       </div>
     </div>

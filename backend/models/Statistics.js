@@ -157,18 +157,27 @@ export class Statistics {
     startOfToday.setHours(0, 0, 0, 0);
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    
     const { count: todaySends, error: sendsError } = await supabase
       .from('kakao_send_history')
       .select('*', { count: 'exact', head: true })
+      .eq('send_status', 'success')
       .gte('send_at', startOfToday.toISOString())
       .lt('send_at', startOfTomorrow.toISOString());
     if (sendsError) throw new Error(sendsError.message);
 
+    // 오늘 등원해야 하는 총원 (반이 배정된 학생 수)
+    const { count: attendingStudents, error: attendingError } = await supabase
+      .from('students')
+      .select('*', { count: 'exact', head: true })
+      .not('class_name', 'is', null)
+      .not('class_name', 'eq', '');
+    if (attendingError) throw new Error(attendingError.message);
+
     return {
       total_students: totalStudents || 0,
-      total_scores: totalScores || 0,
+      attending_students: attendingStudents || 0,
       today_scores: todayScores || 0,
-      recent_scores: recentScores || 0,
       today_sends: todaySends || 0
     };
   }
