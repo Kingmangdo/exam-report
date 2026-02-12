@@ -544,11 +544,16 @@ const fetchStudents = async () => {
 const classList = computed(() => {
   const set = new Set<string>();
   students.value.forEach(s => {
-    if (s.class_name) {
-      s.class_name.split(',').forEach(c => set.add(c.trim()));
+    if (s.class_name && typeof s.class_name === 'string') {
+      s.class_name.split(',').forEach(c => {
+        const trimmed = c.trim();
+        if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
+          set.add(trimmed);
+        }
+      });
     }
   });
-  return Array.from(set).sort();
+  return Array.from(set).filter(name => name && name.length > 0).sort();
 });
 
 const fetchScores = async () => {

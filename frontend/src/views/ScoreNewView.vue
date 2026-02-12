@@ -469,8 +469,17 @@ const fetchStudents = async () => {
 
 const classList = computed(() => {
   const set = new Set<string>();
-  allStudents.value.forEach(s => s.class_name?.split(',').forEach(c => set.add(c.trim())));
-  return Array.from(set).sort();
+  allStudents.value.forEach(s => {
+    if (s.class_name && typeof s.class_name === 'string') {
+      s.class_name.split(',').forEach(c => {
+        const trimmed = c.trim();
+        if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
+          set.add(trimmed);
+        }
+      });
+    }
+  });
+  return Array.from(set).filter(name => name && name.length > 0).sort();
 });
 
 const toDateInputValue = (v: string) => v ? `20${v}` : '';
