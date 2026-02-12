@@ -3,11 +3,11 @@
     <!-- 상단 네비게이션 -->
     <nav class="bg-primary text-white shadow-lg">
       <div class="container mx-auto px-4">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex items-center justify-between h-20">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="flex items-center space-x-3 hover:text-gray-200 transition">
-              <img src="/logo.png" alt="독강영어 로고" class="h-10 w-10 object-contain rounded-full bg-white p-0.5" />
-              <span class="text-xl font-bold">독강영어학원 성적표 시스템</span>
+            <router-link to="/" class="flex items-center space-x-4 hover:text-gray-200 transition">
+              <img src="/logo.png" alt="독강영어 로고" class="h-16 w-16 object-contain rounded-full bg-white p-1 shadow-sm" />
+              <span class="text-2xl font-bold">독강영어학원 성적표 시스템</span>
             </router-link>
           </div>
           <div class="flex items-center space-x-4">

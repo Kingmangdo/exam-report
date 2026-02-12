@@ -32,31 +32,6 @@
         <p class="text-3xl font-bold text-purple-600">{{ statistics?.today_sends || 0 }}건</p>
       </div>
     </div>
-
-    <!-- 빠른 작업 -->
-    <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">빠른 작업</h3>
-      <div class="flex flex-wrap gap-4">
-        <router-link
-          to="/scores/new"
-          class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
-        >
-          성적 입력하기
-        </router-link>
-        <router-link
-          to="/students"
-          class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-        >
-          학생 관리
-        </router-link>
-        <router-link
-          to="/scores"
-          class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-        >
-          성적 조회
-        </router-link>
-      </div>
-    </div>
   </div>
 </template>
 
