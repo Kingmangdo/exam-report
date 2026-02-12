@@ -4,6 +4,7 @@
       <!-- 인증 폼 -->
       <div v-if="!authenticated" class="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
         <div class="text-center mb-6">
+          <img src="/logo.png" alt="독강영어 로고" class="h-20 w-20 object-contain rounded-full bg-white p-1 mx-auto mb-4 shadow-sm" />
           <h1 class="text-2xl font-bold text-primary mb-2">독강영어학원</h1>
           <p class="text-gray-600">성적표 확인</p>
         </div>
@@ -54,8 +55,9 @@
       <!-- 성적표 -->
       <div v-else-if="reportData" class="bg-white rounded-lg shadow-lg overflow-hidden">
         <!-- 헤더 -->
-        <div class="bg-primary text-white p-6 text-center">
-          <h1 class="text-2xl font-bold mb-2">독강영어학원</h1>
+        <div class="bg-primary text-white p-6 text-center flex flex-col items-center">
+          <img src="/logo.png" alt="독강영어 로고" class="h-16 w-16 object-contain rounded-full bg-white p-1 mb-3 shadow-md" />
+          <h1 class="text-2xl font-bold mb-1">독강영어학원</h1>
           <p class="text-sm opacity-90">영어 성적표</p>
         </div>
 
