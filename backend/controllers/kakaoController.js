@@ -28,7 +28,7 @@ export const sendScoreReport = async (req, res) => {
     const token = await Report.createAccessLink(score_id, student.name, phoneLast4);
     
     // 알리고 템플릿 설정에 맞춰 https:// 사용 (보안 터널 주소 반영)
-    const reportUrl = `https://exam-report.vercel.app/report/${token}`;
+    const reportUrl = `http://exam-report.vercel.app/report/${token}`;
 
     // 3. 알림톡 메시지 구성 (공백/들여쓰기 절대 금지 - 템플릿과 100% 일치해야 함)
     const avgScore = score.average_score || 0;
