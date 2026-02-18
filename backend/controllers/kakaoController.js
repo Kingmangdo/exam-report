@@ -69,15 +69,15 @@ ${reportUrl}
       button_1: {
         button: [
           {
+            name: '채널 추가',
+            linkType: 'AC'
+          },
+          {
             name: '성적표 확인하기',
             linkType: 'WL',
             linkTypeName: '웹링크',
             linkMo: reportUrl,
             linkPc: reportUrl
-          },
-          {
-            name: '채널 추가',
-            linkType: 'AC'
           }
         ]
       }
