@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config();
+// ESM 환경에서 .env 파일을 절대경로로 로딩 (PM2에서도 안정적으로 동작)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,3 +20,5 @@ export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
     persistSession: false
   }
 });
+
+console.log('✅ Supabase 클라이언트가 정상적으로 초기화되었습니다.');

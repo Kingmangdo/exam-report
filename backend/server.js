@@ -3,9 +3,15 @@ import cors from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import { supabase } from './models/supabase.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config();
+// ESM 환경에서 __dirname 확보 및 .env 절대경로 로딩
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '.env') });
+
+import { supabase } from './models/supabase.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,24 +38,12 @@ if (!supabase) {
 
 // Middleware
 app.use(compression()); // 응답 압축 추가
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://exam-report.vercel.app',
-  process.env.CORS_ORIGIN
-].filter(Boolean);
 
+// CORS 설정: Vercel Proxy를 통해 접근하므로 모든 origin 허용
 app.use(cors({
-  origin: function (origin, callback) {
-    // origin이 없으면 (예: 모바일 앱, curl 등) 허용
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
