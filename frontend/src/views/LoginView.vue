@@ -42,13 +42,8 @@
         </button>
       </form>
 
-      <div class="mt-8 pt-6 border-t text-center">
-        <button
-          @click="initAdmin"
-          class="text-xs text-gray-400 hover:text-gray-600 underline"
-        >
-          최초 관리자 계정 생성 (테스트용)
-        </button>
+      <div class="mt-6 text-center">
+        <p class="text-xs text-gray-400">비밀번호를 잊으셨나요? 원장선생님께 문의해주세요.</p>
       </div>
     </div>
   </div>
@@ -94,13 +89,4 @@ const handleLogin = async () => {
   }
 };
 
-const initAdmin = async () => {
-  if (!confirm('이미 계정이 있으면 생성되지 않습니다. 초기 관리자(admin / admin-password-1234)를 생성하시겠습니까?')) return;
-  try {
-    const response = await authApi.initAdmin();
-    alert(response.data.message);
-  } catch (err: any) {
-    alert(err.response?.data?.message || '이미 계정이 존재하거나 오류가 발생했습니다.');
-  }
-};
 </script>
