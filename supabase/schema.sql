@@ -75,10 +75,30 @@ create table if not exists public.class_learning_logs (
   textbook text,
   homework text,
   homework_deadline text,
+  created_by text,          -- 최초 작성자 (선생님 이름)
+  updated_by text,          -- 최종 수정자 (선생님 이름)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (class_id, log_date)
 );
+
+-- 5-2. 바이먼스리 테스트 성적 테이블
+create table if not exists public.bimonthly_scores (
+  id bigserial primary key,
+  student_id bigint not null references public.students(id) on delete cascade,
+  exam_date text not null, -- 'YYYY-MM-DD' 형식
+  class_name text,
+  parts jsonb not null default '[]'::jsonb, -- [{name, total_questions, points_per_question, max_score, correct, score}]
+  total_score numeric default 0,
+  average_score numeric default 0, -- 퍼센트(%)
+  comment text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (student_id, exam_date, class_name)
+);
+
+create index if not exists idx_bimonthly_exam_date on public.bimonthly_scores(exam_date);
+create index if not exists idx_bimonthly_class on public.bimonthly_scores(class_name, exam_date);
 
 -- 6. 상담 일지 테이블
 create table if not exists public.counseling_logs (
@@ -122,6 +142,82 @@ create table if not exists public.settings (
   key text not null unique,
   value text,
   updated_at timestamptz not null default now()
+);
+
+-- 10. 바이먼스리 성적표 접근 토큰 테이블
+create table if not exists public.bimonthly_report_access (
+  id bigserial primary key,
+  bimonthly_score_id bigint not null references public.bimonthly_scores(id) on delete cascade,
+  access_token text not null unique,
+  student_name text not null,
+  phone_last4 text not null,
+  expires_at timestamptz not null,
+  accessed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- 11. 바이먼스리 카카오 발송 이력 테이블
+create table if not exists public.bimonthly_kakao_send_history (
+  id bigserial primary key,
+  student_id bigint not null references public.students(id) on delete cascade,
+  bimonthly_score_id bigint not null references public.bimonthly_scores(id) on delete cascade,
+  parent_phone text not null,
+  send_status text not null,
+  send_at timestamptz not null default now(),
+  retry_count integer not null default 0,
+  error_message text
+);
+
+-- 12. 예약자 테이블
+create table if not exists public.reservations (
+  id bigserial primary key,
+  name text not null,
+  visit_date timestamptz not null,
+  school text,
+  grade text,
+  student_phone text,
+  parent_phone text,
+  recent_english_score text,
+  notes text,
+  status text default '예약' check (status in ('예약', '방문완료', '취소', '입학')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 13. 레벨테스트 성적표 테이블
+create table if not exists public.level_test_scores (
+  id bigserial primary key,
+  reservation_id bigint not null references public.reservations(id) on delete cascade,
+  test_date text not null,
+  parts jsonb not null default '[]'::jsonb,
+  total_score numeric default 0,
+  average_score numeric default 0,
+  overall_comment text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 14. 레벨테스트 성적표 접근 토큰
+create table if not exists public.level_test_report_access (
+  id bigserial primary key,
+  level_test_id bigint not null references public.level_test_scores(id) on delete cascade,
+  access_token text not null unique,
+  name text not null,
+  phone_last4 text not null,
+  expires_at timestamptz not null,
+  accessed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- 15. 예약 안내 알림톡 발송 이력 테이블
+create table if not exists public.reservation_kakao_send_history (
+  id bigserial primary key,
+  reservation_id bigint not null references public.reservations(id) on delete cascade,
+  parent_phone text not null,
+  send_status text not null,
+  send_at timestamptz not null default now(),
+  retry_count integer not null default 0,
+  error_message text
 );
 
 -- [성능 최적화] 인덱스 설정

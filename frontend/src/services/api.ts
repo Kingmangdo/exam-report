@@ -137,6 +137,28 @@ export const classApi = {
   },
   getRecentLogDates: (id: number) => {
     return api.get<ApiResponse<string[]>>(`/classes/${id}/learning-log/recent-dates`);
+  },
+  getHomeworkDue: (date?: string) => {
+    return api.get<ApiResponse<any[]>>('/classes/homework-due', { params: { date } });
+  }
+};
+
+// 바이먼스리 테스트 API
+export const bimonthlyApi = {
+  getAll: (filters?: { class_name?: string; exam_date?: string; student_id?: number }) => {
+    return api.get<ApiResponse<any[]>>('/bimonthly', { params: filters });
+  },
+  getById: (id: number) => {
+    return api.get<ApiResponse<any>>(`/bimonthly/${id}`);
+  },
+  create: (data: any) => {
+    return api.post<ApiResponse<any>>('/bimonthly', data);
+  },
+  delete: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/bimonthly/${id}`);
+  },
+  getClassAverage: (class_name: string, exam_date: string) => {
+    return api.get<ApiResponse<any>>('/bimonthly/class-average', { params: { class_name, exam_date } });
   }
 };
 
@@ -271,6 +293,77 @@ export const paymentApi = {
 export const kakaoApi = {
   sendReport: (scoreId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-report', { score_id: scoreId });
+  },
+  // 바이먼스리 알림톡
+  sendBimonthlyReport: (bimonthlyScoreId: number) => {
+    return api.post<ApiResponse<any>>('/kakao/send-bimonthly', { bimonthly_score_id: bimonthlyScoreId });
+  },
+  generateBimonthlyLink: (bimonthlyScoreId: number) => {
+    return api.post<ApiResponse<{ token: string; url: string; expires_at: string }>>('/kakao/bimonthly-link', { bimonthly_score_id: bimonthlyScoreId });
+  },
+  previewBimonthlyReport: (scoreId: number) => {
+    return api.get<ApiResponse<any>>(`/kakao/bimonthly-preview/${scoreId}`);
+  },
+  verifyBimonthlyAccess: (token: string, studentName: string, phoneLast4: string) => {
+    return api.post<ApiResponse<any>>(`/kakao/bimonthly-verify/${token}`, { student_name: studentName, phone_last4: phoneLast4 });
+  },
+  getBimonthlyReport: (token: string, studentName: string, phoneLast4: string) => {
+    return api.get<ApiResponse<any>>(`/kakao/bimonthly-report/${token}`, { params: { student_name: studentName, phone_last4: phoneLast4 } });
+  },
+  getBimonthlySendStatus: (className: string, examDate: string) => {
+    return api.get<ApiResponse<any[]>>('/kakao/bimonthly-send-status', { params: { class_name: className, exam_date: examDate } });
+  },
+  // 예약 안내 알림톡
+  sendReservationNotification: (reservationId: number) => {
+    return api.post<ApiResponse<any>>('/kakao/send-reservation', { reservation_id: reservationId });
+  },
+  getReservationSendStatus: () => {
+    return api.get<ApiResponse<any[]>>('/kakao/reservation-send-status');
+  }
+};
+
+// 예약자 관리 API
+export const reservationApi = {
+  getAll: (filters?: { status?: string; search?: string }) => {
+    return api.get<ApiResponse<any[]>>('/reservations', { params: filters });
+  },
+  getById: (id: number) => {
+    return api.get<ApiResponse<any>>(`/reservations/${id}`);
+  },
+  create: (data: any) => {
+    return api.post<ApiResponse<any>>('/reservations', data);
+  },
+  update: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/reservations/${id}`, data);
+  },
+  delete: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/reservations/${id}`);
+  },
+  // 입학 처리
+  enroll: (id: number) => {
+    return api.post<ApiResponse<any>>(`/reservations/${id}/enroll`);
+  },
+  // 레벨테스트
+  getLevelTest: (reservationId: number) => {
+    return api.get<ApiResponse<any>>(`/reservations/${reservationId}/level-test`);
+  },
+  saveLevelTest: (data: any) => {
+    return api.post<ApiResponse<any>>('/reservations/level-test', data);
+  },
+  getLevelTestById: (id: number) => {
+    return api.get<ApiResponse<any>>(`/reservations/level-test/${id}`);
+  },
+  deleteLevelTest: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/reservations/level-test/${id}`);
+  },
+  // 레벨테스트 성적표 링크
+  generateReportLink: (levelTestId: number, name: string, phoneLast4: string) => {
+    return api.post<ApiResponse<{ token: string; url: string }>>('/reports/level-test/generate', {
+      level_test_id: levelTestId, name, phone_last4: phoneLast4
+    });
+  },
+  getReportPreview: (levelTestId: number) => {
+    return api.get<ApiResponse<any>>(`/reports/level-test/preview/${levelTestId}`);
   }
 };
 

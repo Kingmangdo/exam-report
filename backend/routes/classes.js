@@ -12,6 +12,7 @@ router.post('/', classController.createClass);
 router.put('/:id', classController.updateClass);
 router.delete('/:id', classController.deleteClass);
 router.post('/assign-students', classController.assignStudentsToClass);
+router.get('/homework-due', classController.getHomeworkDue);
 router.get('/:id/learning-log', classController.getLearningLog);
 router.post('/:id/learning-log', classController.saveLearningLog);
 router.get('/:id/learning-logs', classController.getAllLearningLogs);

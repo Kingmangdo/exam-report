@@ -74,7 +74,11 @@ export const getLearningLog = async (req, res) => {
 export const saveLearningLog = async (req, res) => {
   try {
     const { id } = req.params;
-    const logData = { ...req.body, class_id: id };
+    const logData = { 
+      ...req.body, 
+      class_id: id,
+      created_by: req.user?.name || '알 수 없음'
+    };
     const savedLog = await Class.saveLearningLog(logData);
     res.json({ success: true, data: savedLog });
   } catch (error) {
@@ -87,6 +91,17 @@ export const getAllLearningLogs = async (req, res) => {
     const { id } = req.params;
     const logs = await Class.getAllLogs(id);
     res.json({ success: true, data: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getHomeworkDue = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const today = date || new Date().toISOString().split('T')[0];
+    const dueList = await Class.getHomeworkDueByDate(today);
+    res.json({ success: true, data: dueList });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

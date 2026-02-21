@@ -10,82 +10,94 @@
       </button>
     </div>
 
-    <!-- 반 리스트 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- 오늘 숙제 검사 알림 배너 -->
+    <div v-if="homeworkDueToday.length > 0" class="mb-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm animate-pulse-slow">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">🔔</span>
+        <h3 class="text-lg font-bold text-red-700">오늘 숙제 검사일입니다!</h3>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="due in homeworkDueToday"
+          :key="due.id"
+          class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-sm font-bold cursor-pointer hover:bg-red-200 transition"
+          @click="goToClassHomeworkCheck(due)"
+        >
+          📋 {{ due.class_name || '반' }} - {{ due.content?.substring(0, 20) }}{{ (due.content?.length || 0) > 20 ? '...' : '' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 반 리스트 (최대 20개 대응 - 컴팩트) -->
+    <div class="flex flex-wrap gap-3 mb-6">
       <div
         v-for="item in classes"
         :key="item.id"
-        class="bg-white rounded-lg shadow-md p-6 border-t-4 border-primary hover:shadow-lg transition cursor-pointer"
-        :class="{ 'ring-2 ring-primary': selectedClass?.id === item.id }"
+        class="bg-white rounded-lg shadow-sm px-4 py-3 border-l-4 border-primary hover:shadow-md transition cursor-pointer relative flex-shrink-0"
+        :class="{ 'ring-2 ring-primary bg-blue-50': selectedClass?.id === item.id }"
         @click="selectClass(item)"
       >
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <h3 class="text-xl font-bold text-gray-800">{{ item.name }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ item.teacher_name ? `담임: ${item.teacher_name}` : '담임 미지정' }}</p>
-          </div>
-          <div class="flex space-x-2">
-            <button @click.stop="openClassModal('edit', item)" class="text-gray-400 hover:text-primary">
-              <span class="text-xs font-bold">수정</span>
-            </button>
-            <button @click.stop="deleteClass(item.id)" class="text-gray-400 hover:text-red-600">
-              <span class="text-xs font-bold">삭제</span>
-            </button>
-          </div>
-        </div>
-        
-        <div class="space-y-2 mb-4">
-          <p class="text-sm text-gray-600"><span class="font-bold">진도:</span> {{ item.progress || '-' }}</p>
-          <p class="text-sm text-gray-600"><span class="font-bold">교재:</span> {{ item.textbook || '-' }}</p>
-          <p class="text-sm text-gray-600"><span class="font-bold">숙제:</span> {{ item.homework || '-' }}</p>
+        <!-- 숙제 검사일 배지 -->
+        <div v-if="hasHomeworkDue(item.id)" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow animate-bounce">
+          📝
         </div>
 
-        <div class="flex justify-between items-center text-xs text-gray-400">
-          <span>등록 학생: {{ item.student_count || 0 }}명</span>
-          <span>생성일: {{ item.created_at?.split('T')[0] }}</span>
+        <div class="flex items-center gap-3">
+          <div>
+            <h3 class="text-base font-bold text-gray-800">{{ item.name }}</h3>
+            <p class="text-xs text-gray-500">{{ item.teacher_name ? `담임: ${item.teacher_name}` : '담임 미지정' }} · {{ item.student_count || 0 }}명</p>
+          </div>
+          <div class="flex space-x-1 ml-2">
+            <button @click.stop="openClassModal('edit', item)" class="text-gray-400 hover:text-primary">
+              <span class="text-xs">수정</span>
+            </button>
+            <button @click.stop="deleteClass(item.id)" class="text-gray-400 hover:text-red-600">
+              <span class="text-xs">삭제</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 선택된 반의 학생 관리 및 학습 관리 -->
-    <div v-if="selectedClass" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- 왼쪽: 학생 목록 (너비 축소: 12개 중 4개 컬럼 사용) -->
-      <div class="lg:col-span-4 bg-white rounded-lg shadow-lg overflow-hidden border flex flex-col">
-        <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
-          <h3 class="text-md font-bold text-gray-800">학생 목록</h3>
+    <div v-if="selectedClass" class="flex flex-col lg:flex-row gap-6">
+      <!-- 왼쪽: 학생 목록 (35% 너비) -->
+      <div class="lg:w-[35%] lg:flex-shrink-0 bg-white rounded-lg shadow-lg overflow-hidden border flex flex-col">
+        <div class="p-3 bg-gray-50 border-b flex justify-between items-center">
+          <h3 class="text-base font-bold text-gray-800">학생 목록</h3>
           <button
             v-if="isAdmin"
             @click="openStudentAssignModal"
-            class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-xs"
+            class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
           >
             추가/변경
           </button>
         </div>
         <div class="flex-1 overflow-y-auto max-h-[600px]">
-          <table class="min-w-full divide-y divide-gray-200">
+          <table class="w-full divide-y divide-gray-200 table-fixed">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-600 uppercase">이름</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-600 uppercase">학교/학년</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-600 uppercase">연락처</th>
-                <th class="px-4 py-3 text-left text-sm font-bold text-gray-600 uppercase">최근상담</th>
+                <th class="px-2 py-2 text-left text-sm font-bold text-gray-600 w-[18%]">이름</th>
+                <th class="px-2 py-2 text-left text-sm font-bold text-gray-600 w-[22%]">학교/학년</th>
+                <th class="px-2 py-2 text-left text-sm font-bold text-gray-600 w-[38%]">연락처</th>
+                <th class="px-2 py-2 text-left text-sm font-bold text-gray-600 w-[22%]">최근상담</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="student in sortedClassStudents" :key="student.id" class="hover:bg-gray-50 cursor-pointer" @click="openCounselingModal(student)">
-                <td class="px-4 py-4 whitespace-nowrap text-base font-bold text-gray-900">
+                <td class="px-2 py-2.5 text-sm font-bold text-gray-900 truncate">
                   {{ student.name }}
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-base text-gray-700 font-bold">
+                <td class="px-2 py-2.5 text-sm text-gray-700 font-bold">
                   {{ student.school || '-' }}<br/>{{ student.grade || '-' }}
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                  <div class="flex flex-col gap-1.5">
+                <td class="px-2 py-2.5 text-sm text-gray-600">
+                  <div class="flex flex-col gap-0.5">
                     <span class="font-bold">학: {{ formatPhone(student.student_no) }}</span>
                     <span class="font-extrabold text-blue-700">부: {{ formatPhone(student.parent_phone) }}</span>
                   </div>
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600 font-bold">
+                <td class="px-2 py-2.5 text-sm text-gray-600 font-bold">
                   <div v-if="student.last_counseling_date" class="text-primary">
                     {{ student.last_counseling_date }}
                   </div>
@@ -94,14 +106,14 @@
               </tr>
             </tbody>
           </table>
-          <div v-if="classStudents.length === 0" class="text-center py-8 text-gray-400 text-xs">
+          <div v-if="classStudents.length === 0" class="text-center py-8 text-gray-400 text-sm">
             배정된 학생 없음
           </div>
         </div>
       </div>
 
-      <!-- 오른쪽: 반별 학습 관리 (너비 확대: 12개 중 8개 컬럼 사용) -->
-      <div class="lg:col-span-8 bg-white rounded-lg shadow-lg overflow-hidden border">
+      <!-- 오른쪽: 반별 학습 관리 (65% 너비) -->
+      <div class="lg:flex-1 bg-white rounded-lg shadow-lg overflow-hidden border">
         <div class="p-4 bg-primary text-white flex justify-between items-center">
           <h3 class="text-lg font-bold">{{ selectedClass.name }} 학습 관리</h3>
           <div class="flex items-center gap-2">
@@ -111,18 +123,27 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-4 min-h-[400px]">
-          <!-- 최근 2주 기록 목록 (사이드바) -->
+          <!-- 최근 3주 기록 목록 (사이드바) -->
           <div class="md:col-span-1 border-r bg-gray-50 p-4 overflow-y-auto max-h-[600px]">
-            <h4 class="text-sm font-bold text-gray-600 uppercase mb-4 px-1">최근 2주 기록</h4>
+            <h4 class="text-sm font-bold text-gray-600 uppercase mb-4 px-1">최근 3주 기록</h4>
             <div class="space-y-2">
               <button
-                v-for="date in recentLogDates"
-                :key="date"
-                @click="selectLogDate(date)"
-                class="w-full text-left px-4 py-3 rounded-lg text-sm transition font-bold shadow-sm"
-                :class="learningLogDate === date ? 'bg-primary text-white' : 'bg-white hover:bg-gray-200 text-gray-700 border border-gray-100'"
+                v-for="log in recentLogDates"
+                :key="log.log_date"
+                @click="selectLogDate(log.log_date)"
+                class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition shadow-sm"
+                :class="learningLogDate === log.log_date ? 'bg-primary text-white' : (log.log_date === getTodayFull() ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white hover:bg-gray-200 text-gray-700 border border-gray-100')"
               >
-                {{ formatDateWithDay(date) }}
+                <div class="font-bold">
+                  {{ formatDateWithDay(log.log_date) }}
+                  <span v-if="log.log_date === getTodayFull()" class="text-xs ml-1">(오늘)</span>
+                </div>
+                <div v-if="log.homework" class="mt-1 text-xs truncate" :class="learningLogDate === log.log_date ? 'text-blue-100' : 'text-gray-500'">
+                  📝 {{ getHomeworkSummary(log.homework).substring(0, 20) }}{{ getHomeworkSummary(log.homework).length > 20 ? '...' : '' }}
+                  <span v-if="hasHomeworkDueInLog(log.homework) || (log.homework_deadline === getTodayFull())" class="ml-1" :class="learningLogDate === log.log_date ? 'text-yellow-200 font-bold' : 'text-red-600 font-bold'">
+                    🔔오늘검사
+                  </span>
+                </div>
               </button>
               <div v-if="recentLogDates.length === 0" class="text-center py-8 text-gray-400 text-xs">
                 기록 없음
@@ -132,37 +153,61 @@
 
           <!-- 입력 및 상세 내용 -->
           <div class="md:col-span-3 p-6 space-y-6">
+            <!-- 작성자 정보 표시 -->
+            <div v-if="learningLog.created_by || learningLog.updated_by" class="flex items-center gap-3 text-sm bg-blue-50 px-4 py-2.5 rounded-lg border border-blue-100">
+              <span class="text-blue-500">👤</span>
+              <span class="text-blue-700 font-bold">작성: {{ learningLog.created_by || '-' }}</span>
+              <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-gray-400">|</span>
+              <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-orange-600 font-bold">수정: {{ learningLog.updated_by }}</span>
+            </div>
+
             <div class="grid grid-cols-1 gap-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div class="flex gap-4">
+                <div class="w-[65%]">
                   <label class="block text-base font-bold text-gray-700 mb-2">진도</label>
-                  <input v-model="learningLog.progress" type="text" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" placeholder="오늘 나간 진도를 입력하세요" />
+                  <textarea v-model="learningLog.progress" rows="2" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium resize-none" placeholder="오늘 나간 진도를 입력하세요"></textarea>
                 </div>
-                <div>
+                <div class="w-[35%]">
                   <label class="block text-base font-bold text-gray-700 mb-2">교재</label>
-                  <input v-model="learningLog.textbook" type="text" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" placeholder="사용 중인 교재를 입력하세요" />
+                  <input v-model="learningLog.textbook" type="text" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" placeholder="교재명" />
                 </div>
               </div>
               <div>
-                <div class="flex justify-between items-center mb-2">
-                  <label class="block text-base font-bold text-gray-700">오늘 내준 숙제</label>
-                  <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-500 font-bold">숙제 검사 예정일:</label>
-                    <input v-model="learningLog.homework_deadline" type="date" class="px-3 py-1.5 text-sm border rounded-lg outline-none focus:ring-1 focus:ring-primary font-bold" />
+                <label class="block text-base font-bold text-gray-700 mb-3">오늘 내준 숙제</label>
+                <div class="space-y-2">
+                  <div v-for="(hw, idx) in learningLog.homeworks" :key="idx" class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
+                    <input 
+                      v-model="hw.content" 
+                      type="text" 
+                      class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" 
+                      :placeholder="`숙제 ${idx + 1}`" 
+                    />
+                    <div class="flex items-center gap-1 flex-shrink-0">
+                      <span class="text-xs text-red-600 font-bold">검사일:</span>
+                      <input 
+                        v-model="hw.deadline" 
+                        type="date" 
+                        class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]" 
+                      />
+                    </div>
                   </div>
                 </div>
-                <textarea v-model="learningLog.homework" rows="5" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none font-medium" placeholder="학생들에게 내준 숙제를 입력하세요"></textarea>
               </div>
               
-              <!-- 이전 숙제 확인 영역 (추가) -->
-              <div v-if="previousHomework" class="bg-orange-50 border border-orange-100 rounded-lg p-5 shadow-sm">
+              <!-- 오늘 검사해야 할 숙제 영역 (강조) -->
+              <div v-if="todayDueHomeworks.length > 0" class="bg-red-50 border-2 border-red-200 rounded-lg p-5 shadow-md">
                 <div class="flex justify-between items-center mb-3">
-                  <h5 class="text-base font-bold text-orange-800 flex items-center gap-2">
-                    <span class="text-xl">📋</span> 오늘 검사해야 할 숙제 ({{ previousHomework.log_date }} 부여)
+                  <h5 class="text-base font-bold text-red-700 flex items-center gap-2">
+                    <span class="text-2xl">🚨</span> 오늘 검사해야 할 숙제
                   </h5>
                 </div>
-                <div class="text-base text-gray-800 whitespace-pre-wrap bg-white/70 p-4 rounded-lg border border-orange-100 font-medium leading-relaxed">
-                  {{ previousHomework.homework || '등록된 숙제가 없습니다.' }}
+                <div class="space-y-2">
+                  <div v-for="(dueHw, idx) in todayDueHomeworks" :key="idx" class="flex items-center gap-3 bg-white p-3 rounded-lg border border-red-100">
+                    <span class="text-red-500 font-bold text-sm">{{ idx + 1 }}</span>
+                    <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
+                    <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">{{ dueHw.log_date }} 부여 {{ dueHw.created_by ? `| 출제: ${dueHw.created_by}` : '' }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -256,18 +301,6 @@
             <input v-model="classForm.teacher_name" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="선생님 이름" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">진도</label>
-            <input v-model="classForm.progress" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="현재 진도" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">교재</label>
-            <input v-model="classForm.textbook" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="사용 교재" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">숙제</label>
-            <input v-model="classForm.homework" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="오늘의 숙제" />
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
             <textarea v-model="classForm.description" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="반에 대한 설명 입력"></textarea>
           </div>
@@ -339,23 +372,105 @@ import { classApi, studentApi, counselingApi } from '../services/api';
 import { getToday } from '../utils/date';
 import type { Student } from '../types';
 
+// 학습관리에서는 YYYY-MM-DD 형식 사용 (DB, input[type=date] 모두 이 형식)
+const getTodayFull = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+};
+
 const classes = ref<any[]>([]);
 const selectedClass = ref<any>(null);
 const classStudents = ref<any[]>([]);
 const allStudents = ref<Student[]>([]);
 const loading = ref(false);
 
-const learningLogDate = ref(getToday());
+const learningLogDate = ref(getTodayFull());
+
+const emptyHomeworks = () => [
+  { content: '', deadline: '' },
+  { content: '', deadline: '' },
+  { content: '', deadline: '' },
+  { content: '', deadline: '' }
+];
+
 const learningLog = ref({
   progress: '',
   textbook: '',
-  homework: '',
-  homework_deadline: ''
+  homeworks: emptyHomeworks(),
+  created_by: '',
+  updated_by: ''
 });
 const savingLog = ref(false);
 const saveStatus = ref('');
-const recentLogDates = ref<string[]>([]);
-const previousHomework = ref<any>(null);
+const recentLogDates = ref<any[]>([]);
+const todayDueHomeworks = ref<any[]>([]);
+const homeworkDueToday = ref<any[]>([]);
+
+// DB에 저장된 homework 문자열을 homeworks 배열로 파싱
+const parseHomeworks = (homework: string, homework_deadline: string) => {
+  const hws = emptyHomeworks();
+  if (!homework) return hws;
+  try {
+    const parsed = JSON.parse(homework);
+    if (Array.isArray(parsed)) {
+      parsed.forEach((item: any, i: number) => {
+        if (i < 4) {
+          hws[i].content = item.content || '';
+          hws[i].deadline = item.deadline || '';
+        }
+      });
+      return hws;
+    }
+  } catch (e) {
+    // JSON이 아닌 기존 데이터: 첫 번째 칸에 넣기
+    hws[0].content = homework;
+    hws[0].deadline = homework_deadline || '';
+  }
+  return hws;
+};
+
+// homeworks 배열을 DB 저장용 JSON 문자열로 변환
+const serializeHomeworks = (homeworks: any[]) => {
+  const filtered = homeworks.filter((h: any) => h.content.trim());
+  if (filtered.length === 0) return { homework: '', homework_deadline: '' };
+  return {
+    homework: JSON.stringify(filtered),
+    homework_deadline: filtered[0]?.deadline || ''
+  };
+};
+
+// 숙제 목록에서 사이드바 표시용 요약 텍스트
+const getHomeworkSummary = (homework: string) => {
+  if (!homework) return '';
+  try {
+    const parsed = JSON.parse(homework);
+    if (Array.isArray(parsed)) {
+      const items = parsed.filter((h: any) => h.content).map((h: any) => h.content);
+      return items.join(', ');
+    }
+  } catch (e) {
+    return homework;
+  }
+  return homework;
+};
+
+// 숙제 목록에서 오늘 검사할 것이 있는지
+const hasHomeworkDueInLog = (homework: string) => {
+  const today = getTodayFull();
+  if (!homework) return false;
+  try {
+    const parsed = JSON.parse(homework);
+    if (Array.isArray(parsed)) {
+      return parsed.some((h: any) => h.deadline === today && h.content);
+    }
+  } catch (e) {
+    // 구형 데이터: homework_deadline 필드로 체크 (사이드바에서 별도 처리)
+  }
+  return false;
+};
 
 // 학생 정렬: 최근 상담일자 순 (상담일자가 없는 학생은 뒤로)
 const sortedClassStudents = computed(() => {
@@ -378,7 +493,7 @@ const counselingLogs = ref<any[]>([]);
 const counselingForm = ref({
   category: '일반상담',
   content: '',
-  consultation_date: getToday()
+  consultation_date: getTodayFull()
 });
 const savingCounseling = ref(false);
 
@@ -470,10 +585,7 @@ const classModalMode = ref<'create' | 'edit'>('create');
 const classForm = ref({ 
   name: '', 
   teacher_name: '', 
-  description: '',
-  progress: '',
-  textbook: '',
-  homework: ''
+  description: ''
 });
 
 const showStudentAssignModal = ref(false);
@@ -538,6 +650,8 @@ const fetchAllStudents = async () => {
 
 const selectClass = async (item: any) => {
   selectedClass.value = item;
+  // 반 선택 시 항상 오늘 날짜로 초기화
+  learningLogDate.value = getTodayFull();
   try {
     loading.value = true;
     const response = await classApi.getStudents(item.name);
@@ -591,45 +705,61 @@ const fetchLearningLog = async () => {
   try {
     const response = await classApi.getLearningLog(selectedClass.value.id, learningLogDate.value);
     if (response.data.success && response.data.data) {
+      const d = response.data.data;
       learningLog.value = {
-        progress: response.data.data.progress || '',
-        textbook: response.data.data.textbook || '',
-        homework: response.data.data.homework || '',
-        homework_deadline: response.data.data.homework_deadline || ''
+        progress: d.progress || '',
+        textbook: d.textbook || '',
+        homeworks: parseHomeworks(d.homework, d.homework_deadline),
+        created_by: d.created_by || '',
+        updated_by: d.updated_by || ''
       };
     } else {
       learningLog.value = {
         progress: '',
         textbook: '',
-        homework: '',
-        homework_deadline: ''
+        homeworks: emptyHomeworks(),
+        created_by: '',
+        updated_by: ''
       };
     }
-    await fetchPreviousHomework();
+    await fetchTodayDueHomeworks();
   } catch (err) {
     console.error('학습 로그 로드 실패:', err);
   }
 };
 
-const fetchPreviousHomework = async () => {
-  if (!selectedClass.value || !learningLogDate.value) return;
+const fetchTodayDueHomeworks = async () => {
+  if (!selectedClass.value) return;
   try {
-    // 현재 날짜 이전에 등록된 로그 중, 숙제 검사 예정일이 오늘인 기록을 찾음
     const res = await classApi.getAllLogs(selectedClass.value.id);
     if (res.data.success) {
       const logs = res.data.data || [];
-      // 오늘 검사해야 할 숙제 찾기 (마감일이 오늘인 것)
-      const todayCheck = logs.find((l: any) => l.homework_deadline === learningLogDate.value);
-      if (todayCheck) {
-        previousHomework.value = todayCheck;
-      } else {
-        // 없으면 가장 최근 숙제 보여주기
-        const lastLog = logs.find((l: any) => l.log_date < learningLogDate.value && l.homework);
-        previousHomework.value = lastLog || null;
+      const today = getTodayFull();
+      const dueItems: any[] = [];
+      
+      for (const log of logs) {
+        if (!log.homework) continue;
+        try {
+          const parsed = JSON.parse(log.homework);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((h: any) => {
+              if (h.content && h.deadline === today) {
+                dueItems.push({ ...h, log_date: log.log_date, created_by: log.created_by });
+              }
+            });
+          }
+        } catch (e) {
+          // 구형 데이터: homework_deadline으로 체크
+          if (log.homework_deadline === today && log.homework) {
+            dueItems.push({ content: log.homework, deadline: today, log_date: log.log_date, created_by: log.created_by });
+          }
+        }
       }
+      
+      todayDueHomeworks.value = dueItems;
     }
   } catch (err) {
-    console.error('이전 숙제 로드 실패:', err);
+    console.error('오늘 검사 숙제 로드 실패:', err);
   }
 };
 
@@ -638,12 +768,19 @@ const saveLearningLog = async () => {
   try {
     savingLog.value = true;
     saveStatus.value = '';
+    const { homework, homework_deadline } = serializeHomeworks(learningLog.value.homeworks);
     await classApi.saveLearningLog(selectedClass.value.id, {
       log_date: learningLogDate.value,
-      ...learningLog.value
+      progress: learningLog.value.progress,
+      textbook: learningLog.value.textbook,
+      homework,
+      homework_deadline,
+      created_by: learningLog.value.created_by,
+      updated_by: learningLog.value.updated_by
     });
     saveStatus.value = '저장 완료!';
     await fetchRecentLogs(); // 최근 기록 목록 갱신
+    await fetchHomeworkDue(); // 배너 갱신
     setTimeout(() => {
       saveStatus.value = '';
     }, 3000);
@@ -659,19 +796,13 @@ const openClassModal = (mode: 'create' | 'edit', item?: any) => {
   classModalMode.value = mode;
   if (mode === 'edit' && item) {
     classForm.value = { 
-      ...item,
-      progress: item.progress || '',
-      textbook: item.textbook || '',
-      homework: item.homework || ''
+      ...item
     };
   } else {
     classForm.value = { 
       name: '', 
       teacher_name: '', 
-      description: '',
-      progress: '',
-      textbook: '',
-      homework: ''
+      description: ''
     };
   }
   showClassModal.value = true;
@@ -755,8 +886,62 @@ const assignStudents = async () => {
   }
 };
 
-onMounted(() => {
-  fetchClasses();
+// 모든 반의 오늘 숙제 검사 예정 데이터 로드
+const fetchHomeworkDue = async () => {
+  try {
+    const today = getTodayFull();
+    const allDue: any[] = [];
+    
+    for (const cls of classes.value) {
+      try {
+        const res = await classApi.getAllLogs(cls.id);
+        if (res.data.success) {
+          const logs = res.data.data || [];
+          for (const log of logs) {
+            if (!log.homework) continue;
+            try {
+              const parsed = JSON.parse(log.homework);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((h: any) => {
+                  if (h.content && h.deadline === today) {
+                    allDue.push({ ...h, class_name: cls.name, class_id: cls.id, id: `${log.id}-${h.content}` });
+                  }
+                });
+              }
+            } catch (e) {
+              // 구형 데이터
+              if (log.homework_deadline === today && log.homework) {
+                allDue.push({ content: log.homework, class_name: cls.name, class_id: cls.id, id: log.id });
+              }
+            }
+          }
+        }
+      } catch (e) { /* 무시 */ }
+    }
+    
+    homeworkDueToday.value = allDue;
+  } catch (err) {
+    console.error('숙제 검사일 로드 실패:', err);
+  }
+};
+
+// 특정 반에 오늘 숙제 검사 예정이 있는지 확인
+const hasHomeworkDue = (classId: number) => {
+  return homeworkDueToday.value.some(d => d.class_id === classId);
+};
+
+// 숙제 검사 배너 클릭 시 해당 반으로 이동
+const goToClassHomeworkCheck = async (due: any) => {
+  const targetClass = classes.value.find((c: any) => c.id === due.class_id);
+  if (targetClass) {
+    await selectClass(targetClass);
+  }
+};
+
+onMounted(async () => {
+  await fetchClasses();
   fetchAllStudents();
+  // 반 목록 로드 후 숙제 검사일 체크
+  await fetchHomeworkDue();
 });
 </script>

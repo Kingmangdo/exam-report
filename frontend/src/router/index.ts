@@ -36,9 +36,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/ScoreNewView.vue')
       },
       {
+        path: 'scores/bimonthly/new',
+        name: 'bimonthly-score-new',
+        component: () => import('../views/BimonthlyScoreNewView.vue')
+      },
+      {
         path: 'scores',
         name: 'scores',
         component: () => import('../views/ScoresView.vue')
+      },
+      {
+        path: 'scores/bimonthly',
+        name: 'bimonthly-scores',
+        component: () => import('../views/BimonthlyScoresView.vue')
+      },
+      {
+        path: 'reservations',
+        name: 'reservations',
+        component: () => import('../views/ReservationsView.vue')
       },
       {
         path: 'settings',
@@ -52,6 +67,18 @@ const routes: RouteRecordRaw[] = [
     path: '/report/:token',
     name: 'report',
     component: () => import('../views/ReportView.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/report/bimonthly/:token',
+    name: 'bimonthly-report',
+    component: () => import('../views/BimonthlyReportView.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/report/level-test/:token',
+    name: 'level-test-report',
+    component: () => import('../views/LevelTestReportView.vue'),
     meta: { public: true }
   }
 ]

@@ -48,10 +48,10 @@ export class Class {
 
   // 반 생성
   static async create(classData) {
-    const { name, description, teacher_name, progress, textbook, homework } = classData;
+    const { name, description, teacher_name } = classData;
     const { data, error } = await supabase
       .from('classes')
-      .insert({ name, description, teacher_name, progress, textbook, homework })
+      .insert({ name, description: description || null, teacher_name: teacher_name || null })
       .select('*')
       .single();
     
@@ -61,16 +61,13 @@ export class Class {
 
   // 반 수정
   static async update(id, classData) {
-    const { name, description, teacher_name, progress, textbook, homework } = classData;
+    const { name, description, teacher_name } = classData;
     const { data, error } = await supabase
       .from('classes')
       .update({ 
         name, 
-        description, 
-        teacher_name, 
-        progress, 
-        textbook, 
-        homework, 
+        description: description || null, 
+        teacher_name: teacher_name || null, 
         updated_at: new Date().toISOString() 
       })
       .eq('id', id)
@@ -119,19 +116,30 @@ export class Class {
 
   // 일자별 학습 로그 저장 (upsert)
   static async saveLearningLog(logData) {
-    const { class_id, log_date, progress, textbook, homework, homework_deadline } = logData;
+    const { class_id, log_date, progress, textbook, homework, homework_deadline, created_by } = logData;
     
+    // 기존 로그가 있는지 확인 (최초 작성자 보존을 위해)
+    const existing = await this.getLearningLog(class_id, log_date);
+    
+    const upsertData = { 
+      class_id, 
+      log_date, 
+      progress, 
+      textbook, 
+      homework,
+      homework_deadline,
+      updated_by: created_by || null,
+      updated_at: new Date().toISOString()
+    };
+    
+    // 새로 작성하는 경우에만 created_by 설정 (기존 데이터가 없을 때)
+    if (!existing) {
+      upsertData.created_by = created_by || null;
+    }
+
     const { data, error } = await supabase
       .from('class_learning_logs')
-      .upsert({ 
-        class_id, 
-        log_date, 
-        progress, 
-        textbook, 
-        homework,
-        homework_deadline,
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(upsertData, {
         onConflict: 'class_id,log_date'
       })
       .select('*')
@@ -153,20 +161,32 @@ export class Class {
     return data || [];
   }
 
-  // 최근 학습 로그 날짜 목록 조회
-  static async getRecentLogDates(classId, days = 14) {
+  // 특정 날짜에 숙제 검사 예정인 로그 조회 (모든 반 대상)
+  static async getHomeworkDueByDate(date) {
+    const { data, error } = await supabase
+      .from('class_learning_logs')
+      .select('*, classes!inner(name)')
+      .eq('homework_deadline', date)
+      .not('homework', 'is', null);
+    
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
+  // 최근 학습 로그 날짜 목록 조회 (숙제 포함)
+  static async getRecentLogDates(classId, days = 21) {
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - days);
     const dateStr = dateLimit.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('class_learning_logs')
-      .select('log_date')
+      .select('log_date, homework, homework_deadline')
       .eq('class_id', classId)
       .gte('log_date', dateStr)
       .order('log_date', { ascending: false });
     
     if (error) throw new Error(error.message);
-    return data.map(d => d.log_date);
+    return data || [];
   }
 }
