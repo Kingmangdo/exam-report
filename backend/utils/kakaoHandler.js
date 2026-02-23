@@ -9,6 +9,7 @@ export const sendAligoAlimtalk = async (data) => {
     receiver_1,
     subject_1,
     message_1,
+    emtitle_1,
     tpl_code,
     button_1
   } = data;
@@ -36,6 +37,7 @@ export const sendAligoAlimtalk = async (data) => {
   form.append('receiver_1', receiver_1);
   form.append('subject_1', subject_1);
   form.append('message_1', message_1);
+  if (emtitle_1) form.append('emtitle_1', emtitle_1);
   
   if (button_1) {
     // 알리고 가이드에 따라 JSON 문자열을 최대한 단순하게(공백 없이) 변환하여 전송
