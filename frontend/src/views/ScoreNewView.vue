@@ -113,7 +113,7 @@
 
               <!-- 코멘트 -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3">
-                <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+                <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary" @input="onCommentInput(sIdx)"></textarea>
               </td>
             </tr>
           </tbody>
@@ -217,7 +217,14 @@ const toggleRetest = (sIdx: number, tIdx: number) => {
   const detail = scoreForms.value[sIdx].word_details[tIdx];
   detail.retest = !detail.retest;
   if (detail.retest) detail.correct = 0;
+  // 재시험 토글 시 코멘트 자동생성 다시 활성화
+  scoreForms.value[sIdx].commentManuallyEdited = false;
   calculateScore(sIdx);
+};
+
+const onCommentInput = (sIdx: number) => {
+  // 사용자가 직접 코멘트를 수정하면 자동생성 비활성화
+  scoreForms.value[sIdx].commentManuallyEdited = true;
 };
 
 const calculateScore = (sIdx: number) => {
@@ -251,14 +258,16 @@ const calculateScore = (sIdx: number) => {
   const total = rtAvg + wordAvg + (form.assignment_score || 0);
   const average = total / 3;
 
-  // 코멘트 자동 추가 (재시험 시)
-  const normalizedComment = (form.comment || '').trim();
-  if (retestFound) {
-    if (!normalizedComment.includes(retestComment)) {
-      form.comment = normalizedComment ? `${normalizedComment} ${retestComment}` : retestComment;
+  // 코멘트 자동 추가 (재시험 시) - 수동 편집하지 않은 경우에만
+  if (!form.commentManuallyEdited) {
+    const normalizedComment = (form.comment || '').trim();
+    if (retestFound) {
+      if (!normalizedComment.includes(retestComment)) {
+        form.comment = normalizedComment ? `${normalizedComment} ${retestComment}` : retestComment;
+      }
+    } else if (normalizedComment === retestComment) {
+      form.comment = '';
     }
-  } else if (normalizedComment === retestComment) {
-    form.comment = '';
   }
 
   calculatedScores.value[sIdx] = {
@@ -291,7 +300,8 @@ const onClassChange = () => {
     word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
-    comment: ''
+    comment: '',
+    commentManuallyEdited: false
   }));
   
   calculatedScores.value = classStudents.value.map(() => ({ total: 0, average: 0 }));
@@ -309,7 +319,8 @@ const loadExistingScores = async () => {
     word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
-    comment: ''
+    comment: '',
+    commentManuallyEdited: false
   }));
   calculatedScores.value = classStudents.value.map(() => ({ 
     rtScore: 0, 
@@ -388,7 +399,8 @@ const loadExistingScores = async () => {
             word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
             assignment_score: score.assignment_score || 0,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
-            comment: score.comment || ''
+            comment: score.comment || '',
+            commentManuallyEdited: !!(score.comment && score.comment.trim())
           };
           calculateScore(sIdx);
         }
@@ -477,7 +489,8 @@ const resetAllScores = () => {
     word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
     assignment_grade: '',
     assignment_score: 0,
-    comment: ''
+    comment: '',
+    commentManuallyEdited: false
   }));
   
   calculatedScores.value = classStudents.value.map(() => ({ 
