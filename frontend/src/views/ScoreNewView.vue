@@ -229,12 +229,27 @@ const setAssignmentGrade = (sIdx: number, grade: string) => {
 };
 
 const toggleRetest = (sIdx: number, tIdx: number) => {
-  const detail = scoreForms.value[sIdx].word_details[tIdx];
+  const form = scoreForms.value[sIdx];
+  const detail = form.word_details[tIdx];
   detail.retest = !detail.retest;
   if (detail.retest) detail.correct = 0;
-  // 재시험 토글 시 코멘트 자동생성 다시 활성화
-  scoreForms.value[sIdx].commentManuallyEdited = false;
   calculateScore(sIdx);
+  
+  // 재시험 코멘트 자동 추가/제거 (수동 편집하지 않은 경우에만)
+  if (!form.commentManuallyEdited) {
+    const hasAnyRetest = form.word_details.some((d: any) => d.retest);
+    const currentComment = (form.comment || '').trim();
+    if (hasAnyRetest) {
+      if (!currentComment.includes(retestComment)) {
+        form.comment = currentComment ? `${currentComment} ${retestComment}` : retestComment;
+      }
+    } else {
+      // 재시험 해제 시 자동생성 코멘트만 제거
+      if (currentComment === retestComment) {
+        form.comment = '';
+      }
+    }
+  }
 };
 
 const onCommentInput = (sIdx: number) => {
@@ -272,18 +287,6 @@ const calculateScore = (sIdx: number) => {
   // 총점 및 평균 (RT, 단어, 과제 3개 항목)
   const total = rtAvg + wordAvg + (form.assignment_score || 0);
   const average = total / 3;
-
-  // 코멘트 자동 추가 (재시험 시) - 수동 편집하지 않은 경우에만
-  if (!form.commentManuallyEdited) {
-    const normalizedComment = (form.comment || '').trim();
-    if (retestFound) {
-      if (!normalizedComment.includes(retestComment)) {
-        form.comment = normalizedComment ? `${normalizedComment} ${retestComment}` : retestComment;
-      }
-    } else if (normalizedComment === retestComment) {
-      form.comment = '';
-    }
-  }
 
   calculatedScores.value[sIdx] = {
     rtScore: rtAvg,
