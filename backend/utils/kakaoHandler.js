@@ -58,7 +58,17 @@ export const sendAligoAlimtalk = async (data) => {
       headers: form.getHeaders(),
       timeout: 10000
     });
-    return response.data;
+    
+    // 응답 데이터가 문자열일 경우 JSON 파싱 시도 (가끔 문자열로 오는 경우 대비)
+    let result = response.data;
+    if (typeof result === 'string') {
+      try {
+        result = JSON.parse(result);
+      } catch (e) {
+        console.error('알리고 응답 파싱 실패 (문자열):', result);
+      }
+    }
+    return result;
   } catch (error) {
     console.error('알리고 API 호출 에러:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || error.message);

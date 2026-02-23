@@ -434,15 +434,18 @@ export const sendReservationNotification = async (req, res) => {
     console.log('================================================');
 
     // 5. 발송 이력 저장
+    // result_code는 숫자일 수도, 문자열일 수도 있으므로 느슨한 비교(==) 또는 String 변환 후 비교
+    const isSuccess = result && (result.result_code == 1 || String(result.result_code) === '1');
+    
     await supabase.from('reservation_kakao_send_history').insert({
       reservation_id: reservation.id,
       parent_phone: reservation.parent_phone,
-      send_status: String(result.result_code) === '1' ? 'success' : 'fail',
+      send_status: isSuccess ? 'success' : 'fail',
       error_message: result.message || null
     });
 
     return res.json({
-      success: String(result.result_code) === '1',
+      success: isSuccess,
       message: result.message,
       data: result
     });
