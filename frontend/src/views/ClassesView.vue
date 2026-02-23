@@ -304,7 +304,7 @@
     </div>
 
     <!-- 상담일지 모달 (반 관리에서 바로 사용) -->
-    <div v-if="showCounselingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeCounselingModal">
+    <div v-if="showCounselingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">{{ selectedStudentForCounseling?.name }} 학생 상담</h3>
@@ -364,7 +364,7 @@
     </div>
 
     <!-- 반 등록/수정 모달 -->
-    <div v-if="showClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeClassModal">
+    <div v-if="showClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
         <h3 class="text-xl font-bold mb-4">{{ classModalMode === 'create' ? '새 반 추가' : '반 정보 수정' }}</h3>
         <form @submit.prevent="saveClass" class="space-y-4">
@@ -406,7 +406,7 @@
     </div>
 
     <!-- 학생 배정 모달 -->
-    <div v-if="showStudentAssignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeStudentAssignModal">
+    <div v-if="showStudentAssignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
         <h3 class="text-xl font-bold mb-4">{{ selectedClass?.name }} 학생 배정</h3>
         
@@ -458,7 +458,7 @@
     </div>
 
     <!-- 보강 일정 등록 모달 -->
-    <div v-if="showSupplementaryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showSupplementaryModal = false">
+    <div v-if="showSupplementaryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
         <h3 class="text-xl font-bold mb-4">보강 일정 등록</h3>
         
@@ -519,7 +519,7 @@
     </div>
 
     <!-- 타 반 학생 검색 모달 (보강용) -->
-    <div v-if="showStudentSearchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4" @click.self="showStudentSearchModal = false">
+    <div v-if="showStudentSearchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl h-[500px] flex flex-col">
         <h3 class="text-lg font-bold mb-4">학생 검색</h3>
         <input v-model="supplementaryStudentSearch" type="text" placeholder="이름 검색..." class="w-full px-4 py-2 border rounded-lg mb-4" />
