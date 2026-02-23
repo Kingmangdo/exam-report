@@ -1,3 +1,4 @@
+
 <template>
   <div>
     <div class="flex justify-between items-center mb-6">
@@ -28,13 +29,30 @@
       </div>
     </div>
 
+    <!-- 카테고리 탭 -->
+    <div class="flex space-x-1 mb-6 border-b border-gray-200">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="currentTab = tab.id"
+        class="px-6 py-3 text-base font-bold transition-colors relative"
+        :class="currentTab === tab.id ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'"
+      >
+        {{ tab.label }}
+        <span class="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ getClassCountByCategory(tab.id) }}</span>
+      </button>
+    </div>
+
     <!-- 반 리스트 (최대 20개 대응 - 컴팩트) -->
     <div class="flex flex-wrap gap-3 mb-6">
       <div
-        v-for="item in classes"
+        v-for="item in filteredClasses"
         :key="item.id"
-        class="bg-white rounded-lg shadow-sm px-4 py-3 border-l-4 border-primary hover:shadow-md transition cursor-pointer relative flex-shrink-0"
-        :class="{ 'ring-2 ring-primary bg-blue-50': selectedClass?.id === item.id }"
+        class="bg-white rounded-lg shadow-sm px-4 py-3 border-l-4 hover:shadow-md transition cursor-pointer relative flex-shrink-0"
+        :class="[
+          selectedClass?.id === item.id ? 'ring-2 ring-primary bg-blue-50' : '',
+          getCategoryColor(item.category)
+        ]"
         @click="selectClass(item)"
       >
         <!-- 숙제 검사일 배지 -->
@@ -56,6 +74,9 @@
             </button>
           </div>
         </div>
+      </div>
+      <div v-if="filteredClasses.length === 0" class="w-full py-8 text-center text-gray-400">
+        해당 카테고리에 등록된 반이 없습니다.
       </div>
     </div>
 
@@ -112,115 +133,170 @@
         </div>
       </div>
 
-      <!-- 오른쪽: 반별 학습 관리 (65% 너비) -->
-      <div class="lg:flex-1 bg-white rounded-lg shadow-lg overflow-hidden border">
-        <div class="p-4 bg-primary text-white flex justify-between items-center">
-          <h3 class="text-lg font-bold">{{ selectedClass.name }} 학습 관리</h3>
-          <div class="flex items-center gap-2">
-            <label class="text-xs opacity-90">선택 날짜:</label>
-            <input v-model="learningLogDate" type="date" class="px-2 py-1 text-xs border rounded text-gray-800" @change="fetchLearningLog" />
-          </div>
+      <!-- 오른쪽: 반별 학습 관리 및 보강 관리 (65% 너비) -->
+      <div class="lg:flex-1 bg-white rounded-lg shadow-lg overflow-hidden border flex flex-col">
+        <!-- 탭 메뉴 -->
+        <div class="flex border-b">
+          <button 
+            @click="activeRightTab = 'learning'" 
+            class="flex-1 py-3 text-center font-bold text-sm transition-colors"
+            :class="activeRightTab === 'learning' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
+          >
+            📚 학습 관리
+          </button>
+          <button 
+            @click="activeRightTab = 'supplementary'" 
+            class="flex-1 py-3 text-center font-bold text-sm transition-colors"
+            :class="activeRightTab === 'supplementary' ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
+          >
+            🕒 보강 관리
+          </button>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-4 min-h-[400px]">
-          <!-- 최근 3주 기록 목록 (사이드바) -->
-          <div class="md:col-span-1 border-r bg-gray-50 p-4 overflow-y-auto max-h-[600px]">
-            <h4 class="text-sm font-bold text-gray-600 uppercase mb-4 px-1">최근 3주 기록</h4>
-            <div class="space-y-2">
-              <button
-                v-for="log in recentLogDates"
-                :key="log.log_date"
-                @click="selectLogDate(log.log_date)"
-                class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition shadow-sm"
-                :class="learningLogDate === log.log_date ? 'bg-primary text-white' : (log.log_date === getTodayFull() ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white hover:bg-gray-200 text-gray-700 border border-gray-100')"
-              >
-                <div class="font-bold">
-                  {{ formatDateWithDay(log.log_date) }}
-                  <span v-if="log.log_date === getTodayFull()" class="text-xs ml-1">(오늘)</span>
-                </div>
-                <div v-if="log.homework" class="mt-1 text-xs truncate" :class="learningLogDate === log.log_date ? 'text-blue-100' : 'text-gray-500'">
-                  📝 {{ getHomeworkSummary(log.homework).substring(0, 20) }}{{ getHomeworkSummary(log.homework).length > 20 ? '...' : '' }}
-                  <span v-if="hasHomeworkDueInLog(log.homework) || (log.homework_deadline === getTodayFull())" class="ml-1" :class="learningLogDate === log.log_date ? 'text-yellow-200 font-bold' : 'text-red-600 font-bold'">
-                    🔔오늘검사
-                  </span>
-                </div>
-              </button>
-              <div v-if="recentLogDates.length === 0" class="text-center py-8 text-gray-400 text-xs">
-                기록 없음
-              </div>
+
+        <!-- 학습 관리 내용 -->
+        <div v-if="activeRightTab === 'learning'">
+          <div class="p-4 bg-primary text-white flex justify-between items-center">
+            <h3 class="text-lg font-bold">{{ selectedClass.name }} 학습 일지</h3>
+            <div class="flex items-center gap-2">
+              <label class="text-xs opacity-90">선택 날짜:</label>
+              <input v-model="learningLogDate" type="date" class="px-2 py-1 text-xs border rounded text-gray-800" @change="fetchLearningLog" />
             </div>
           </div>
-
-          <!-- 입력 및 상세 내용 -->
-          <div class="md:col-span-3 p-6 space-y-6">
-            <!-- 작성자 정보 표시 -->
-            <div v-if="learningLog.created_by || learningLog.updated_by" class="flex items-center gap-3 text-sm bg-blue-50 px-4 py-2.5 rounded-lg border border-blue-100">
-              <span class="text-blue-500">👤</span>
-              <span class="text-blue-700 font-bold">작성: {{ learningLog.created_by || '-' }}</span>
-              <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-gray-400">|</span>
-              <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-orange-600 font-bold">수정: {{ learningLog.updated_by }}</span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6">
-              <div class="flex gap-4">
-                <div class="w-[65%]">
-                  <label class="block text-base font-bold text-gray-700 mb-2">진도</label>
-                  <textarea v-model="learningLog.progress" rows="2" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium resize-none" placeholder="오늘 나간 진도를 입력하세요"></textarea>
-                </div>
-                <div class="w-[35%]">
-                  <label class="block text-base font-bold text-gray-700 mb-2">교재</label>
-                  <input v-model="learningLog.textbook" type="text" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" placeholder="교재명" />
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 min-h-[400px]">
+            <!-- 최근 3주 기록 목록 (사이드바) -->
+            <div class="md:col-span-1 border-r bg-gray-50 p-4 overflow-y-auto max-h-[600px]">
+              <h4 class="text-sm font-bold text-gray-600 uppercase mb-4 px-1">최근 3주 기록</h4>
+              <div class="space-y-2">
+                <button
+                  v-for="log in recentLogDates"
+                  :key="log.log_date"
+                  @click="selectLogDate(log.log_date)"
+                  class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition shadow-sm"
+                  :class="learningLogDate === log.log_date ? 'bg-primary text-white' : (log.log_date === getTodayFull() ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white hover:bg-gray-200 text-gray-700 border border-gray-100')"
+                >
+                  <div class="font-bold">
+                    {{ formatDateWithDay(log.log_date) }}
+                    <span v-if="log.log_date === getTodayFull()" class="text-xs ml-1">(오늘)</span>
+                  </div>
+                  <div v-if="log.homework" class="mt-1 text-xs truncate" :class="learningLogDate === log.log_date ? 'text-blue-100' : 'text-gray-500'">
+                    📝 {{ getHomeworkSummary(log.homework).substring(0, 20) }}{{ getHomeworkSummary(log.homework).length > 20 ? '...' : '' }}
+                    <span v-if="hasHomeworkDueInLog(log.homework) || (log.homework_deadline === getTodayFull())" class="ml-1" :class="learningLogDate === log.log_date ? 'text-yellow-200 font-bold' : 'text-red-600 font-bold'">
+                      🔔오늘검사
+                    </span>
+                  </div>
+                </button>
+                <div v-if="recentLogDates.length === 0" class="text-center py-8 text-gray-400 text-xs">
+                  기록 없음
                 </div>
               </div>
-              <div>
-                <label class="block text-base font-bold text-gray-700 mb-3">오늘 내준 숙제</label>
-                <div class="space-y-2">
-                  <div v-for="(hw, idx) in learningLog.homeworks" :key="idx" class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
-                    <input 
-                      v-model="hw.content" 
-                      type="text" 
-                      class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" 
-                      :placeholder="`숙제 ${idx + 1}`" 
-                    />
-                    <div class="flex items-center gap-1 flex-shrink-0">
-                      <span class="text-xs text-red-600 font-bold">검사일:</span>
+            </div>
+
+            <!-- 입력 및 상세 내용 -->
+            <div class="md:col-span-3 p-6 space-y-6">
+              <!-- 작성자 정보 표시 -->
+              <div v-if="learningLog.created_by || learningLog.updated_by" class="flex items-center gap-3 text-sm bg-blue-50 px-4 py-2.5 rounded-lg border border-blue-100">
+                <span class="text-blue-500">👤</span>
+                <span class="text-blue-700 font-bold">작성: {{ learningLog.created_by || '-' }}</span>
+                <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-gray-400">|</span>
+                <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-orange-600 font-bold">수정: {{ learningLog.updated_by }}</span>
+              </div>
+
+              <div class="grid grid-cols-1 gap-6">
+                <div class="flex gap-4">
+                  <div class="w-[65%]">
+                    <label class="block text-base font-bold text-gray-700 mb-2">진도</label>
+                    <textarea v-model="learningLog.progress" rows="2" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium resize-none" placeholder="오늘 나간 진도를 입력하세요"></textarea>
+                  </div>
+                  <div class="w-[35%]">
+                    <label class="block text-base font-bold text-gray-700 mb-2">교재</label>
+                    <input v-model="learningLog.textbook" type="text" class="w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" placeholder="교재명" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-base font-bold text-gray-700 mb-3">오늘 내준 숙제</label>
+                  <div class="space-y-2">
+                    <div v-for="(hw, idx) in learningLog.homeworks" :key="idx" class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
                       <input 
-                        v-model="hw.deadline" 
-                        type="date" 
-                        class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]" 
+                        v-model="hw.content" 
+                        type="text" 
+                        class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" 
+                        :placeholder="`숙제 ${idx + 1}`" 
                       />
+                      <div class="flex items-center gap-1 flex-shrink-0">
+                        <span class="text-xs text-red-600 font-bold">검사일:</span>
+                        <input 
+                          v-model="hw.deadline" 
+                          type="date" 
+                          class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 오늘 검사해야 할 숙제 영역 (강조) -->
+                <div v-if="todayDueHomeworks.length > 0" class="bg-red-50 border-2 border-red-200 rounded-lg p-5 shadow-md">
+                  <div class="flex justify-between items-center mb-3">
+                    <h5 class="text-base font-bold text-red-700 flex items-center gap-2">
+                      <span class="text-2xl">🚨</span> 오늘 검사해야 할 숙제
+                    </h5>
+                  </div>
+                  <div class="space-y-2">
+                    <div v-for="(dueHw, idx) in todayDueHomeworks" :key="idx" class="flex items-center gap-3 bg-white p-3 rounded-lg border border-red-100">
+                      <span class="text-red-500 font-bold text-sm">{{ idx + 1 }}</span>
+                      <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
+                      <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">{{ dueHw.log_date }} 부여 {{ dueHw.created_by ? `| 출제: ${dueHw.created_by}` : '' }}</span>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <!-- 오늘 검사해야 할 숙제 영역 (강조) -->
-              <div v-if="todayDueHomeworks.length > 0" class="bg-red-50 border-2 border-red-200 rounded-lg p-5 shadow-md">
-                <div class="flex justify-between items-center mb-3">
-                  <h5 class="text-base font-bold text-red-700 flex items-center gap-2">
-                    <span class="text-2xl">🚨</span> 오늘 검사해야 할 숙제
-                  </h5>
-                </div>
-                <div class="space-y-2">
-                  <div v-for="(dueHw, idx) in todayDueHomeworks" :key="idx" class="flex items-center gap-3 bg-white p-3 rounded-lg border border-red-100">
-                    <span class="text-red-500 font-bold text-sm">{{ idx + 1 }}</span>
-                    <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
-                    <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">{{ dueHw.log_date }} 부여 {{ dueHw.created_by ? `| 출제: ${dueHw.created_by}` : '' }}</span>
+
+              <div class="flex justify-end items-center gap-4 pt-4 border-t">
+                <span v-if="saveStatus" class="text-sm text-green-600 font-bold animate-pulse">{{ saveStatus }}</span>
+                <button 
+                  @click="saveLearningLog" 
+                  :disabled="savingLog"
+                  class="px-8 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition shadow-md disabled:opacity-50"
+                >
+                  {{ savingLog ? '저장 중...' : '학습 내용 저장' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 보강 관리 내용 -->
+        <div v-else-if="activeRightTab === 'supplementary'" class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold text-gray-800">보강 스케줄</h3>
+            <button @click="openSupplementaryModal" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-sm">
+              + 보강 일정 추가
+            </button>
+          </div>
+
+          <!-- 3주 히스토리 (전전주, 전주, 금주) -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div v-for="(week, idx) in supplementaryWeeks" :key="idx" class="bg-gray-50 rounded-lg p-4 border">
+              <h4 class="text-sm font-bold text-gray-700 mb-3 text-center border-b pb-2">
+                {{ week.label }} <span class="text-xs font-normal text-gray-500">({{ week.range }})</span>
+              </h4>
+              <div v-if="week.sessions.length === 0" class="text-center py-4 text-gray-400 text-xs">일정 없음</div>
+              <div class="space-y-3">
+                <div v-for="session in week.sessions" :key="session.id" class="bg-white p-3 rounded shadow-sm border border-gray-100 hover:shadow-md transition">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{{ formatTime(session.session_date) }}</span>
+                    <button @click="deleteSupplementary(session.id)" class="text-gray-400 hover:text-red-500 text-xs">&times;</button>
+                  </div>
+                  <p class="text-sm font-bold text-gray-800 mb-1">{{ session.content }}</p>
+                  <div class="flex flex-wrap gap-1">
+                    <span v-for="student in session.supplementary_students" :key="student.student_id" class="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                      {{ student.students?.name }}
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div class="flex justify-end items-center gap-4 pt-4 border-t">
-              <span v-if="saveStatus" class="text-sm text-green-600 font-bold animate-pulse">{{ saveStatus }}</span>
-              <button 
-                @click="saveLearningLog" 
-                :disabled="savingLog"
-                class="px-8 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition shadow-md disabled:opacity-50"
-              >
-                {{ savingLog ? '저장 중...' : '학습 내용 저장' }}
-              </button>
             </div>
           </div>
         </div>
@@ -293,6 +369,23 @@
         <h3 class="text-xl font-bold mb-4">{{ classModalMode === 'create' ? '새 반 추가' : '반 정보 수정' }}</h3>
         <form @submit.prevent="saveClass" class="space-y-4">
           <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">반 카테고리 <span class="text-red-500">*</span></label>
+            <div class="flex gap-2">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" v-model="classForm.category" value="regular" class="sr-only peer" />
+                <div class="text-center py-2 border rounded-lg peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary hover:bg-gray-50 transition">정규반</div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" v-model="classForm.category" value="exam" class="sr-only peer" />
+                <div class="text-center py-2 border rounded-lg peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:bg-gray-50 transition">내신대비</div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" v-model="classForm.category" value="ongoing" class="sr-only peer" />
+                <div class="text-center py-2 border rounded-lg peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-gray-50 transition">On-going</div>
+              </label>
+            </div>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">반 이름 <span class="text-red-500">*</span></label>
             <input v-model="classForm.name" type="text" required class="w-full px-4 py-2 border rounded-lg" placeholder="예: 중등 A반" />
           </div>
@@ -363,13 +456,97 @@
         </div>
       </div>
     </div>
+
+    <!-- 보강 일정 등록 모달 -->
+    <div v-if="showSupplementaryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showSupplementaryModal = false">
+      <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
+        <h3 class="text-xl font-bold mb-4">보강 일정 등록</h3>
+        
+        <div class="space-y-4 mb-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">날짜</label>
+              <input v-model="supplementaryForm.date" type="date" class="w-full px-4 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1">시간</label>
+              <input v-model="supplementaryForm.time" type="time" class="w-full px-4 py-2 border rounded-lg" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">보강 내용</label>
+            <input v-model="supplementaryForm.content" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="예: 관계대명사 보충" />
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-h-0">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-sm font-bold text-gray-700">참여 학생 선택</label>
+            <button @click="openStudentSearchForSupplementary" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 font-bold">
+              + 다른 반 학생 추가
+            </button>
+          </div>
+          
+          <div class="border rounded-lg overflow-y-auto flex-1 p-2">
+            <!-- 현재 반 학생 목록 -->
+            <div v-if="classStudents.length > 0">
+              <div class="text-xs font-bold text-gray-500 mb-1 px-2">현재 반 학생</div>
+              <div v-for="student in classStudents" :key="student.id" class="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer" @click="toggleSupplementaryStudent(student)">
+                <input type="checkbox" :checked="selectedSupplementaryStudents.some(s => s.id === student.id)" class="w-4 h-4 mr-2 text-purple-600 rounded focus:ring-purple-500" />
+                <span class="text-sm">{{ student.name }}</span>
+              </div>
+            </div>
+            
+            <!-- 추가된 타 반 학생 목록 -->
+            <div v-if="otherClassStudents.length > 0" class="mt-3">
+              <div class="text-xs font-bold text-gray-500 mb-1 px-2 border-t pt-2">추가된 학생</div>
+              <div v-for="student in otherClassStudents" :key="student.id" class="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer" @click="toggleSupplementaryStudent(student)">
+                <input type="checkbox" :checked="selectedSupplementaryStudents.some(s => s.id === student.id)" class="w-4 h-4 mr-2 text-purple-600 rounded focus:ring-purple-500" />
+                <span class="text-sm">{{ student.name }} <span class="text-xs text-gray-400">({{ student.class_name || '반 없음' }})</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2 text-right text-sm text-gray-600">
+            총 {{ selectedSupplementaryStudents.length }}명 선택됨
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 mt-6">
+          <button @click="showSupplementaryModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">취소</button>
+          <button @click="saveSupplementary" class="px-6 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 타 반 학생 검색 모달 (보강용) -->
+    <div v-if="showStudentSearchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4" @click.self="showStudentSearchModal = false">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl h-[500px] flex flex-col">
+        <h3 class="text-lg font-bold mb-4">학생 검색</h3>
+        <input v-model="supplementaryStudentSearch" type="text" placeholder="이름 검색..." class="w-full px-4 py-2 border rounded-lg mb-4" />
+        
+        <div class="flex-1 overflow-y-auto border rounded-lg">
+          <div v-for="student in filteredAllStudentsForSearch" :key="student.id" 
+               class="px-4 py-3 border-b hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+               @click="addOtherStudentToSupplementary(student)">
+            <div>
+              <div class="font-bold">{{ student.name }}</div>
+              <div class="text-xs text-gray-500">{{ student.school }} / {{ student.class_name }}</div>
+            </div>
+            <button class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">선택</button>
+          </div>
+        </div>
+        <div class="mt-4 text-right">
+          <button @click="showStudentSearchModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">닫기</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { classApi, studentApi, counselingApi } from '../services/api';
-import { getToday } from '../utils/date';
+import { ref, onMounted, computed, watch } from 'vue';
+import { classApi, studentApi, counselingApi, supplementaryApi } from '../services/api';
 import type { Student } from '../types';
 
 // 학습관리에서는 YYYY-MM-DD 형식 사용 (DB, input[type=date] 모두 이 형식)
@@ -388,6 +565,31 @@ const allStudents = ref<Student[]>([]);
 const loading = ref(false);
 
 const learningLogDate = ref(getTodayFull());
+const activeRightTab = ref<'learning' | 'supplementary'>('learning');
+
+// 탭 설정
+const currentTab = ref('regular');
+const tabs = [
+  { id: 'regular', label: '정규반' },
+  { id: 'exam', label: '내신대비' },
+  { id: 'ongoing', label: 'On-going' }
+];
+
+const filteredClasses = computed(() => {
+  return classes.value.filter(c => (c.category || 'regular') === currentTab.value);
+});
+
+const getClassCountByCategory = (cat: string) => {
+  return classes.value.filter(c => (c.category || 'regular') === cat).length;
+};
+
+const getCategoryColor = (cat: string) => {
+  switch(cat) {
+    case 'exam': return 'border-green-500';
+    case 'ongoing': return 'border-orange-500';
+    default: return 'border-primary';
+  }
+};
 
 const emptyHomeworks = () => [
   { content: '', deadline: '' },
@@ -408,6 +610,19 @@ const saveStatus = ref('');
 const recentLogDates = ref<any[]>([]);
 const todayDueHomeworks = ref<any[]>([]);
 const homeworkDueToday = ref<any[]>([]);
+
+// 보강 관리 관련 상태
+const showSupplementaryModal = ref(false);
+const showStudentSearchModal = ref(false);
+const supplementaryForm = ref({
+  date: getTodayFull(),
+  time: '14:00',
+  content: ''
+});
+const selectedSupplementaryStudents = ref<any[]>([]);
+const otherClassStudents = ref<any[]>([]); // 타 반 학생 중 선택된 학생들
+const supplementaryStudentSearch = ref('');
+const supplementaryWeeks = ref<any[]>([]); // 3주치 데이터
 
 // DB에 저장된 homework 문자열을 homeworks 배열로 파싱
 const parseHomeworks = (homework: string, homework_deadline: string) => {
@@ -585,7 +800,8 @@ const classModalMode = ref<'create' | 'edit'>('create');
 const classForm = ref({ 
   name: '', 
   teacher_name: '', 
-  description: ''
+  description: '',
+  category: 'regular'
 });
 
 const showStudentAssignModal = ref(false);
@@ -626,6 +842,19 @@ const filteredAllStudents = computed(() => {
   return filtered;
 });
 
+// 타 반 학생 검색 필터
+const filteredAllStudentsForSearch = computed(() => {
+  if (!supplementaryStudentSearch.value) return [];
+  const search = supplementaryStudentSearch.value.toLowerCase();
+  // 이미 현재 반에 있거나, 이미 추가된 학생은 제외
+  const excludeIds = [...classStudents.value, ...otherClassStudents.value].map(s => s.id);
+  
+  return allStudents.value.filter(s => 
+    !excludeIds.includes(s.id) && 
+    (s.name.toLowerCase().includes(search) || (s.school && s.school.toLowerCase().includes(search)))
+  );
+});
+
 const fetchClasses = async () => {
   try {
     const response = await classApi.getAll();
@@ -652,6 +881,8 @@ const selectClass = async (item: any) => {
   selectedClass.value = item;
   // 반 선택 시 항상 오늘 날짜로 초기화
   learningLogDate.value = getTodayFull();
+  activeRightTab.value = 'learning'; // 기본 탭은 학습 관리
+  
   try {
     loading.value = true;
     const response = await classApi.getStudents(item.name);
@@ -681,6 +912,7 @@ const selectClass = async (item: any) => {
     }
     await fetchLearningLog();
     await fetchRecentLogs();
+    await fetchSupplementaryHistory(); // 보강 히스토리 로드
   } catch (err) {
     console.error('반 학생 로드 실패:', err);
   } finally {
@@ -796,13 +1028,15 @@ const openClassModal = (mode: 'create' | 'edit', item?: any) => {
   classModalMode.value = mode;
   if (mode === 'edit' && item) {
     classForm.value = { 
-      ...item
+      ...item,
+      category: item.category || 'regular'
     };
   } else {
     classForm.value = { 
       name: '', 
       teacher_name: '', 
-      description: ''
+      description: '',
+      category: 'regular'
     };
   }
   showClassModal.value = true;
@@ -938,6 +1172,150 @@ const goToClassHomeworkCheck = async (due: any) => {
   }
 };
 
+// ========== 보강 관리 로직 ==========
+const openSupplementaryModal = () => {
+  supplementaryForm.value = {
+    date: getTodayFull(),
+    time: '14:00',
+    content: ''
+  };
+  selectedSupplementaryStudents.value = [];
+  otherClassStudents.value = [];
+  showSupplementaryModal.value = true;
+};
+
+const openStudentSearchForSupplementary = () => {
+  supplementaryStudentSearch.value = '';
+  showStudentSearchModal.value = true;
+};
+
+const addOtherStudentToSupplementary = (student: any) => {
+  if (!otherClassStudents.value.some(s => s.id === student.id)) {
+    otherClassStudents.value.push(student);
+  }
+  // 자동으로 체크 상태로
+  if (!selectedSupplementaryStudents.value.some(s => s.id === student.id)) {
+    selectedSupplementaryStudents.value.push(student);
+  }
+  showStudentSearchModal.value = false;
+};
+
+const toggleSupplementaryStudent = (student: any) => {
+  const index = selectedSupplementaryStudents.value.findIndex(s => s.id === student.id);
+  if (index === -1) {
+    selectedSupplementaryStudents.value.push(student);
+  } else {
+    selectedSupplementaryStudents.value.splice(index, 1);
+  }
+};
+
+const saveSupplementary = async () => {
+  if (!supplementaryForm.value.content) {
+    alert('보강 내용을 입력해주세요.');
+    return;
+  }
+  
+  try {
+    const dateTime = `${supplementaryForm.value.date}T${supplementaryForm.value.time}:00+09:00`;
+    const res = await supplementaryApi.createSession({
+      class_id: selectedClass.value.id,
+      session_date: dateTime,
+      content: supplementaryForm.value.content,
+      student_ids: selectedSupplementaryStudents.value.map(s => s.id)
+    });
+    
+    if (res.data.success) {
+      alert('보강 일정이 등록되었습니다.');
+      showSupplementaryModal.value = false;
+      fetchSupplementaryHistory();
+    }
+  } catch (err: any) {
+    alert('보강 등록 실패: ' + (err.response?.data?.message || err.message));
+  }
+};
+
+const deleteSupplementary = async (id: number) => {
+  if (!confirm('보강 일정을 삭제하시겠습니까?')) return;
+  try {
+    await supplementaryApi.deleteSession(id);
+    fetchSupplementaryHistory();
+  } catch (err) {
+    alert('삭제 실패');
+  }
+};
+
+const formatTime = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  return `${m}/${dd}(${day}) ${h}:${mi}`;
+};
+
+const fetchSupplementaryHistory = async () => {
+  if (!selectedClass.value) return;
+  
+  // 전전주 월요일부터 이번주 일요일(또는 다음주까지) 계산
+  const today = new Date();
+  const day = today.getDay(); // 0: 일, 1: 월 ...
+  const diffToMon = today.getDate() - day + (day === 0 ? -6 : 1); // 이번주 월요일
+  const thisMon = new Date(today.setDate(diffToMon));
+  
+  // 전전주 월요일 (14일 전)
+  const start = new Date(thisMon);
+  start.setDate(start.getDate() - 14);
+  
+  // 다음주 일요일 (13일 후)
+  const end = new Date(thisMon);
+  end.setDate(end.getDate() + 13);
+  
+  try {
+    const res = await supplementaryApi.getSessions(
+      selectedClass.value.id, 
+      start.toISOString(), 
+      end.toISOString()
+    );
+    
+    if (res.data.success) {
+      const sessions = res.data.data || [];
+      organizeWeeks(sessions, start);
+    }
+  } catch (err) {
+    console.error('보강 히스토리 로드 실패:', err);
+  }
+};
+
+const organizeWeeks = (sessions: any[], startDate: Date) => {
+  const weeks = [];
+  const labels = ['전전주', '지난주', '이번주', '다음주'];
+  
+  for (let i = 0; i < 4; i++) {
+    const weekStart = new Date(startDate);
+    weekStart.setDate(weekStart.getDate() + (i * 7));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    // 범위 문자열
+    const range = `${weekStart.getMonth()+1}/${weekStart.getDate()} ~ ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
+    
+    // 해당 주차 세션 필터링
+    const weekSessions = sessions.filter((s: any) => {
+      const d = new Date(s.session_date);
+      return d >= weekStart && d <= weekEnd;
+    });
+    
+    weeks.push({
+      label: labels[i],
+      range,
+      sessions: weekSessions
+    });
+  }
+  
+  supplementaryWeeks.value = weeks;
+};
+
 onMounted(async () => {
   await fetchClasses();
   fetchAllStudents();
@@ -945,3 +1323,19 @@ onMounted(async () => {
   await fetchHomeworkDue();
 });
 </script>
+
+<style scoped>
+.bg-primary {
+  background-color: #1e3a8a;
+}
+.bg-primary-dark {
+  background-color: #1e3a8a;
+}
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
+</style>

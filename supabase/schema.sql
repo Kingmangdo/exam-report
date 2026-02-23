@@ -1,8 +1,15 @@
+-- ============================================
 -- [독강영어학원 ERP] 최종 통합 데이터베이스 스키마
--- 날짜: 2026-02-02
+-- 날짜: 2026-02-23
+-- ⚠️ 이 SQL 하나만 New Query에서 실행하세요!
+-- ============================================
+
+-- ============================================
+-- [PART 1] 기본 테이블 (이미 존재하면 무시)
+-- ============================================
 
 -- 1. 학생 테이블
-create table if not exists public.students (
+CREATE TABLE IF NOT EXISTS public.students (
   id bigserial primary key,
   name text not null,
   grade text,
@@ -19,7 +26,7 @@ create table if not exists public.students (
 );
 
 -- 2. 사용자(관리자/강사) 테이블
-create table if not exists public.users (
+CREATE TABLE IF NOT EXISTS public.users (
   id bigserial primary key,
   username text not null unique,
   password text not null,
@@ -30,7 +37,7 @@ create table if not exists public.users (
 );
 
 -- 3. 반(클래스) 테이블
-create table if not exists public.classes (
+CREATE TABLE IF NOT EXISTS public.classes (
   id bigserial primary key,
   name text not null unique,
   description text,
@@ -42,11 +49,14 @@ create table if not exists public.classes (
   updated_at timestamptz not null default now()
 );
 
+-- 3-1. 반 카테고리 컬럼 (이미 있으면 무시)
+ALTER TABLE public.classes ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'regular';
+
 -- 4. 성적 테이블
-create table if not exists public.scores (
+CREATE TABLE IF NOT EXISTS public.scores (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
-  exam_date text not null, -- 'YY-MM-DD' 형식
+  exam_date text not null,
   class_name text,
   rt_total integer default 0,
   rt_correct integer default 0,
@@ -67,41 +77,38 @@ create table if not exists public.scores (
 );
 
 -- 5. 반별 일자별 학습 로그 테이블
-create table if not exists public.class_learning_logs (
+CREATE TABLE IF NOT EXISTS public.class_learning_logs (
   id bigserial primary key,
   class_id bigint not null references public.classes(id) on delete cascade,
-  log_date text not null, -- 'YYYY-MM-DD' 형식
+  log_date text not null,
   progress text,
   textbook text,
   homework text,
   homework_deadline text,
-  created_by text,          -- 최초 작성자 (선생님 이름)
-  updated_by text,          -- 최종 수정자 (선생님 이름)
+  created_by text,
+  updated_by text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (class_id, log_date)
 );
 
--- 5-2. 바이먼스리 테스트 성적 테이블
-create table if not exists public.bimonthly_scores (
+-- 6. 바이먼스리 테스트 성적 테이블
+CREATE TABLE IF NOT EXISTS public.bimonthly_scores (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
-  exam_date text not null, -- 'YYYY-MM-DD' 형식
+  exam_date text not null,
   class_name text,
-  parts jsonb not null default '[]'::jsonb, -- [{name, total_questions, points_per_question, max_score, correct, score}]
+  parts jsonb not null default '[]'::jsonb,
   total_score numeric default 0,
-  average_score numeric default 0, -- 퍼센트(%)
+  average_score numeric default 0,
   comment text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (student_id, exam_date, class_name)
 );
 
-create index if not exists idx_bimonthly_exam_date on public.bimonthly_scores(exam_date);
-create index if not exists idx_bimonthly_class on public.bimonthly_scores(class_name, exam_date);
-
--- 6. 상담 일지 테이블
-create table if not exists public.counseling_logs (
+-- 7. 상담 일지 테이블
+CREATE TABLE IF NOT EXISTS public.counseling_logs (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
   counselor_name text not null,
@@ -112,8 +119,8 @@ create table if not exists public.counseling_logs (
   updated_at timestamptz not null default now()
 );
 
--- 7. 카카오 발송 이력 테이블
-create table if not exists public.kakao_send_history (
+-- 8. 카카오 발송 이력 테이블
+CREATE TABLE IF NOT EXISTS public.kakao_send_history (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
   score_id bigint not null references public.scores(id) on delete cascade,
@@ -124,8 +131,8 @@ create table if not exists public.kakao_send_history (
   error_message text
 );
 
--- 8. 성적표 접근 토큰 테이블
-create table if not exists public.report_access (
+-- 9. 성적표 접근 토큰 테이블
+CREATE TABLE IF NOT EXISTS public.report_access (
   id bigserial primary key,
   score_id bigint not null references public.scores(id) on delete cascade,
   access_token text not null unique,
@@ -136,16 +143,16 @@ create table if not exists public.report_access (
   created_at timestamptz not null default now()
 );
 
--- 9. 설정 테이블
-create table if not exists public.settings (
+-- 10. 설정 테이블
+CREATE TABLE IF NOT EXISTS public.settings (
   id bigserial primary key,
   key text not null unique,
   value text,
   updated_at timestamptz not null default now()
 );
 
--- 10. 바이먼스리 성적표 접근 토큰 테이블
-create table if not exists public.bimonthly_report_access (
+-- 11. 바이먼스리 성적표 접근 토큰 테이블
+CREATE TABLE IF NOT EXISTS public.bimonthly_report_access (
   id bigserial primary key,
   bimonthly_score_id bigint not null references public.bimonthly_scores(id) on delete cascade,
   access_token text not null unique,
@@ -156,8 +163,8 @@ create table if not exists public.bimonthly_report_access (
   created_at timestamptz not null default now()
 );
 
--- 11. 바이먼스리 카카오 발송 이력 테이블
-create table if not exists public.bimonthly_kakao_send_history (
+-- 12. 바이먼스리 카카오 발송 이력 테이블
+CREATE TABLE IF NOT EXISTS public.bimonthly_kakao_send_history (
   id bigserial primary key,
   student_id bigint not null references public.students(id) on delete cascade,
   bimonthly_score_id bigint not null references public.bimonthly_scores(id) on delete cascade,
@@ -168,8 +175,8 @@ create table if not exists public.bimonthly_kakao_send_history (
   error_message text
 );
 
--- 12. 예약자 테이블
-create table if not exists public.reservations (
+-- 13. 예약자 테이블
+CREATE TABLE IF NOT EXISTS public.reservations (
   id bigserial primary key,
   name text not null,
   visit_date timestamptz not null,
@@ -184,8 +191,8 @@ create table if not exists public.reservations (
   updated_at timestamptz not null default now()
 );
 
--- 13. 레벨테스트 성적표 테이블
-create table if not exists public.level_test_scores (
+-- 14. 레벨테스트 성적표 테이블
+CREATE TABLE IF NOT EXISTS public.level_test_scores (
   id bigserial primary key,
   reservation_id bigint not null references public.reservations(id) on delete cascade,
   test_date text not null,
@@ -197,8 +204,8 @@ create table if not exists public.level_test_scores (
   updated_at timestamptz not null default now()
 );
 
--- 14. 레벨테스트 성적표 접근 토큰
-create table if not exists public.level_test_report_access (
+-- 15. 레벨테스트 성적표 접근 토큰
+CREATE TABLE IF NOT EXISTS public.level_test_report_access (
   id bigserial primary key,
   level_test_id bigint not null references public.level_test_scores(id) on delete cascade,
   access_token text not null unique,
@@ -209,8 +216,8 @@ create table if not exists public.level_test_report_access (
   created_at timestamptz not null default now()
 );
 
--- 15. 예약 안내 알림톡 발송 이력 테이블
-create table if not exists public.reservation_kakao_send_history (
+-- 16. 예약 안내 알림톡 발송 이력 테이블
+CREATE TABLE IF NOT EXISTS public.reservation_kakao_send_history (
   id bigserial primary key,
   reservation_id bigint not null references public.reservations(id) on delete cascade,
   parent_phone text not null,
@@ -220,31 +227,77 @@ create table if not exists public.reservation_kakao_send_history (
   error_message text
 );
 
--- [성능 최적화] 인덱스 설정
-create index if not exists idx_students_class_name on public.students(class_name);
-create index if not exists idx_scores_exam_date on public.scores(exam_date);
-create index if not exists idx_scores_class_exam on public.scores(class_name, exam_date);
-create index if not exists idx_learning_logs_date on public.class_learning_logs(log_date);
-create index if not exists idx_counseling_student on public.counseling_logs(student_id);
+-- ============================================
+-- [PART 2] 보강 테이블 (완전 초기화 후 재생성)
+-- ============================================
 
--- [자동화] updated_at 트리거 함수
-create or replace function public.set_updated_at()
-returns trigger as $$
-begin
+-- 기존 보강 테이블 완전 삭제 (CASCADE = 정책/의존성 모두 제거)
+DROP TABLE IF EXISTS public.supplementary_students CASCADE;
+DROP TABLE IF EXISTS public.supplementary_sessions CASCADE;
+
+-- 17. 보강 일정 테이블
+CREATE TABLE public.supplementary_sessions (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  class_id BIGINT REFERENCES public.classes(id) ON DELETE CASCADE,
+  session_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  content TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 18. 보강 참여 학생 테이블
+CREATE TABLE public.supplementary_students (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  session_id BIGINT REFERENCES public.supplementary_sessions(id) ON DELETE CASCADE,
+  student_id BIGINT REFERENCES public.students(id) ON DELETE CASCADE,
+  attendance_status TEXT DEFAULT 'pending',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(session_id, student_id)
+);
+
+-- 보강 테이블 RLS + 정책
+ALTER TABLE public.supplementary_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.supplementary_students ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "supp_sessions_full_access_v2" ON public.supplementary_sessions
+  FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "supp_students_full_access_v2" ON public.supplementary_students
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================
+-- [PART 3] 인덱스 & 트리거
+-- ============================================
+
+CREATE INDEX IF NOT EXISTS idx_students_class_name ON public.students(class_name);
+CREATE INDEX IF NOT EXISTS idx_scores_exam_date ON public.scores(exam_date);
+CREATE INDEX IF NOT EXISTS idx_scores_class_exam ON public.scores(class_name, exam_date);
+CREATE INDEX IF NOT EXISTS idx_learning_logs_date ON public.class_learning_logs(log_date);
+CREATE INDEX IF NOT EXISTS idx_counseling_student ON public.counseling_logs(student_id);
+CREATE INDEX IF NOT EXISTS idx_bimonthly_exam_date ON public.bimonthly_scores(exam_date);
+CREATE INDEX IF NOT EXISTS idx_bimonthly_class ON public.bimonthly_scores(class_name, exam_date);
+
+-- updated_at 자동 갱신 트리거 함수
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger AS $$
+BEGIN
   new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql;
 
 -- 트리거 적용
-do $$
-declare
+DO $$
+DECLARE
   t text;
-begin
-  for t in select table_name from information_schema.tables where table_schema = 'public' and table_name in ('students', 'users', 'classes', 'scores', 'class_learning_logs', 'counseling_logs', 'settings')
-  loop
-    execute format('drop trigger if exists trg_%I_updated_at on public.%I', t, t);
-    execute format('create trigger trg_%I_updated_at before update on public.%I for each row execute function public.set_updated_at()', t, t);
-  end loop;
-end;
+BEGIN
+  FOR t IN SELECT table_name FROM information_schema.tables 
+    WHERE table_schema = 'public' 
+    AND table_name IN ('students', 'users', 'classes', 'scores', 'class_learning_logs', 'counseling_logs', 'settings')
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS trg_%I_updated_at ON public.%I', t, t);
+    EXECUTE format('CREATE TRIGGER trg_%I_updated_at BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.set_updated_at()', t, t);
+  END LOOP;
+END;
 $$;
+
+-- 스키마 캐시 갱신
+NOTIFY pgrst, 'reload schema';

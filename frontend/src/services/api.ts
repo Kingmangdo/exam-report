@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import type { 
   Student, 
@@ -140,6 +141,31 @@ export const classApi = {
   },
   getHomeworkDue: (date?: string) => {
     return api.get<ApiResponse<any[]>>('/classes/homework-due', { params: { date } });
+  }
+};
+
+// 보강 관리 API
+export const supplementaryApi = {
+  getSessions: (classId: number, startDate?: string, endDate?: string) => {
+    return api.get<ApiResponse<any[]>>(`/supplementary/class/${classId}`, { params: { start_date: startDate, end_date: endDate } });
+  },
+  createSession: (data: any) => {
+    return api.post<ApiResponse<any>>('/supplementary', data);
+  },
+  updateSession: (id: number, data: any) => {
+    return api.put<ApiResponse<any>>(`/supplementary/${id}`, data);
+  },
+  deleteSession: (id: number) => {
+    return api.delete<ApiResponse<void>>(`/supplementary/${id}`);
+  },
+  addStudents: (sessionId: number, studentIds: number[]) => {
+    return api.post<ApiResponse<any>>(`/supplementary/${sessionId}/students`, { student_ids: studentIds });
+  },
+  removeStudent: (sessionId: number, studentId: number) => {
+    return api.delete<ApiResponse<void>>(`/supplementary/${sessionId}/students/${studentId}`);
+  },
+  getStudentHistory: (studentId: number, startDate?: string, endDate?: string) => {
+    return api.get<ApiResponse<any[]>>(`/supplementary/student/${studentId}`, { params: { start_date: startDate, end_date: endDate } });
   }
 };
 
