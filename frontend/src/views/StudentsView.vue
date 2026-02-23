@@ -274,7 +274,7 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       @click.self="closeModal"
     >
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h3 class="text-xl font-bold mb-4">
           {{ modalMode === 'create' ? '학생 등록' : '학생 수정' }}
         </h3>
@@ -355,7 +355,7 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">반 (중복 선택 가능)</label>
-              <div class="space-y-2">
+              <div class="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
                 <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
                   <input
                     :id="`form-class-${className}`"
