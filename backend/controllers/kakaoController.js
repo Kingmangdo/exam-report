@@ -408,6 +408,7 @@ export const sendReservationNotification = async (req, res) => {
       receiver_1: reservation.parent_phone,
       subject_1: '입학 학습진단 일정 확인 안내',
       message_1: message,
+      emtitle_1: '입학 학습진단 일정 확인',
       tpl_code: 'UF_6177',
       button_1: {
         button: [
