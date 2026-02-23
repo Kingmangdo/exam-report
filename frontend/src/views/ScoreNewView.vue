@@ -75,6 +75,7 @@
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제점수</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">평균</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">코멘트</th>
+              <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">저장</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -114,6 +115,18 @@
               <!-- 코멘트 -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3">
                 <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary" @input="onCommentInput(sIdx)"></textarea>
+              </td>
+
+              <!-- 개별 저장 -->
+              <td class="px-2 py-3 text-center">
+                <button 
+                  @click="saveSingleScore(sIdx)" 
+                  :disabled="savingSingle[sIdx]"
+                  class="px-3 py-1 text-xs font-bold rounded-lg transition"
+                  :class="savedSingle[sIdx] ? 'bg-green-500 text-white' : 'bg-primary text-white hover:bg-primary-dark disabled:opacity-50'"
+                >
+                  {{ savingSingle[sIdx] ? '...' : savedSingle[sIdx] ? '✓' : '저장' }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -167,6 +180,8 @@ const classStudents = ref<Student[]>([]);
 const scoreForms = ref<any[]>([]);
 const calculatedScores = ref<any[]>([]);
 const savingAll = ref(false);
+const savingSingle = ref<Record<number, boolean>>({});
+const savedSingle = ref<Record<number, boolean>>({});
 const saveSuccessMessage = ref<string>('');
 
 const assignmentMap: Record<string, number> = { 'A': 100, 'B': 85, 'C': 70, 'F': 50 };
@@ -419,6 +434,51 @@ const saveDraftAll = () => {
     scoreForms: scoreForms.value
   }));
   showToast('임시저장 되었습니다.');
+};
+
+const saveSingleScore = async (sIdx: number) => {
+  savingSingle.value[sIdx] = true;
+  savedSingle.value[sIdx] = false;
+  try {
+    const student = classStudents.value[sIdx];
+    const form = scoreForms.value[sIdx];
+
+    const finalRtDetails = form.rt_details.map((d: any, idx: number) => ({
+      ...d,
+      name: rtTestTypes.value[idx]?.name || `RT ${idx + 1}`,
+      total: Number(rtTestTypes.value[idx]?.total) || 0
+    }));
+
+    const finalWordDetails = form.word_details.map((d: any, idx: number) => ({
+      ...d,
+      name: wordTestTypes.value[idx]?.name || `단어 ${idx + 1}`,
+      total: Number(wordTestTypes.value[idx]?.total) || 0
+    }));
+
+    const payload = {
+      student_id: student.id,
+      exam_date: examDate.value,
+      class_name: selectedClass.value,
+      rt_total: rtTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
+      rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+      word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
+      word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+      rt_details: finalRtDetails,
+      word_details: finalWordDetails,
+      assignment_score: Number(form.assignment_score) || 0,
+      comment: form.comment || ''
+    };
+
+    await scoreApi.create(payload);
+    savedSingle.value[sIdx] = true;
+    showToast(`${student.name} 성적이 저장되었습니다.`);
+    setTimeout(() => { savedSingle.value[sIdx] = false; }, 2000);
+  } catch (err: any) {
+    console.error('개별 저장 오류:', err.response?.data || err.message);
+    alert(`저장 실패: ${err.response?.data?.message || err.message}`);
+  } finally {
+    savingSingle.value[sIdx] = false;
+  }
 };
 
 const saveAllScores = async () => {
