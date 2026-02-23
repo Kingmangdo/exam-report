@@ -14,24 +14,10 @@ export const getAllScores = async (req, res) => {
 
     const scores = await Score.getAll(filters);
     
-    // 응답 데이터 최적화: 불필요한 필드 제거 및 압축
-    const optimizedScores = scores.map(s => ({
-      id: s.id,
-      student_id: s.student_id,
-      student_name: s.student_name,
-      exam_date: s.exam_date,
-      rt_score: s.rt_score,
-      word_score: s.word_score,
-      assignment_score: s.assignment_score,
-      average_score: s.average_score,
-      rt_details: s.rt_details,
-      word_details: s.word_details
-    }));
-
     res.json({
       success: true,
-      data: optimizedScores,
-      count: optimizedScores.length
+      data: scores,
+      count: scores.length
     });
   } catch (error) {
     res.status(500).json({
