@@ -95,17 +95,25 @@ ${reportUrl}
     console.log('================================================');
 
     // 5. 발송 이력 저장
+    // 알리고 API 성공 조건 확장 (result_code: 1 또는 code: 0 또는 메시지에 '성공' 포함)
+    let isSuccess = false;
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+    }
+
     await supabase.from('kakao_send_history').insert({
       student_id: student.id,
       score_id: score.id,
       parent_phone: student.parent_phone,
-      send_status: String(result.result_code) === '1' ? 'success' : 'fail',
+      send_status: isSuccess ? 'success' : 'fail',
       error_message: result.message || null
     });
 
     // 성공/실패 여부와 상관없이 알리고의 메시지를 그대로 전달
     return res.json({
-      success: String(result.result_code) === '1',
+      success: isSuccess,
       message: result.message,
       data: result
     });
@@ -204,16 +212,24 @@ ${reportUrl}
     console.log('================================================');
 
     // 7. 발송 이력 저장
+    // 알리고 API 성공 조건 확장 (result_code: 1 또는 code: 0 또는 메시지에 '성공' 포함)
+    let isSuccess = false;
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+    }
+
     await supabase.from('bimonthly_kakao_send_history').insert({
       student_id: student.id,
       bimonthly_score_id: score.id,
       parent_phone: student.parent_phone,
-      send_status: String(result.result_code) === '1' ? 'success' : 'fail',
+      send_status: isSuccess ? 'success' : 'fail',
       error_message: result.message || null
     });
 
     return res.json({
-      success: String(result.result_code) === '1',
+      success: isSuccess,
       message: result.message,
       data: result
     });
@@ -434,9 +450,14 @@ export const sendReservationNotification = async (req, res) => {
     console.log('================================================');
 
     // 5. 발송 이력 저장
-    // result_code는 숫자일 수도, 문자열일 수도 있으므로 느슨한 비교(==) 또는 String 변환 후 비교
-    const isSuccess = result && (result.result_code == 1 || String(result.result_code) === '1');
-    
+    // 알리고 API 성공 조건 확장 (result_code: 1 또는 code: 0 또는 메시지에 '성공' 포함)
+    let isSuccess = false;
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+    }
+
     await supabase.from('reservation_kakao_send_history').insert({
       reservation_id: reservation.id,
       parent_phone: reservation.parent_phone,
