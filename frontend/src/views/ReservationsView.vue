@@ -505,10 +505,10 @@ const saveReservation = async () => {
   }
   saving.value = true;
   try {
-    // 날짜 + 시간을 합쳐서 visit_date로 전송
+    // 날짜 + 시간을 합쳐서 visit_date로 전송 (KST 타임존 명시)
     const payload = {
       name: form.value.name,
-      visit_date: `${form.value.visit_date_only}T${form.value.visit_time}`,
+      visit_date: `${form.value.visit_date_only}T${form.value.visit_time}:00+09:00`,
       school: form.value.school,
       grade: form.value.grade,
       student_phone: form.value.student_phone,

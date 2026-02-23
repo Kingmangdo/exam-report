@@ -392,8 +392,13 @@ export const sendReservationNotification = async (req, res) => {
       return res.status(400).json({ success: false, message: '학부모 연락처가 등록되지 않았습니다.' });
     }
 
-    // 2. 방문일시 포맷 변수 추출
-    const visitDate = new Date(reservation.visit_date);
+    // 2. 방문일시 포맷 변수 추출 (KST 변환)
+    const dbDate = new Date(reservation.visit_date);
+    // DB에 저장된 시간이 UTC라고 가정하고 한국 시간(KST, UTC+9)으로 변환
+    // 만약 서버가 이미 KST라면 이 변환이 중복될 수 있으나, 보통 클라우드 서버는 UTC임
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const visitDate = new Date(dbDate.getTime() + kstOffset);
+
     const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
     const MM = String(visitDate.getMonth() + 1).padStart(2, '0');
     const DD = String(visitDate.getDate()).padStart(2, '0');
