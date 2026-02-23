@@ -417,11 +417,10 @@ export const sendReservationNotification = async (req, res) => {
             linkType: 'AC'
           },
           {
-            name: '문의하기',
+            name: '방문 전 꼭 확인하기',
             linkType: 'WL',
             linkTypeName: '웹링크',
-            linkMo: 'http://pf.kakao.com/_txaxjXG',
-            linkPc: 'http://pf.kakao.com/_txaxjXG'
+            linkMo: 'https://m.blog.naver.com/drawingenglish/224157552204'
           }
         ]
       }
