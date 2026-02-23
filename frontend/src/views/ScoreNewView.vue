@@ -344,52 +344,16 @@ const loadExistingScores = async () => {
     average: 0 
   }));
 
-  // 임시저장 먼저 확인
-  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
-  const draft = localStorage.getItem(key);
-  if (draft) {
-    try {
-      const parsed = JSON.parse(draft);
-      if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
-      if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
-      if (parsed.scoreForms) {
-        // 학생 수가 일치하는 경우에만 임시저장 데이터 적용
-        if (parsed.scoreForms.length === classStudents.value.length) {
-          scoreForms.value = parsed.scoreForms;
-        } else {
-          // 학생 수가 변경되었으므로 임시저장 데이터 삭제
-          console.warn(`임시저장 데이터 학생 수(${parsed.scoreForms.length})와 현재 학생 수(${classStudents.value.length}) 불일치. 임시저장 데이터를 무시합니다.`);
-          localStorage.removeItem(key);
-        }
-      }
-      // scoreForms 각 항목의 rt_details, word_details 길이도 검증
-      scoreForms.value.forEach((form, i) => {
-        while (form.rt_details.length < rtTestTypes.value.length) {
-          form.rt_details.push({ correct: 0, name: '', total: 0 });
-        }
-        if (form.rt_details.length > rtTestTypes.value.length) {
-          form.rt_details.splice(rtTestTypes.value.length);
-        }
-        while (form.word_details.length < wordTestTypes.value.length) {
-          form.word_details.push({ correct: 0, retest: false, name: '', total: 0 });
-        }
-        if (form.word_details.length > wordTestTypes.value.length) {
-          form.word_details.splice(wordTestTypes.value.length);
-        }
-        calculateScore(i);
-      });
-      return;
-    } catch (e) {
-      console.error('임시저장 데이터 로드 실패:', e);
-      localStorage.removeItem(key);
-    }
-  }
+  const draftKey = `scoreDraft:${selectedClass.value}:${examDate.value}`;
 
-  // 서버 데이터 확인
+  // 서버 데이터 확인 (서버 데이터 우선)
   try {
     const res = await scoreApi.getAll({ class_name: selectedClass.value, exam_date: examDate.value });
     if (res.data.success && res.data.data.length > 0) {
       const data = res.data.data;
+      
+      // 서버에 저장된 데이터가 있으면 임시저장 삭제 (서버가 최신)
+      localStorage.removeItem(draftKey);
       
       // 첫 번째 성적 데이터에서 테스트 종류 복원 (있다면)
       const firstScore = data[0];
@@ -415,14 +379,46 @@ const loadExistingScores = async () => {
             assignment_score: score.assignment_score || 0,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
             comment: score.comment || '',
-            commentManuallyEdited: !!(score.comment && score.comment.trim())
+            commentManuallyEdited: true  // 서버에서 불러온 데이터는 항상 수동편집 취급 (자동 덮어쓰기 방지)
           };
           calculateScore(sIdx);
         }
       });
+      return;
     }
   } catch (err) {
     console.error('기존 성적 로드 실패', err);
+  }
+
+  // 서버에 데이터가 없을 때만 임시저장 확인
+  const draft = localStorage.getItem(draftKey);
+  if (draft) {
+    try {
+      const parsed = JSON.parse(draft);
+      if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
+      if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
+      if (parsed.scoreForms) {
+        if (parsed.scoreForms.length === classStudents.value.length) {
+          scoreForms.value = parsed.scoreForms;
+        } else {
+          localStorage.removeItem(draftKey);
+        }
+      }
+      scoreForms.value.forEach((form, i) => {
+        while (form.rt_details.length < rtTestTypes.value.length) {
+          form.rt_details.push({ correct: 0, name: '', total: 0 });
+        }
+        if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
+        while (form.word_details.length < wordTestTypes.value.length) {
+          form.word_details.push({ correct: 0, retest: false, name: '', total: 0 });
+        }
+        if (form.word_details.length > wordTestTypes.value.length) form.word_details.splice(wordTestTypes.value.length);
+        calculateScore(i);
+      });
+    } catch (e) {
+      console.error('임시저장 데이터 로드 실패:', e);
+      localStorage.removeItem(draftKey);
+    }
   }
 };
 
@@ -470,6 +466,8 @@ const saveSingleScore = async (sIdx: number) => {
     };
 
     await scoreApi.create(payload);
+    // 개별 저장 후 임시저장 데이터 삭제 (다음 로드 시 서버 데이터 우선)
+    localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
     savedSingle.value[sIdx] = true;
     showToast(`${student.name} 성적이 저장되었습니다.`);
     setTimeout(() => { savedSingle.value[sIdx] = false; }, 2000);
