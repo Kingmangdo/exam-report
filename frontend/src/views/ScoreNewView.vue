@@ -81,24 +81,24 @@
             <tr v-for="(student, sIdx) in classStudents" :key="student.id" class="hover:bg-gray-50">
               <!-- 학생명 -->
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
-                {{ student.name }}
+                {{ student.name || '이름없음' }}
               </td>
 
               <!-- RT 맞춘 문제 입력 -->
               <td v-for="(test, tIdx) in rtTestTypes" :key="'rt-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
-                <input v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center" @input="calculateScore(sIdx)" />
+                <input v-if="scoreForms[sIdx]?.rt_details?.[tIdx]" v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center" @input="calculateScore(sIdx)" />
               </td>
 
               <!-- 단어 맞춘 문제 입력 -->
               <td v-for="(test, tIdx) in wordTestTypes" :key="'word-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
-                <div class="flex flex-col items-center gap-1">
+                <div v-if="scoreForms[sIdx]?.word_details?.[tIdx]" class="flex flex-col items-center gap-1">
                   <input v-model.number="scoreForms[sIdx].word_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-100" :disabled="scoreForms[sIdx].word_details[tIdx].retest" @input="calculateScore(sIdx)" />
                   <button @click="toggleRetest(sIdx, tIdx)" class="text-[10px] px-1 rounded border" :class="scoreForms[sIdx].word_details[tIdx].retest ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200'">재시험</button>
                 </div>
               </td>
 
               <!-- 과제점수 (A, B, C, F) -->
-              <td class="px-2 py-3 text-center">
+              <td v-if="scoreForms[sIdx]" class="px-2 py-3 text-center">
                 <div class="flex gap-1 justify-center">
                   <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" class="w-8 h-8 text-xs font-bold rounded-full border transition" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
                     {{ grade }}
@@ -112,7 +112,7 @@
               </td>
 
               <!-- 코멘트 -->
-              <td class="px-2 py-3">
+              <td v-if="scoreForms[sIdx]" class="px-2 py-3">
                 <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
               </td>
             </tr>
@@ -269,6 +269,10 @@ const calculateScore = (sIdx: number) => {
   };
 };
 
+const updateGlobalTotals = () => {
+  scoreForms.value.forEach((_, sIdx) => calculateScore(sIdx));
+};
+
 const onClassChange = () => {
   if (!selectedClass.value) {
     classStudents.value = [];
@@ -276,8 +280,11 @@ const onClassChange = () => {
     return;
   }
   classStudents.value = allStudents.value
-    .filter(s => s.class_name?.split(',').map(c => c.trim()).includes(selectedClass.value))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter(s => {
+      if (!s.class_name || typeof s.class_name !== 'string') return false;
+      return s.class_name.split(',').map(c => c.trim()).includes(selectedClass.value);
+    })
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   scoreForms.value = classStudents.value.map(() => ({
     rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, total: t.total })),
@@ -315,15 +322,41 @@ const loadExistingScores = async () => {
   const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
   const draft = localStorage.getItem(key);
   if (draft) {
-    const parsed = JSON.parse(draft);
-    if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
-    if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
-    if (parsed.scoreForms) {
-      // 저장된 폼 데이터 적용 전 구조 동기화
-      scoreForms.value = parsed.scoreForms;
+    try {
+      const parsed = JSON.parse(draft);
+      if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
+      if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
+      if (parsed.scoreForms) {
+        // 학생 수가 일치하는 경우에만 임시저장 데이터 적용
+        if (parsed.scoreForms.length === classStudents.value.length) {
+          scoreForms.value = parsed.scoreForms;
+        } else {
+          // 학생 수가 변경되었으므로 임시저장 데이터 삭제
+          console.warn(`임시저장 데이터 학생 수(${parsed.scoreForms.length})와 현재 학생 수(${classStudents.value.length}) 불일치. 임시저장 데이터를 무시합니다.`);
+          localStorage.removeItem(key);
+        }
+      }
+      // scoreForms 각 항목의 rt_details, word_details 길이도 검증
+      scoreForms.value.forEach((form, i) => {
+        while (form.rt_details.length < rtTestTypes.value.length) {
+          form.rt_details.push({ correct: 0, name: '', total: 0 });
+        }
+        if (form.rt_details.length > rtTestTypes.value.length) {
+          form.rt_details.splice(rtTestTypes.value.length);
+        }
+        while (form.word_details.length < wordTestTypes.value.length) {
+          form.word_details.push({ correct: 0, retest: false, name: '', total: 0 });
+        }
+        if (form.word_details.length > wordTestTypes.value.length) {
+          form.word_details.splice(wordTestTypes.value.length);
+        }
+        calculateScore(i);
+      });
+      return;
+    } catch (e) {
+      console.error('임시저장 데이터 로드 실패:', e);
+      localStorage.removeItem(key);
     }
-    scoreForms.value.forEach((_, i) => calculateScore(i));
-    return;
   }
 
   // 서버 데이터 확인
@@ -463,8 +496,13 @@ const showToast = (msg: string) => {
 };
 
 const fetchStudents = async () => {
-  const res = await studentApi.getAll();
-  if (res.data.success) allStudents.value = res.data.data;
+  try {
+    const res = await studentApi.getAll();
+    if (res.data.success) allStudents.value = res.data.data;
+  } catch (err) {
+    console.error('학생 목록 로드 실패:', err);
+    allStudents.value = [];
+  }
 };
 
 const classList = computed(() => {
