@@ -53,7 +53,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'reservations',
         name: 'reservations',
-        component: () => import('../views/ReservationsView.vue')
+        component: () => import('../views/ReservationsView.vue'),
+        meta: { adminOnly: true }
       },
       {
         path: 'settings',

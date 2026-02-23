@@ -102,7 +102,7 @@ const navItems = ref([
       { name: '바이먼스리 테스트', path: '/scores/bimonthly' }
     ]
   },
-  { name: '예약 관리', path: '/reservations', adminOnly: false },
+  { name: '예약 관리', path: '/reservations', adminOnly: true },
   { name: '설정', path: '/settings', adminOnly: true }
 ]);
 
