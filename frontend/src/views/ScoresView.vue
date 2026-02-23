@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 조회 및 발송</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 발송</h2>
 
     <!-- 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
@@ -620,17 +620,9 @@ const fetchScores = async () => {
 const showReportModal = ref(false);
 const reportData = ref<ReportData | null>(null);
 const loadingReport = ref(false);
-const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
-
 const displayComment = computed(() => {
   if (!reportData.value) return '';
-  const baseComment = (reportData.value.score.comment || '').trim();
-  const wordScore = reportData.value.score.word?.score ?? 0;
-  const needsRetest = wordScore > 0 && wordScore <= 84;
-  if (needsRetest && !baseComment.includes(retestComment)) {
-    return baseComment ? `${baseComment} ${retestComment}` : retestComment;
-  }
-  return baseComment;
+  return (reportData.value.score.comment || '').trim();
 });
 
 const trendScores = computed(() => {

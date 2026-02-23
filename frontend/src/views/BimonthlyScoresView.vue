@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼스리 테스트 성적 조회</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼슬리 테스트 성적 발송</h2>
 
     <!-- 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
@@ -575,7 +575,7 @@ const fetchScores = async () => {
     // 발송 상태도 함께 조회
     await fetchSendStatus();
   } catch (err) {
-    console.error('바이먼스리 성적 조회 실패:', err);
+    console.error('바이먼슬리 성적 조회 실패:', err);
   }
 };
 
@@ -612,7 +612,7 @@ const openReport = async (score: any) => {
 
 // ============ 알림톡 발송 ============
 const sendKakao = async (score: any) => {
-  if (!confirm(`${score.student_name} 학생의 학부모님께 바이먼스리 성적표 알림톡을 발송하시겠습니까?`)) return;
+  if (!confirm(`${score.student_name} 학생의 학부모님께 바이먼슬리 성적표 알림톡을 발송하시겠습니까?`)) return;
   try {
     const response = await kakaoApi.sendBimonthlyReport(score.id);
     alert(`알리고 응답: ${response.data.message}`);
@@ -628,7 +628,7 @@ const sendKakao = async (score: any) => {
 };
 
 const sendBulkKakao = async () => {
-  if (!confirm(`선택한 ${selectedIds.value.length}명에게 바이먼스리 알림톡을 발송하시겠습니까?`)) return;
+  if (!confirm(`선택한 ${selectedIds.value.length}명에게 바이먼슬리 알림톡을 발송하시겠습니까?`)) return;
   let successCount = 0;
   let failCount = 0;
 

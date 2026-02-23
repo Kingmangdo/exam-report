@@ -126,7 +126,7 @@
           <button @click="resetAllScores" class="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">전체 초기화</button>
           <button @click="saveDraftAll" class="px-4 py-2 text-sm bg-orange-100 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-200 transition">임시저장</button>
           <button @click="saveAllScores" :disabled="savingAll" class="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50">
-            {{ savingAll ? '저장 중...' : '성적 전체 저장' }}
+            {{ savingAll ? '생성 중...' : '성적표 생성' }}
           </button>
         </div>
       </div>
@@ -422,7 +422,7 @@ const saveDraftAll = () => {
 };
 
 const saveAllScores = async () => {
-  if (!confirm('모든 학생의 성적을 저장하시겠습니까?')) return;
+  if (!confirm('모든 학생의 성적표를 생성하시겠습니까?')) return;
   savingAll.value = true;
   try {
     // 순차적으로 저장하여 서버 부하 및 충돌 방지

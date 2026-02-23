@@ -6,7 +6,7 @@
         <div class="text-center mb-6">
           <img src="/logo.png" alt="독강영어 로고" class="h-32 w-32 object-contain rounded-full bg-white p-1 mx-auto mb-4 shadow-sm" />
           <h1 class="text-2xl font-bold text-primary mb-2">독강영어학원</h1>
-          <p class="text-gray-600">바이먼스리 테스트 성적표 확인</p>
+          <p class="text-gray-600">바이먼슬리 테스트 성적표 확인</p>
         </div>
 
         <form @submit.prevent="verifyAccess" class="space-y-4">

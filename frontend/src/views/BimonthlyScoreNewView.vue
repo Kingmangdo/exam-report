@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼스리 테스트 성적 입력</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼슬리 테스트 성적 입력</h2>
 
     <!-- 반 선택 및 시험 설정 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -66,7 +66,7 @@
     <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
       <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">
-          {{ selectedClass }} 바이먼스리 성적 입력 ({{ classStudents.length }}명)
+          {{ selectedClass }} 바이먼슬리 성적 입력 ({{ classStudents.length }}명)
         </h3>
       </div>
 
@@ -137,13 +137,13 @@
       <div class="p-4 border-t bg-gray-50 flex justify-end items-center gap-3">
         <button @click="resetAll" class="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">전체 초기화</button>
         <button @click="saveAllScores" :disabled="saving" class="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
-          {{ saving ? '저장 중...' : '성적 전체 저장' }}
+          {{ saving ? '생성 중...' : '성적표 생성' }}
         </button>
       </div>
     </div>
 
     <div v-else-if="!selectedClass" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-      반을 선택하면 학생들의 바이먼스리 테스트 성적을 입력할 수 있습니다.
+      반을 선택하면 학생들의 바이먼슬리 테스트 성적을 입력할 수 있습니다.
     </div>
     <div v-else class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
       선택한 반에 등록된 학생이 없습니다.
@@ -266,7 +266,7 @@ const loadExistingScores = async () => {
       });
     }
   } catch (err) {
-    console.error('기존 바이먼스리 성적 로드 실패:', err);
+    console.error('기존 바이먼슬리 성적 로드 실패:', err);
   }
 };
 
@@ -307,7 +307,7 @@ const resetAll = () => {
 
 const saveAllScores = async () => {
   if (!selectedClass.value || !examDate.value) { alert('반과 시험일자를 선택해주세요.'); return; }
-  if (!confirm('모든 학생의 성적을 저장하시겠습니까?')) return;
+  if (!confirm('모든 학생의 성적표를 생성하시겠습니까?')) return;
   saving.value = true;
   try {
     for (let i = 0; i < classStudents.value.length; i++) {
@@ -331,7 +331,7 @@ const saveAllScores = async () => {
         comment: form.comment || ''
       });
     }
-    showToast('모든 바이먼스리 성적이 저장되었습니다!');
+    showToast('모든 바이먼슬리 성적이 저장되었습니다!');
   } catch (err: any) {
     console.error('저장 오류:', err);
     alert(`저장 중 오류: ${err.response?.data?.message || err.message}`);
