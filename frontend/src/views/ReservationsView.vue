@@ -101,7 +101,7 @@
     </div>
 
     <!-- ========== 예약 등록/수정 모달 ========== -->
-    <div v-if="showFormModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showFormModal = false">
+    <div v-if="showFormModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b">
           <h3 class="text-lg font-bold text-gray-800">{{ editingId ? '예약 수정' : '예약 등록' }}</h3>
@@ -174,7 +174,7 @@
     </div>
 
     <!-- ========== 레벨테스트 모달 ========== -->
-    <div v-if="showLevelTestModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showLevelTestModal = false">
+    <div v-if="showLevelTestModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
         <div class="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-6 rounded-t-xl">
           <div class="flex justify-between items-start">
@@ -269,7 +269,7 @@
     </div>
 
     <!-- ========== 레벨테스트 성적표 미리보기 모달 ========== -->
-    <div v-if="showReportPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4" @click.self="showReportPreview = false">
+    <div v-if="showReportPreview" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto">
         <div class="bg-primary text-white p-6 rounded-t-xl flex items-center justify-between">
           <div class="flex items-center space-x-6">

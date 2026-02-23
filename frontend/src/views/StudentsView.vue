@@ -82,7 +82,6 @@
     <div
       v-if="showClassMoveModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showClassMoveModal = false"
     >
       <div class="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 class="text-xl font-bold mb-4">반 일괄 이동</h3>
@@ -272,7 +271,6 @@
     <div
       v-if="showModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="closeModal"
     >
       <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h3 class="text-xl font-bold mb-4">
@@ -435,7 +433,6 @@
     <div
       v-if="showCounselingModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      @click.self="closeCounselingModal"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div class="p-4 border-b bg-green-600 text-white flex justify-between items-center rounded-t-lg">

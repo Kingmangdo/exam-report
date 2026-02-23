@@ -107,7 +107,7 @@
     </div>
 
     <!-- ==================== 성적표 모달 ==================== -->
-    <div v-if="showReportModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" @click.self="showReportModal = false">
+    <div v-if="showReportModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto" ref="reportEl">
         <!-- 헤더 -->
         <div class="bg-primary text-white p-6 rounded-t-2xl flex items-center justify-between">

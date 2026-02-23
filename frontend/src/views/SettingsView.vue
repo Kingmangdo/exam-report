@@ -95,7 +95,7 @@
     </div>
 
     <!-- 사용자 수정 모달 -->
-    <div v-if="showUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeUserModal">
+    <div v-if="showUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
         <h3 class="text-xl font-bold mb-4">사용자 정보 수정</h3>
         <form @submit.prevent="saveUser" class="space-y-4">
