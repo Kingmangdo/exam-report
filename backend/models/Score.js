@@ -117,7 +117,11 @@ export class Score {
     if (!data || data.length === 0) return 0;
     
     // average_score가 0인 경우 제외 (결석 학생)
-    const validScores = data.filter(score => score.average_score && score.average_score > 0);
+    // average_score가 null, undefined, 0이 아닌 경우만 포함
+    const validScores = data.filter(score => {
+      const avg = Number(score.average_score);
+      return !isNaN(avg) && avg > 0;
+    });
     if (validScores.length === 0) return 0;
     
     const sum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
@@ -187,9 +191,28 @@ export class Score {
       }
       const { data: existingScores, error } = await query;
       if (error) throw new Error(error.message);
-      const existingSum = (existingScores || []).reduce((acc, score) => acc + (score.average_score || 0), 0);
-      const totalCount = (existingScores || []).length + 1;
-      classAverage = Math.round(((existingSum + average) / totalCount) * 100) / 100;
+      
+      // average_score가 0인 경우 제외 (결석 학생)
+      // average_score가 null, undefined, 0이 아닌 경우만 포함
+      const validScores = (existingScores || []).filter(score => {
+        const avg = Number(score.average_score);
+        return !isNaN(avg) && avg > 0;
+      });
+      
+      // 현재 저장하려는 학생의 점수도 0점이면 제외
+      if (average > 0) {
+        const existingSum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
+        const totalCount = validScores.length + 1;
+        classAverage = Math.round(((existingSum + average) / totalCount) * 100) / 100;
+      } else {
+        // 현재 학생도 0점이면 기존 유효한 점수들만으로 평균 계산
+        if (validScores.length > 0) {
+          const existingSum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
+          classAverage = Math.round((existingSum / validScores.length) * 100) / 100;
+        } else {
+          classAverage = 0;
+        }
+      }
     }
 
     const payload = {
