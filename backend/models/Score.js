@@ -115,8 +115,13 @@ export class Score {
       .eq('exam_date', examDate);
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) return 0;
-    const sum = data.reduce((acc, score) => acc + (score.average_score || 0), 0);
-    return Math.round((sum / data.length) * 100) / 100;
+    
+    // average_score가 0인 경우 제외 (결석 학생)
+    const validScores = data.filter(score => score.average_score && score.average_score > 0);
+    if (validScores.length === 0) return 0;
+    
+    const sum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
+    return Math.round((sum / validScores.length) * 100) / 100;
   }
 
   // 성적 등록

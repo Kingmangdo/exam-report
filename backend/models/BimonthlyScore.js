@@ -124,14 +124,18 @@ export class BimonthlyScore {
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) return null;
 
-    const count = data.length;
-    const totalAvg = data.reduce((sum, s) => sum + (s.average_score || 0), 0) / count;
+    // average_score가 0인 경우 제외 (결석 학생)
+    const validScores = data.filter(s => s.average_score && s.average_score > 0);
+    if (validScores.length === 0) return null;
 
-    // 파트별 평균 계산
-    const partCount = data[0].parts?.length || 0;
+    const count = validScores.length;
+    const totalAvg = validScores.reduce((sum, s) => sum + (s.average_score || 0), 0) / count;
+
+    // 파트별 평균 계산 (결석 학생 제외)
+    const partCount = validScores[0]?.parts?.length || 0;
     const partAverages = [];
     for (let i = 0; i < partCount; i++) {
-      const partSum = data.reduce((sum, s) => {
+      const partSum = validScores.reduce((sum, s) => {
         const part = s.parts?.[i];
         if (part) {
           return sum + (part.score / part.max_score * 100);
