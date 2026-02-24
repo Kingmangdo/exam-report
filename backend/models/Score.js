@@ -179,42 +179,7 @@ export class Score {
     const targetClassName = class_name || (student.class_name ? student.class_name.split(',')[0].trim() : null);
     const existing = await this.getByStudentAndDate(Number(student_id), exam_date, targetClassName);
 
-    let classAverage = 0;
-    if (targetClassName) {
-      let query = supabase
-        .from('scores')
-        .select('average_score')
-        .eq('class_name', targetClassName)
-        .eq('exam_date', exam_date);
-      if (existing?.id) {
-        query = query.neq('id', existing.id);
-      }
-      const { data: existingScores, error } = await query;
-      if (error) throw new Error(error.message);
-      
-      // average_score가 0인 경우 제외 (결석 학생)
-      // average_score가 null, undefined, 0이 아닌 경우만 포함
-      const validScores = (existingScores || []).filter(score => {
-        const avg = Number(score.average_score);
-        return !isNaN(avg) && avg > 0;
-      });
-      
-      // 현재 저장하려는 학생의 점수도 0점이면 제외
-      if (average > 0) {
-        const existingSum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
-        const totalCount = validScores.length + 1;
-        classAverage = Math.round(((existingSum + average) / totalCount) * 100) / 100;
-      } else {
-        // 현재 학생도 0점이면 기존 유효한 점수들만으로 평균 계산
-        if (validScores.length > 0) {
-          const existingSum = validScores.reduce((acc, score) => acc + (score.average_score || 0), 0);
-          classAverage = Math.round((existingSum / validScores.length) * 100) / 100;
-        } else {
-          classAverage = 0;
-        }
-      }
-    }
-
+    // 반평균은 저장 후 일괄 계산하므로 임시로 0 저장
     const payload = {
       student_id: Number(student_id),
       exam_date,
@@ -230,24 +195,46 @@ export class Score {
       assignment_score: Number(assignment_score) || 0,
       total_score: total,
       average_score: average,
-      class_average: classAverage,
+      class_average: 0, // 임시값, 저장 후 재계산
       comment: comment || '',
       updated_at: new Date().toISOString()
     };
 
+    let savedScore;
     if (existing) {
       const { error } = await supabase.from('scores').update(payload).eq('id', existing.id);
       if (error) throw new Error(error.message);
-      return this.getById(existing.id);
+      savedScore = await this.getById(existing.id);
+    } else {
+      const { data: inserted, error } = await supabase
+        .from('scores')
+        .insert(payload)
+        .select('id')
+        .single();
+      if (error) throw new Error(error.message);
+      savedScore = await this.getById(inserted.id);
     }
 
-    const { data: inserted, error } = await supabase
-      .from('scores')
-      .insert(payload)
-      .select('id')
-      .single();
-    if (error) throw new Error(error.message);
-    return this.getById(inserted.id);
+    // 저장 후 정확한 반평균 계산 및 일괄 업데이트
+    if (targetClassName) {
+      const classAverage = await this.calculateClassAverage(targetClassName, exam_date);
+      // 해당 반/날짜의 모든 성적 레코드의 반평균을 동일하게 업데이트
+      const { error: updateError } = await supabase
+        .from('scores')
+        .update({ class_average: classAverage })
+        .eq('class_name', targetClassName)
+        .eq('exam_date', exam_date);
+      if (updateError) {
+        console.error('반평균 일괄 업데이트 실패:', updateError);
+        // 에러가 발생해도 저장된 성적은 반환 (반평균만 업데이트 실패)
+      }
+      // 반환할 데이터에 정확한 반평균 반영
+      if (savedScore) {
+        savedScore.class_average = classAverage;
+      }
+    }
+
+    return savedScore;
   }
 
   // 성적 수정
@@ -291,8 +278,7 @@ export class Score {
       assignment_score
     );
 
-    const classAverage = await this.calculateClassAverage(existing.class_name || null, existing.exam_date);
-
+    // 먼저 성적 업데이트 (반평균은 임시로 0)
     const { error } = await supabase
       .from('scores')
       .update({
@@ -307,23 +293,61 @@ export class Score {
         assignment_score: assignment_score || 0,
         total_score: total,
         average_score: average,
-        class_average: classAverage,
+        class_average: 0, // 임시값, 업데이트 후 재계산
         comment: comment || '',
         updated_at: new Date().toISOString()
       })
       .eq('id', id);
     if (error) throw new Error(error.message);
-    return this.getById(id);
+
+    // 업데이트 후 정확한 반평균 계산 및 일괄 업데이트
+    if (existing.class_name && existing.exam_date) {
+      const classAverage = await this.calculateClassAverage(existing.class_name, existing.exam_date);
+      // 해당 반/날짜의 모든 성적 레코드의 반평균을 동일하게 업데이트
+      const { error: updateError } = await supabase
+        .from('scores')
+        .update({ class_average: classAverage })
+        .eq('class_name', existing.class_name)
+        .eq('exam_date', existing.exam_date);
+      if (updateError) {
+        console.error('반평균 일괄 업데이트 실패:', updateError);
+        // 에러가 발생해도 저장된 성적은 반환 (반평균만 업데이트 실패)
+      }
+    }
+
+    const updatedScore = await this.getById(id);
+    return updatedScore;
   }
 
   // 성적 삭제
   static async delete(id) {
+    // 삭제 전 성적 정보 조회 (반평균 재계산용)
+    const existing = await this.getById(id);
+    const className = existing?.class_name;
+    const examDate = existing?.exam_date;
+
     const deleteHistory = supabase.from('kakao_send_history').delete().eq('score_id', id);
     const deleteAccess = supabase.from('report_access').delete().eq('score_id', id);
     const deleteScore = supabase.from('scores').delete().eq('id', id);
     const results = await Promise.all([deleteHistory, deleteAccess, deleteScore]);
     const last = results[2];
     if (last.error) throw new Error(last.error.message);
+
+    // 삭제 후 반평균 재계산 및 일괄 업데이트
+    if (className && examDate) {
+      const classAverage = await this.calculateClassAverage(className, examDate);
+      // 해당 반/날짜의 모든 성적 레코드의 반평균을 동일하게 업데이트
+      const { error: updateError } = await supabase
+        .from('scores')
+        .update({ class_average: classAverage })
+        .eq('class_name', className)
+        .eq('exam_date', examDate);
+      if (updateError) {
+        console.error('반평균 일괄 업데이트 실패:', updateError);
+        // 에러가 발생해도 삭제는 성공 (반평균만 업데이트 실패)
+      }
+    }
+
     return true;
   }
 
