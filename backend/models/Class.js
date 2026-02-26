@@ -66,7 +66,11 @@ export class Class {
 
   // 반 수정
   static async update(id, classData) {
+    // 기존 반 이름 조회 (이름 변경 시 학생들의 class_name 업데이트용)
+    const existing = await this.getById(id);
+    const oldName = existing?.name;
     const { name, description, teacher_name, category } = classData;
+    
     const { data, error } = await supabase
       .from('classes')
       .update({ 
@@ -81,17 +85,72 @@ export class Class {
       .single();
     
     if (error) throw new Error(error.message);
+    
+    // 반 이름이 변경된 경우, 해당 반에 배정된 모든 학생의 class_name 업데이트
+    if (oldName && name && oldName !== name) {
+      const { data: students, error: studentError } = await supabase
+        .from('students')
+        .select('id, class_name')
+        .or(`class_name.eq."${oldName}",class_name.like."${oldName},%",class_name.like."%,${oldName},%",class_name.like."%,${oldName}"`);
+      
+      if (!studentError && students) {
+        for (const student of students) {
+          if (student.class_name) {
+            const classes = student.class_name.split(',').map(c => c.trim()).filter(c => c);
+            const index = classes.indexOf(oldName);
+            if (index !== -1) {
+              classes[index] = name;
+              const newClassName = classes.join(',');
+              await supabase
+                .from('students')
+                .update({ class_name: newClassName })
+                .eq('id', student.id);
+            }
+          }
+        }
+      }
+    }
+    
     return data;
   }
 
   // 반 삭제
   static async delete(id) {
+    // 삭제 전 반 이름 조회 (학생들의 class_name에서 제거하기 위해)
+    const existing = await this.getById(id);
+    const className = existing?.name;
+    
+    // 반 삭제
     const { error } = await supabase
       .from('classes')
       .delete()
       .eq('id', id);
     
     if (error) throw new Error(error.message);
+    
+    // 해당 반에 배정된 모든 학생의 class_name에서 반 이름 제거
+    if (className) {
+      const { data: students, error: studentError } = await supabase
+        .from('students')
+        .select('id, class_name')
+        .or(`class_name.eq."${className}",class_name.like."${className},%",class_name.like."%,${className},%",class_name.like."%,${className}"`);
+      
+      if (!studentError && students) {
+        for (const student of students) {
+          if (student.class_name) {
+            const classes = student.class_name.split(',').map(c => c.trim()).filter(c => c);
+            const filteredClasses = classes.filter(c => c !== className);
+            const newClassName = filteredClasses.length > 0 ? filteredClasses.join(',') : null;
+            
+            await supabase
+              .from('students')
+              .update({ class_name: newClassName })
+              .eq('id', student.id);
+          }
+        }
+      }
+    }
+    
     return true;
   }
 
