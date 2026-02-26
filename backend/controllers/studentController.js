@@ -6,7 +6,8 @@ export const getAllStudents = async (req, res) => {
     const filters = {
       class_name: req.query.class_name,
       grade: req.query.grade,
-      search: req.query.search
+      search: req.query.search,
+      sort_by: req.query.sort_by // 'name', 'created_at', 'created_at_desc'
     };
 
     const students = await Student.getAll(filters);

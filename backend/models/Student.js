@@ -15,7 +15,12 @@ const withClasses = (student) => ({
 export class Student {
   // 모든 학생 조회 (중복 반 지원)
   static async getAll(filters = {}) {
-    let query = supabase.from('students').select('*').order('name', { ascending: true });
+    // 정렬 옵션: 'name' (기본값), 'created_at', 'created_at_desc'
+    const sortBy = filters.sort_by || 'name';
+    const ascending = sortBy === 'created_at' ? true : (sortBy === 'created_at_desc' ? false : true);
+    const orderColumn = sortBy === 'created_at' || sortBy === 'created_at_desc' ? 'created_at' : 'name';
+    
+    let query = supabase.from('students').select('*').order(orderColumn, { ascending });
 
     if (filters.class_name) {
       const className = filters.class_name;
@@ -56,23 +61,30 @@ export class Student {
 
   // 학생 등록
   static async create(data) {
-    const { name, student_no, grade, school, teacher_name, class_name, phone, parent_name, parent_phone, monthly_tuition } = data;
+    const { name, student_no, grade, school, teacher_name, class_name, phone, parent_name, parent_phone, monthly_tuition, created_at } = data;
     const classNames = toClassNames(class_name);
+
+    const insertData = {
+      name,
+      student_no: student_no || null,
+      grade: grade || null,
+      school: school || null,
+      teacher_name: teacher_name || null,
+      class_name: classNames || null,
+      phone: phone || null,
+      parent_name: parent_name || null,
+      parent_phone,
+      monthly_tuition: monthly_tuition || 0
+    };
+
+    // 등록일시가 지정된 경우 사용, 없으면 DB 기본값(now()) 사용
+    if (created_at) {
+      insertData.created_at = created_at;
+    }
 
     const { data: inserted, error } = await supabase
       .from('students')
-      .insert({
-        name,
-        student_no: student_no || null,
-        grade: grade || null,
-        school: school || null,
-        teacher_name: teacher_name || null,
-        class_name: classNames || null,
-        phone: phone || null,
-        parent_name: parent_name || null,
-        parent_phone,
-        monthly_tuition: monthly_tuition || 0
-      })
+      .insert(insertData)
       .select('*')
       .single();
 
@@ -96,6 +108,8 @@ export class Student {
     if (data.parent_name !== undefined) updateData.parent_name = data.parent_name || null;
     if (data.parent_phone !== undefined) updateData.parent_phone = data.parent_phone;
     if (data.monthly_tuition !== undefined) updateData.monthly_tuition = data.monthly_tuition;
+    // 등록일시 수정도 지원 (날짜 변경이 필요한 경우)
+    if (data.created_at !== undefined) updateData.created_at = data.created_at;
 
     const { data: updated, error } = await supabase
       .from('students')

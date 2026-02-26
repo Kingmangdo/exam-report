@@ -304,6 +304,16 @@
             </div>
 
             <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">등록일시</label>
+              <input
+                v-model="form.created_at"
+                type="date"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p class="text-xs text-gray-500 mt-1">선택하지 않으면 현재 날짜로 자동 설정됩니다.</p>
+            </div>
+
+            <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">학생 연락처</label>
               <input
                 v-model="form.student_no"
@@ -828,8 +838,16 @@ const openModal = (mode: 'create' | 'edit', student?: Student) => {
   customSchoolName.value = '';
   
   if (mode === 'edit' && student) {
+    // created_at을 날짜 형식(yyyy-mm-dd)으로 변환
+    let created_at_date = '';
+    if (student.created_at) {
+      const date = new Date(student.created_at);
+      created_at_date = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    
     form.value = {
       ...student,
+      created_at: created_at_date,
       classes: (student as any).classes || (student.class_name ? student.class_name.split(',').map(c => c.trim()).filter(c => c) : [])
     };
     
@@ -840,7 +858,7 @@ const openModal = (mode: 'create' | 'edit', student?: Student) => {
       customSchoolName.value = student.school;
     }
   } else {
-    form.value = { classes: [] };
+    form.value = { classes: [], created_at: '' };
   }
   showNewClassInput.value = false;
   newClassName.value = '';
@@ -849,7 +867,7 @@ const openModal = (mode: 'create' | 'edit', student?: Student) => {
 
 const closeModal = () => {
   showModal.value = false;
-  form.value = { classes: [] };
+  form.value = { classes: [], created_at: '' };
   showNewClassInput.value = false;
   newClassName.value = '';
 };
@@ -877,6 +895,12 @@ const saveStudent = async () => {
       parent_name: form.value.parent_name,
       parent_phone: form.value.parent_phone
     };
+
+    // 등록일시가 입력된 경우 ISO 형식으로 변환하여 전달
+    if (form.value.created_at) {
+      // 날짜만 입력된 경우 시간을 00:00:00으로 설정 (KST 기준)
+      studentData.created_at = `${form.value.created_at}T00:00:00+09:00`;
+    }
 
     if (modalMode.value === 'create') {
       await studentApi.create(studentData);
