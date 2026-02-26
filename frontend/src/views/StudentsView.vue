@@ -174,9 +174,20 @@
               <input
                 type="checkbox"
                 @change="toggleSelectAll"
-                :checked="selectedStudents.length === students.length && students.length > 0"
+                :checked="selectedStudents.length === sortedStudents.length && sortedStudents.length > 0"
                 class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
+            </th>
+            <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">
+              <button
+                type="button"
+                @click="toggleDateSort"
+                class="flex items-center gap-1 text-gray-700 hover:text-primary"
+              >
+                <span>등록일시</span>
+                <span v-if="dateSortOrder === 'asc'">▲</span>
+                <span v-else>▼</span>
+              </button>
             </th>
             <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">이름</th>
             <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학교</th>
@@ -190,7 +201,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="student in students" :key="student.id" class="hover:bg-gray-50">
+          <tr v-for="student in sortedStudents" :key="student.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap">
               <input
                 type="checkbox"
@@ -198,6 +209,9 @@
                 v-model="selectedStudents"
                 class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
+              {{ formatDate(student.created_at) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
               {{ student.name }}
@@ -507,7 +521,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { studentApi, excelApi, counselingApi, classApi } from '../services/api';
 import type { Student } from '../types';
 
@@ -516,6 +530,17 @@ const user = userJson ? JSON.parse(userJson) : null;
 const isAdmin = user?.role === 'admin';
 
 const students = ref<Student[]>([]);
+const dateSortOrder = ref<'asc' | 'desc'>('desc');
+
+const sortedStudents = computed(() => {
+  const list = [...students.value];
+  // created_at 기준 정렬 (기본: 최신순)
+  return list.sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateSortOrder.value === 'asc' ? aTime - bTime : bTime - aTime;
+  });
+});
 const totalStudentCount = ref(0);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -645,6 +670,16 @@ const formatPhone = (phone: string) => {
   return phone;
 };
 
+const formatDate = (value?: string) => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '-';
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+};
+
 const availableGrades = ref<string[]>([]);
 const allAvailableClasses = ref<string[]>([]);
 const allAvailableGrades = ref<string[]>([]);
@@ -716,10 +751,14 @@ const fetchStudents = async () => {
 const toggleSelectAll = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.checked) {
-    selectedStudents.value = students.value.map(s => s.id);
+    selectedStudents.value = sortedStudents.value.map(s => s.id);
   } else {
     selectedStudents.value = [];
   }
+};
+
+const toggleDateSort = () => {
+  dateSortOrder.value = dateSortOrder.value === 'desc' ? 'asc' : 'desc';
 };
 
 // 반 이동 모달 열기
