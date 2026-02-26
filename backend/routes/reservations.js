@@ -1,10 +1,11 @@
 import express from 'express';
 import * as reservationController from '../controllers/reservationController.js';
-import { adminOnly } from '../middleware/auth.js';
+import { authenticate, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// 예약 관리 전체 admin 전용
+// 예약 관리 전체 admin 전용 (인증 먼저, 그 다음 권한 체크)
+router.use(authenticate);
 router.use(adminOnly);
 
 // 예약자 CRUD
