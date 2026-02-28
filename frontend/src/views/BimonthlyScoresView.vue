@@ -427,8 +427,6 @@ const radarOptions = {
 };
 
 // ============ 트렌드 차트 ============
-const trendRawScores = ref<Record<string, number[]>>({});
-
 const trendData = computed(() => {
   if (!selectedScore.value || studentHistory.value.length === 0) return null;
 
@@ -449,7 +447,6 @@ const trendData = computed(() => {
   if (commonParts.length === 0) return null;
 
   const labels = recentScores.map(s => dateToMonth(s.exam_date));
-  const rawScoresMap: Record<string, number[]> = {};
 
   const datasets = commonParts.map((partName, idx) => {
     const colorIdx = currentPartNames.indexOf(partName);
@@ -463,12 +460,6 @@ const trendData = computed(() => {
       return 0;
     });
 
-    const rawData = recentScores.map(score => {
-      const part = (score.parts || []).find((p: any) => p.name === partName);
-      return part ? (part.score || 0) : 0;
-    });
-    rawScoresMap[partName] = rawData;
-
     return {
       label: partName,
       data,
@@ -477,12 +468,10 @@ const trendData = computed(() => {
       borderWidth: 1,
       borderRadius: 4,
       barPercentage: 0.7,
-      categoryPercentage: 0.8,
-      rawScores: rawData
+      categoryPercentage: 0.8
     };
   });
 
-  trendRawScores.value = rawScoresMap;
   return { labels, datasets };
 });
 
@@ -493,7 +482,13 @@ const trendOptions = {
     y: {
       beginAtZero: true,
       max: 100,
-      ticks: { stepSize: 20, font: { size: 11 } },
+      ticks: { 
+        stepSize: 20, 
+        font: { size: 11 },
+        callback: function(value: any) {
+          return value + '%';
+        }
+      },
       grid: { color: 'rgba(0,0,0,0.06)' }
     },
     x: {
@@ -510,9 +505,7 @@ const trendOptions = {
     tooltip: {
       callbacks: {
         label: (ctx: any) => {
-          const rawScores = (ctx.dataset as any).rawScores;
-          const rawScore = rawScores ? rawScores[ctx.dataIndex] : '';
-          return `${ctx.dataset.label}: ${rawScore}점 (${ctx.raw}점)`;
+          return `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`;
         }
       }
     },
@@ -522,12 +515,8 @@ const trendOptions = {
       align: 'top' as const,
       font: { size: 10, weight: 'bold' as const },
       color: '#333',
-      formatter: (_value: number, ctx: any) => {
-        const rawScores = (ctx.dataset as any).rawScores;
-        if (rawScores && rawScores[ctx.dataIndex] !== undefined) {
-          return rawScores[ctx.dataIndex] + '점';
-        }
-        return '';
+      formatter: (value: number) => {
+        return value !== undefined ? value.toFixed(1) + '%' : '';
       }
     }
   }

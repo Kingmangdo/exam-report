@@ -259,14 +259,10 @@ const trendData = computed(() => {
       const part = (score.parts || []).find((p: any) => p.name === partName);
       return part && part.max_score > 0 ? Math.round(part.score / part.max_score * 100 * 10) / 10 : 0;
     });
-    const rawData = recentScores.map((score: any) => {
-      const part = (score.parts || []).find((p: any) => p.name === partName);
-      return part ? (part.score || 0) : 0;
-    });
     return {
       label: partName, data,
       backgroundColor: color + 'CC', borderColor: color, borderWidth: 1, borderRadius: 4,
-      barPercentage: 0.7, categoryPercentage: 0.8, rawScores: rawData
+      barPercentage: 0.7, categoryPercentage: 0.8
     };
   });
   return { labels, datasets };
@@ -275,16 +271,27 @@ const trendData = computed(() => {
 const trendOptions = {
   responsive: true, maintainAspectRatio: false,
   scales: {
-    y: { beginAtZero: true, max: 100, ticks: { stepSize: 20, font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.06)' } },
+    y: { 
+      beginAtZero: true, 
+      max: 100, 
+      ticks: { 
+        stepSize: 20, 
+        font: { size: 11 },
+        callback: function(value: any) {
+          return value + '%';
+        }
+      }, 
+      grid: { color: 'rgba(0,0,0,0.06)' } 
+    },
     x: { ticks: { font: { size: 12, weight: 'bold' as const } }, grid: { display: false } }
   },
   plugins: {
     legend: { display: true, position: 'top' as const, labels: { font: { size: 11, weight: 'bold' as const }, usePointStyle: true, pointStyle: 'rectRounded' } },
-    tooltip: { callbacks: { label: (ctx: any) => { const r = (ctx.dataset as any).rawScores; return `${ctx.dataset.label}: ${r?.[ctx.dataIndex] || 0}점`; } } },
+    tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } },
     datalabels: {
       display: true, anchor: 'end' as const, align: 'top' as const,
       font: { size: 10, weight: 'bold' as const }, color: '#333',
-      formatter: (_v: number, ctx: any) => { const r = (ctx.dataset as any).rawScores; return r?.[ctx.dataIndex] !== undefined ? r[ctx.dataIndex] + '점' : ''; }
+      formatter: (value: number) => value !== undefined ? value.toFixed(1) + '%' : ''
     }
   }
 };
