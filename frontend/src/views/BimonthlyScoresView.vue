@@ -478,6 +478,14 @@ const trendData = computed(() => {
 const trendOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  layout: {
+    padding: {
+      top: 20,
+      bottom: 10,
+      left: 10,
+      right: 10
+    }
+  },
   scales: {
     y: {
       beginAtZero: true,
@@ -500,6 +508,9 @@ const trendOptions = {
     legend: {
       display: true,
       position: 'top' as const,
+      padding: {
+        bottom: 15
+      },
       labels: { font: { size: 11, weight: 'bold' as const }, usePointStyle: true, pointStyle: 'rectRounded' }
     },
     tooltip: {
