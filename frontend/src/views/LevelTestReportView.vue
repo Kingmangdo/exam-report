@@ -6,7 +6,7 @@
         <div class="text-center mb-6">
           <img src="/logo.png" alt="독강영어 로고" class="h-32 w-32 object-contain rounded-full bg-white p-1 mx-auto mb-4 shadow-sm" />
           <h1 class="text-2xl font-bold text-primary mb-2">독강영어학원</h1>
-          <p class="text-gray-600">레벨테스트 성적표 확인</p>
+          <p class="text-gray-600">레벨테스트 리포트 자세히 보기</p>
         </div>
 
         <div v-if="linkError" class="mb-4 bg-red-50 p-3 rounded-lg text-sm text-red-600 text-center">

@@ -6,7 +6,7 @@
         <div class="text-center mb-6">
           <img src="/logo.png" alt="독강영어 로고" class="h-32 w-32 object-contain rounded-full bg-white p-1 mx-auto mb-4 shadow-sm" />
           <h1 class="text-2xl font-bold text-primary mb-2">독강영어학원</h1>
-          <p class="text-gray-600">바이먼슬리 테스트 성적표 확인</p>
+          <p class="text-gray-600">바이먼슬리 테스트 리포트 자세히 보기</p>
         </div>
 
         <form @submit.prevent="verifyAccess" class="space-y-4">
@@ -273,7 +273,7 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 20,
+      top: 40,
       bottom: 10,
       left: 10,
       right: 10
@@ -301,7 +301,13 @@ const trendOptions = {
       padding: {
         bottom: 15
       },
-      labels: { font: { size: 11, weight: 'bold' as const }, usePointStyle: true, pointStyle: 'rectRounded' } 
+      labels: { 
+        font: { size: 11, weight: 'bold' as const }, 
+        usePointStyle: true, 
+        pointStyle: 'rectRounded',
+        boxWidth: 14,
+        boxHeight: 14
+      } 
     },
     tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } },
     datalabels: {

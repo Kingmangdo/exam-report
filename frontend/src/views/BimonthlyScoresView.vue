@@ -480,7 +480,7 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 20,
+      top: 40,
       bottom: 10,
       left: 10,
       right: 10
@@ -511,7 +511,13 @@ const trendOptions = {
       padding: {
         bottom: 15
       },
-      labels: { font: { size: 11, weight: 'bold' as const }, usePointStyle: true, pointStyle: 'rectRounded' }
+      labels: { 
+        font: { size: 11, weight: 'bold' as const }, 
+        usePointStyle: true, 
+        pointStyle: 'rectRounded',
+        boxWidth: 14,
+        boxHeight: 14
+      }
     },
     tooltip: {
       callbacks: {

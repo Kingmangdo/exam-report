@@ -146,16 +146,16 @@ import { studentApi, bimonthlyApi } from '../services/api';
 
 // 10개 사전 정의 영역 (드롭다운용)
 const PART_OPTIONS = [
-  'Listening',
-  'Grammar',
-  'Reading',
-  'Vocabulary',
-  'Writing',
-  'Speaking',
-  'Pronunciation',
-  'Comprehension',
-  'Composition',
-  'Translation'
+  '문법',
+  '듣기',
+  '구문',
+  '독해',
+  '서술형',
+  '어휘',
+  '킬러문항',
+  '빈순삽',
+  '주제목요',
+  '도표장문'
 ];
 
 // 5개 파트별 고유 색상

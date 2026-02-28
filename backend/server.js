@@ -52,7 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    message: '독강영어학원 성적표 시스템 API 서버가 정상 작동 중입니다.',
+    message: '독강영어 학습 관리 시스템 API 서버가 정상 작동 중입니다.',
     timestamp: new Date().toISOString()
   });
 });
