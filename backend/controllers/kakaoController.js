@@ -163,12 +163,12 @@ export const sendBimonthlyReport = async (req, res) => {
 
     // 5. 알림톡 메시지 (템플릿과 100% 일치해야 함)
     const avgScore = score.average_score?.toFixed(1) || '0';
-    const message = `[독강영어학원 바이먼슬리 성적표안내]
+    const message = `[성취평가 결과안내]
 
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
 
-${examMonth} 실시한 바이먼슬리테스트 성적표가 도착했습니다.
+${examMonth} 실시한 성취평가 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
 
 ▶ 우리 학생 점수: ${avgScore}점
