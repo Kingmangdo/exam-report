@@ -34,29 +34,19 @@
                 <option v-for="opt in availablePartOptions(idx)" :key="opt" :value="opt">{{ opt }}</option>
               </select>
               <div class="flex items-center gap-1">
-                <span class="text-xs text-gray-500">문제수:</span>
+                <span class="text-xs text-gray-500">총점:</span>
                 <input 
-                  v-model.number="part.total_questions" 
+                  v-model.number="part.max_score" 
                   type="number" 
                   min="1" 
-                  class="w-16 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
+                  class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
                 />
               </div>
-              <div class="flex items-center gap-1">
-                <span class="text-xs text-gray-500">배점:</span>
-                <input 
-                  v-model.number="part.points_per_question" 
-                  type="number" 
-                  min="1" 
-                  class="w-16 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
-                />
-              </div>
-              <span class="text-xs text-gray-400 w-16 text-right">만점: {{ (part.total_questions || 0) * (part.points_per_question || 0) }}</span>
             </div>
           </div>
           <div class="mt-3 p-2 bg-gray-50 rounded-lg text-sm">
             <span class="font-bold text-gray-700">총 만점: {{ totalMaxScore }}점</span>
-            <span class="text-gray-400 ml-3">( {{ partSettings.map(p => (p.total_questions || 0) * (p.points_per_question || 0)).join(' + ') }} )</span>
+            <span class="text-gray-400 ml-3">( {{ partSettings.map(p => p.max_score || 0).join(' + ') }} )</span>
           </div>
         </div>
       </div>
@@ -83,7 +73,7 @@
               >
                 <div>{{ part.name || `파트${idx+1}` }}</div>
                 <div class="text-[10px] text-gray-400 font-normal">
-                  ({{ part.total_questions || 0 }}문제 × {{ part.points_per_question || 0 }}점 = {{ (part.total_questions || 0) * (part.points_per_question || 0) }})
+                  (만점: {{ part.max_score || 0 }}점)
                 </div>
               </th>
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">총점</th>
@@ -97,19 +87,14 @@
                 {{ student.name }}
               </td>
               <td v-for="(part, pIdx) in partSettings" :key="'s-'+sIdx+'-'+pIdx" class="px-3 py-3 text-center">
-                <div class="flex flex-col items-center gap-1">
-                  <input 
-                    v-model.number="scoreForms[sIdx].parts[pIdx].correct" 
-                    type="number" 
-                    min="0" 
-                    :max="part.total_questions" 
-                    class="w-16 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
-                    @input="calculateScore(sIdx)" 
-                  />
-                  <span class="text-[10px] text-gray-400">
-                    {{ getPartScore(sIdx, pIdx) }}점
-                  </span>
-                </div>
+                <input 
+                  v-model.number="scoreForms[sIdx].parts[pIdx].score" 
+                  type="number" 
+                  min="0" 
+                  :max="part.max_score || 9999" 
+                  class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
+                  @input="calculateScore(sIdx)" 
+                />
               </td>
               <td class="px-3 py-3 text-center">
                 <span class="text-sm font-bold" :class="getTotalScoreColor(sIdx)">
@@ -185,11 +170,11 @@ const saving = ref(false);
 const toastMsg = ref('');
 
 const partSettings = ref([
-  { name: 'Listening', total_questions: 20, points_per_question: 5 },
-  { name: 'Grammar', total_questions: 20, points_per_question: 5 },
-  { name: 'Reading', total_questions: 20, points_per_question: 5 },
-  { name: 'Vocabulary', total_questions: 20, points_per_question: 5 },
-  { name: 'Writing', total_questions: 20, points_per_question: 5 }
+  { name: 'Listening', max_score: 100 },
+  { name: 'Grammar', max_score: 100 },
+  { name: 'Reading', max_score: 100 },
+  { name: 'Vocabulary', max_score: 100 },
+  { name: 'Writing', max_score: 100 }
 ]);
 
 // 이미 선택된 영역은 다른 파트에서 선택 불가
@@ -206,7 +191,7 @@ function getTodayFull(): string {
 }
 
 const totalMaxScore = computed(() => {
-  return partSettings.value.reduce((sum, p) => sum + (p.total_questions || 0) * (p.points_per_question || 0), 0);
+  return partSettings.value.reduce((sum, p) => sum + (p.max_score || 0), 0);
 });
 
 const classList = computed(() => {
@@ -237,7 +222,7 @@ const onClassChange = () => {
 
 const initScoreForms = () => {
   scoreForms.value = classStudents.value.map(() => ({
-    parts: partSettings.value.map(() => ({ correct: 0 })),
+    parts: partSettings.value.map(() => ({ score: 0 })),
     comment: ''
   }));
 };
@@ -251,15 +236,18 @@ const loadExistingScores = async () => {
       if (first.parts?.length === 5) {
         partSettings.value = first.parts.map((p: any) => ({
           name: p.name || '',
-          total_questions: p.total_questions || 0,
-          points_per_question: p.points_per_question || 0
+          // 기존 데이터 호환성: max_score가 없으면 total_questions * points_per_question으로 계산
+          max_score: p.max_score || ((p.total_questions || 0) * (p.points_per_question || 0))
         }));
       }
       classStudents.value.forEach((student, sIdx) => {
         const score = data.find((s: any) => s.student_id === student.id);
         if (score && score.parts) {
           scoreForms.value[sIdx] = {
-            parts: score.parts.map((p: any) => ({ correct: p.correct || 0 })),
+            parts: score.parts.map((p: any) => ({ 
+              // 기존 데이터 호환성: score가 없으면 correct * points_per_question으로 계산
+              score: p.score || ((p.correct || 0) * (p.points_per_question || 0))
+            })),
             comment: score.comment || ''
           };
         }
@@ -271,9 +259,7 @@ const loadExistingScores = async () => {
 };
 
 const getPartScore = (sIdx: number, pIdx: number): number => {
-  const correct = scoreForms.value[sIdx]?.parts[pIdx]?.correct || 0;
-  const ppq = partSettings.value[pIdx]?.points_per_question || 0;
-  return correct * ppq;
+  return scoreForms.value[sIdx]?.parts[pIdx]?.score || 0;
 };
 
 const getTotalScore = (sIdx: number): number => {
@@ -315,11 +301,8 @@ const saveAllScores = async () => {
       const form = scoreForms.value[i];
       const parts = partSettings.value.map((part, pIdx) => ({
         name: part.name,
-        total_questions: part.total_questions,
-        points_per_question: part.points_per_question,
-        max_score: (part.total_questions || 0) * (part.points_per_question || 0),
-        correct: form.parts[pIdx]?.correct || 0,
-        score: (form.parts[pIdx]?.correct || 0) * (part.points_per_question || 0)
+        max_score: part.max_score || 0,
+        score: form.parts[pIdx]?.score || 0
       }));
       await bimonthlyApi.create({
         student_id: student.id,
