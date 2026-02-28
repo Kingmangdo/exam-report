@@ -184,9 +184,10 @@ ${reportUrl}
 
     const aligoData = {
       receiver_1: student.parent_phone,
-      subject_1: '바이먼슬리 성적표 안내',
+      subject_1: '성취평가 결과 안내',
       message_1: message,
-      tpl_code: process.env.ALIGO_BIMONTHLY_TEMPLATE_CODE || process.env.ALIGO_TEMPLATE_CODE,
+      emtitle_1: '독강영어학원 성취평가 결과 안내',
+      tpl_code: 'UF_7024',
       button_1: {
         button: [
           {
@@ -198,7 +199,7 @@ ${reportUrl}
             linkType: 'WL',
             linkTypeName: '웹링크',
             linkMo: reportUrl,
-            linkPc: reportUrl
+            
           }
         ]
       }
