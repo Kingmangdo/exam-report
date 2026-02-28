@@ -199,7 +199,6 @@ ${reportUrl}
             linkType: 'WL',
             linkTypeName: '웹링크',
             linkMo: reportUrl,
-            
           }
         ]
       }
