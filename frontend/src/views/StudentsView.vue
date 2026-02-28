@@ -4,6 +4,12 @@
       <h2 class="text-2xl font-bold text-gray-800">학생 관리</h2>
       <div class="flex space-x-3">
         <button
+          @click="downloadStudentList"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+        >
+          📊 학생명단 Excel 다운로드
+        </button>
+        <button
           @click="downloadTemplate"
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
         >
@@ -534,6 +540,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { studentApi, excelApi, counselingApi, classApi } from '../services/api';
 import type { Student } from '../types';
+import * as XLSX from 'xlsx';
 
 const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
@@ -961,6 +968,82 @@ const deleteSelectedStudents = async () => {
 const resetFilters = () => {
   filters.value = { search: '', class_name: '', grade: '' };
   fetchStudents();
+};
+
+// 학생명단 Excel 다운로드
+const downloadStudentList = () => {
+  if (sortedStudents.value.length === 0) {
+    alert('다운로드할 학생 데이터가 없습니다.');
+    return;
+  }
+
+  try {
+    // Excel 데이터 준비
+    const excelData = sortedStudents.value.map((student) => {
+      // 등록일시 포맷팅 (yy-mm-dd)
+      const createdDate = student.created_at 
+        ? formatDate(student.created_at) 
+        : '-';
+      
+      // 반 정보 포맷팅 (배열이면 쉼표로 구분)
+      const classes = (student as any).classes 
+        ? (student as any).classes.join(', ')
+        : student.class_name 
+        ? student.class_name.split(',').map((c: string) => c.trim()).join(', ')
+        : '-';
+      
+      // 연락처 포맷팅
+      const studentPhone = formatPhone(student.student_no) || '-';
+      const parentPhone1 = formatPhone(student.parent_phone) || '-';
+      const parentPhone2 = formatPhone(student.phone) || '-';
+
+      return {
+        '등록일시': createdDate,
+        '이름': student.name || '-',
+        '학교': student.school || '-',
+        '학년': student.grade ? `${student.grade}학년` : '-',
+        '반': classes,
+        '담임': student.teacher_name || '-',
+        '학생 연락처': studentPhone,
+        '학부모 연락처1': parentPhone1,
+        '학부모 연락처2': parentPhone2
+      };
+    });
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // 컬럼 너비 자동 조정
+    const colWidths = [
+      { wch: 12 }, // 등록일시
+      { wch: 10 }, // 이름
+      { wch: 15 }, // 학교
+      { wch: 8 },  // 학년
+      { wch: 20 }, // 반
+      { wch: 10 }, // 담임
+      { wch: 15 }, // 학생 연락처
+      { wch: 15 }, // 학부모 연락처1
+      { wch: 15 }  // 학부모 연락처2
+    ];
+    ws['!cols'] = colWidths;
+
+    // 워크시트를 워크북에 추가
+    XLSX.utils.book_append_sheet(wb, ws, '학생명단');
+
+    // 파일명 생성 (현재 날짜 포함)
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    const fileName = `학생명단_${dateStr}.xlsx`;
+
+    // 파일 다운로드
+    XLSX.writeFile(wb, fileName);
+    
+    alert(`학생명단 ${sortedStudents.value.length}명이 Excel 파일로 다운로드되었습니다.`);
+  } catch (err) {
+    console.error('Excel 다운로드 오류:', err);
+    alert('Excel 파일 다운로드 중 오류가 발생했습니다.');
+  }
 };
 
 // Excel 양식 다운로드
