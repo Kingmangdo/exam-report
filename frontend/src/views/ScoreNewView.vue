@@ -279,10 +279,30 @@ const calculateScore = (sIdx: number) => {
     } else if (test.total > 0) {
       const score = (detail.correct / test.total) * 100;
       wordSum += score;
-      if (score <= 84) retestFound = true;
+      // 85점 미만이면 재시험으로 분류
+      if (score < 85) {
+        retestFound = true;
+      }
     }
   });
   const wordAvg = wordTestTypes.value.length > 0 ? wordSum / wordTestTypes.value.length : 0;
+
+  // 85점 미만인 경우 코멘트 자동 추가 (수동 편집하지 않은 경우에만)
+  if (!form.commentManuallyEdited) {
+    const currentComment = (form.comment || '').trim();
+    if (retestFound) {
+      // 재시험 코멘트가 없으면 추가
+      if (!currentComment.includes(retestComment)) {
+        form.comment = currentComment ? `${currentComment} ${retestComment}` : retestComment;
+      }
+    } else {
+      // 재시험이 없으면 자동생성 코멘트만 제거
+      const commentWithoutRetest = currentComment.replace(new RegExp(retestComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
+      if (commentWithoutRetest !== currentComment) {
+        form.comment = commentWithoutRetest;
+      }
+    }
+  }
 
   // 총점 및 평균 (RT, 단어, 과제 3개 항목)
   const total = rtAvg + wordAvg + (form.assignment_score || 0);
