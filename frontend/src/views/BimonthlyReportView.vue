@@ -274,7 +274,7 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 60,
+      top: 80,
       bottom: 10,
       left: 10,
       right: 10
@@ -301,8 +301,8 @@ const trendOptions = {
       position: 'top' as const,
       align: 'center' as const,
       padding: {
-        top: 10,
-        bottom: 20
+        top: 20,
+        bottom: 30
       },
       labels: { 
         font: { size: 11, weight: 'bold' as const }, 
