@@ -6,7 +6,7 @@
         <div class="text-center mb-6">
           <img src="/logo.png" alt="독강영어 로고" class="h-32 w-32 object-contain rounded-full bg-white p-1 mx-auto mb-4 shadow-sm" />
           <h1 class="text-2xl font-bold text-primary mb-2">독강영어학원</h1>
-          <p class="text-gray-600">바이먼슬리 테스트 리포트 자세히 보기</p>
+          <p class="text-gray-600">성취평가 리포트 자세히 보기</p>
         </div>
 
         <form @submit.prevent="verifyAccess" class="space-y-4">
@@ -75,7 +75,7 @@
             <div>
               <h4 class="text-base font-bold text-gray-800 mb-3">📊 영역별 상세 성적</h4>
               <div class="space-y-3">
-                <div v-for="(part, idx) in (reportData.score.parts || [])" :key="idx" class="flex items-center gap-3">
+                <div v-for="(part, idx) in (reportData.score.parts || []).filter((p: any) => p.max_score > 0)" :key="idx" class="flex items-center gap-3">
                   <span class="text-xs font-bold text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" :style="{ backgroundColor: partColors[idx] }">{{ idx + 1 }}</span>
                   <span class="w-[90px] text-sm font-bold text-gray-700 truncate">{{ part.name }}</span>
                   <div class="flex-1 bg-gray-200 rounded-full h-5 relative overflow-hidden">
@@ -200,15 +200,16 @@ const dateToMonth = (dateStr: string): string => {
   return dateStr;
 };
 
-// 레이더 차트
+// 레이더 차트 - max_score > 0인 영역만 표시
 const radarData = computed(() => {
   if (!reportData.value?.score?.parts) return null;
-  const parts = reportData.value.score.parts;
+  const parts = reportData.value.score.parts.filter((p: any) => p.max_score > 0);
+  if (parts.length === 0) return null;
   return {
     labels: parts.map((p: any) => p.name),
     datasets: [{
       label: reportData.value.student.name,
-      data: parts.map((p: any) => p.max_score > 0 ? (p.score / p.max_score * 100) : 0),
+      data: parts.map((p: any) => (p.score / p.max_score * 100)),
       backgroundColor: 'rgba(30, 58, 138, 0.15)',
       borderColor: 'rgba(30, 58, 138, 1)',
       borderWidth: 2,
@@ -273,7 +274,7 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 40,
+      top: 60,
       bottom: 10,
       left: 10,
       right: 10
@@ -298,8 +299,10 @@ const trendOptions = {
     legend: { 
       display: true, 
       position: 'top' as const,
+      align: 'center' as const,
       padding: {
-        bottom: 15
+        top: 10,
+        bottom: 20
       },
       labels: { 
         font: { size: 11, weight: 'bold' as const }, 

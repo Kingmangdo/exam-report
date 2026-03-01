@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼슬리 테스트 성적 입력</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">성취평가 성적 입력</h2>
 
     <!-- 반 선택 및 시험 설정 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
@@ -20,9 +20,18 @@
           </div>
         </div>
 
-        <!-- 우측: 5개 파트 설정 (드롭다운) -->
+        <!-- 우측: 파트 설정 (3~5개 영역) -->
         <div class="border-l pl-6">
-          <h4 class="text-sm font-bold text-gray-700 mb-3">📋 시험 파트 설정 (5개 영역)</h4>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-bold text-gray-700">📋 시험 파트 설정 ({{ partSettings.length }}개 영역)</h4>
+            <button 
+              v-if="partSettings.length < 5"
+              @click="addPart"
+              class="px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold"
+            >
+              + 추가
+            </button>
+          </div>
           <div class="space-y-2">
             <div v-for="(part, idx) in partSettings" :key="idx" class="flex items-center gap-2">
               <span class="text-xs font-bold text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" :style="{ backgroundColor: partColors[idx] }">{{ idx + 1 }}</span>
@@ -42,6 +51,13 @@
                   class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
                 />
               </div>
+              <button 
+                v-if="partSettings.length > 3"
+                @click="removePart(idx)"
+                class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-bold"
+              >
+                삭제
+              </button>
             </div>
           </div>
           <div class="mt-3 p-2 bg-gray-50 rounded-lg text-sm">
@@ -56,7 +72,7 @@
     <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
       <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">
-          {{ selectedClass }} 바이먼슬리 성적 입력 ({{ classStudents.length }}명)
+          {{ selectedClass }} 성취평가 성적 입력 ({{ classStudents.length }}명)
         </h3>
       </div>
 
@@ -66,7 +82,7 @@
             <tr>
               <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase sticky left-0 bg-gray-50 z-10 w-[120px]">학생명</th>
               <th 
-                v-for="(part, idx) in partSettings" 
+                v-for="(part, idx) in partSettings.filter(p => p.max_score > 0)" 
                 :key="'h-'+idx" 
                 class="px-3 py-3 text-center text-xs font-bold uppercase"
                 :style="{ color: partColors[idx] }"
@@ -86,16 +102,18 @@
               <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 sticky left-0 bg-white z-10">
                 {{ student.name }}
               </td>
-              <td v-for="(part, pIdx) in partSettings" :key="'s-'+sIdx+'-'+pIdx" class="px-3 py-3 text-center">
-                <input 
-                  v-model.number="scoreForms[sIdx].parts[pIdx].score" 
-                  type="number" 
-                  min="0" 
-                  :max="part.max_score || 9999" 
-                  class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
-                  @input="calculateScore(sIdx)" 
-                />
-              </td>
+              <template v-for="(part, filteredIdx) in partSettings.filter(p => p.max_score > 0)" :key="'s-'+sIdx+'-'+filteredIdx">
+                <td class="px-3 py-3 text-center">
+                  <input 
+                    v-model.number="scoreForms[sIdx].parts[getOriginalPartIndex(filteredIdx)].score" 
+                    type="number" 
+                    min="0" 
+                    :max="part.max_score || 9999" 
+                    class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" 
+                    @input="calculateScore(sIdx)" 
+                  />
+                </td>
+              </template>
               <td class="px-3 py-3 text-center">
                 <span class="text-sm font-bold" :class="getTotalScoreColor(sIdx)">
                   {{ getTotalScore(sIdx) }}
@@ -128,7 +146,7 @@
     </div>
 
     <div v-else-if="!selectedClass" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-      반을 선택하면 학생들의 바이먼슬리 테스트 성적을 입력할 수 있습니다.
+      반을 선택하면 학생들의 성취평가 성적을 입력할 수 있습니다.
     </div>
     <div v-else class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
       선택한 반에 등록된 학생이 없습니다.
@@ -170,12 +188,36 @@ const saving = ref(false);
 const toastMsg = ref('');
 
 const partSettings = ref([
-  { name: 'Listening', max_score: 100 },
-  { name: 'Grammar', max_score: 100 },
-  { name: 'Reading', max_score: 100 },
-  { name: 'Vocabulary', max_score: 100 },
-  { name: 'Writing', max_score: 100 }
+  { name: '', max_score: 0 },
+  { name: '', max_score: 0 },
+  { name: '', max_score: 0 }
 ]);
+
+// 영역 추가
+const addPart = () => {
+  if (partSettings.value.length < 5) {
+    partSettings.value.push({ name: '', max_score: 0 });
+    // scoreForms도 업데이트
+    if (classStudents.value.length > 0) {
+      scoreForms.value.forEach(form => {
+        form.parts.push({ score: 0 });
+      });
+    }
+  }
+};
+
+// 영역 삭제
+const removePart = (idx: number) => {
+  if (partSettings.value.length > 3) {
+    partSettings.value.splice(idx, 1);
+    // scoreForms도 업데이트
+    if (classStudents.value.length > 0) {
+      scoreForms.value.forEach(form => {
+        form.parts.splice(idx, 1);
+      });
+    }
+  }
+};
 
 // 이미 선택된 영역은 다른 파트에서 선택 불가
 const availablePartOptions = (currentIdx: number) => {
@@ -185,13 +227,23 @@ const availablePartOptions = (currentIdx: number) => {
   return PART_OPTIONS.filter(opt => !selected.includes(opt));
 };
 
+// 필터링된 인덱스를 원본 partSettings 인덱스로 변환
+const getOriginalPartIndex = (filteredIdx: number): number => {
+  const filtered = partSettings.value.filter(p => p.max_score > 0);
+  if (filteredIdx >= filtered.length) return filteredIdx;
+  const targetPart = filtered[filteredIdx];
+  return partSettings.value.findIndex(p => p === targetPart);
+};
+
 function getTodayFull(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 const totalMaxScore = computed(() => {
-  return partSettings.value.reduce((sum, p) => sum + (p.max_score || 0), 0);
+  return partSettings.value
+    .filter(p => p.max_score > 0)
+    .reduce((sum, p) => sum + (p.max_score || 0), 0);
 });
 
 const classList = computed(() => {
@@ -233,7 +285,7 @@ const loadExistingScores = async () => {
     if (res.data.success && res.data.data.length > 0) {
       const data = res.data.data;
       const first = data[0];
-      if (first.parts?.length === 5) {
+      if (first.parts && first.parts.length >= 3) {
         partSettings.value = first.parts.map((p: any) => ({
           name: p.name || '',
           // 기존 데이터 호환성: max_score가 없으면 total_questions * points_per_question으로 계산
@@ -254,7 +306,7 @@ const loadExistingScores = async () => {
       });
     }
   } catch (err) {
-    console.error('기존 바이먼슬리 성적 로드 실패:', err);
+    console.error('기존 성취평가 성적 로드 실패:', err);
   }
 };
 
@@ -264,7 +316,11 @@ const getPartScore = (sIdx: number, pIdx: number): number => {
 
 const getTotalScore = (sIdx: number): number => {
   let total = 0;
-  partSettings.value.forEach((_, pIdx) => { total += getPartScore(sIdx, pIdx); });
+  partSettings.value.forEach((part, pIdx) => { 
+    if (part.max_score > 0) {
+      total += getPartScore(sIdx, pIdx); 
+    }
+  });
   return total;
 };
 
@@ -299,11 +355,14 @@ const saveAllScores = async () => {
     for (let i = 0; i < classStudents.value.length; i++) {
       const student = classStudents.value[i];
       const form = scoreForms.value[i];
-      const parts = partSettings.value.map((part, pIdx) => ({
-        name: part.name,
-        max_score: part.max_score || 0,
-        score: form.parts[pIdx]?.score || 0
-      }));
+      // max_score > 0인 영역만 저장
+      const parts = partSettings.value
+        .map((part, pIdx) => ({
+          name: part.name,
+          max_score: part.max_score || 0,
+          score: form.parts[pIdx]?.score || 0
+        }))
+        .filter(p => p.max_score > 0);
       await bimonthlyApi.create({
         student_id: student.id,
         exam_date: examDate.value,
@@ -314,7 +373,7 @@ const saveAllScores = async () => {
         comment: form.comment || ''
       });
     }
-    showToast('모든 바이먼슬리 성적이 저장되었습니다!');
+    showToast('모든 성취평가 성적이 저장되었습니다!');
   } catch (err: any) {
     console.error('저장 오류:', err);
     alert(`저장 중 오류: ${err.response?.data?.message || err.message}`);

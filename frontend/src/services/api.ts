@@ -169,7 +169,7 @@ export const supplementaryApi = {
   }
 };
 
-// 바이먼슬리 테스트 API
+// 성취평가 API
 export const bimonthlyApi = {
   getAll: (filters?: { class_name?: string; exam_date?: string; student_id?: number }) => {
     return api.get<ApiResponse<any[]>>('/bimonthly', { params: filters });
@@ -320,7 +320,7 @@ export const kakaoApi = {
   sendReport: (scoreId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-report', { score_id: scoreId });
   },
-  // 바이먼슬리 알림톡
+  // 성취평가 알림톡
   sendBimonthlyReport: (bimonthlyScoreId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-bimonthly', { bimonthly_score_id: bimonthlyScoreId });
   },

@@ -90,7 +90,7 @@ const navItems = ref([
     adminOnly: false,
     children: [
       { name: 'Daily Report', path: '/scores/new' },
-      { name: '바이먼슬리 테스트', path: '/scores/bimonthly/new' }
+      { name: '성취평가', path: '/scores/bimonthly/new' }
     ]
   },
   { 
@@ -99,7 +99,7 @@ const navItems = ref([
     adminOnly: false,
     children: [
       { name: 'Daily Report', path: '/scores' },
-      { name: '바이먼슬리 테스트', path: '/scores/bimonthly' }
+      { name: '성취평가', path: '/scores/bimonthly' }
     ]
   },
   { name: '예약 관리', path: '/reservations', adminOnly: true },

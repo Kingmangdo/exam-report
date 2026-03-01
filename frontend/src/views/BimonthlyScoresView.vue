@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">바이먼슬리 테스트 성적 발송</h2>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">성취평가 성적 발송</h2>
 
     <!-- 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
@@ -158,7 +158,7 @@
             <div>
               <h4 class="text-base font-bold text-gray-800 mb-3">📊 영역별 상세 성적</h4>
               <div class="space-y-3">
-                <div v-for="(part, idx) in (selectedScore?.parts || [])" :key="idx" class="flex items-center gap-3">
+                <div v-for="(part, idx) in (selectedScore?.parts || []).filter((p: any) => p.max_score > 0)" :key="idx" class="flex items-center gap-3">
                   <span class="text-xs font-bold text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" :style="{ backgroundColor: partColors[idx] }">{{ idx + 1 }}</span>
                   <span class="w-[90px] text-sm font-bold text-gray-700 truncate">{{ part.name }}</span>
                   <div class="flex-1 bg-gray-200 rounded-full h-5 relative overflow-hidden">
@@ -371,11 +371,13 @@ const dateToMonth = (dateStr: string): string => {
 };
 
 // ============ 레이더 차트 ============
+// max_score > 0인 영역만 표시
 const radarData = computed(() => {
   if (!selectedScore.value?.parts) return null;
-  const parts = selectedScore.value.parts;
+  const parts = selectedScore.value.parts.filter((p: any) => p.max_score > 0);
+  if (parts.length === 0) return null;
   const labels = parts.map((p: any) => p.name);
-  const data = parts.map((p: any) => p.max_score > 0 ? (p.score / p.max_score * 100) : 0);
+  const data = parts.map((p: any) => (p.score / p.max_score * 100));
   
   return {
     labels,
@@ -480,7 +482,7 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 40,
+      top: 60,
       bottom: 10,
       left: 10,
       right: 10
@@ -508,8 +510,10 @@ const trendOptions = {
     legend: {
       display: true,
       position: 'top' as const,
+      align: 'center' as const,
       padding: {
-        bottom: 15
+        top: 10,
+        bottom: 20
       },
       labels: { 
         font: { size: 11, weight: 'bold' as const }, 
@@ -580,7 +584,7 @@ const fetchScores = async () => {
     // 발송 상태도 함께 조회
     await fetchSendStatus();
   } catch (err) {
-    console.error('바이먼슬리 성적 조회 실패:', err);
+    console.error('성취평가 성적 조회 실패:', err);
   }
 };
 
@@ -617,7 +621,7 @@ const openReport = async (score: any) => {
 
 // ============ 알림톡 발송 ============
 const sendKakao = async (score: any) => {
-  if (!confirm(`${score.student_name} 학생의 학부모님께 바이먼슬리 성적표 알림톡을 발송하시겠습니까?`)) return;
+  if (!confirm(`${score.student_name} 학생의 학부모님께 성취평가 성적표 알림톡을 발송하시겠습니까?`)) return;
   try {
     const response = await kakaoApi.sendBimonthlyReport(score.id);
     alert(`알리고 응답: ${response.data.message}`);
@@ -633,7 +637,7 @@ const sendKakao = async (score: any) => {
 };
 
 const sendBulkKakao = async () => {
-  if (!confirm(`선택한 ${selectedIds.value.length}명에게 바이먼슬리 알림톡을 발송하시겠습니까?`)) return;
+  if (!confirm(`선택한 ${selectedIds.value.length}명에게 성취평가 알림톡을 발송하시겠습니까?`)) return;
   let successCount = 0;
   let failCount = 0;
 
