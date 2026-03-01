@@ -173,16 +173,12 @@
                 </div>
               </div>
 
-              <!-- 총점 & 평균 & 반평균 -->
-              <div class="grid grid-cols-3 gap-3 mt-6">
+              <!-- 학생점수 & 반평균 -->
+              <div class="grid grid-cols-2 gap-3 mt-6">
                 <div class="bg-blue-50 p-3 rounded-xl text-center border border-blue-100">
-                  <div class="text-xs text-blue-600 font-bold mb-1">총점</div>
+                  <div class="text-xs text-blue-600 font-bold mb-1">학생점수</div>
                   <div class="text-2xl font-black text-blue-900">{{ selectedScore?.total_score }}</div>
                   <div class="text-xs text-blue-400">/ {{ selectedScore?.parts?.reduce((s: number, p: any) => s + (p.max_score || 0), 0) || 0 }}</div>
-                </div>
-                <div class="bg-green-50 p-3 rounded-xl text-center border border-green-100">
-                  <div class="text-xs text-green-600 font-bold mb-1">평균 점수</div>
-                  <div class="text-2xl font-black" :class="getAvgColor(selectedScore?.average_score)">{{ selectedScore?.average_score?.toFixed(1) }}</div>
                 </div>
                 <div class="bg-purple-50 p-3 rounded-xl text-center border border-purple-100">
                   <div class="text-xs text-purple-600 font-bold mb-1">반 평균</div>
@@ -197,7 +193,7 @@
         <div v-if="trendData && trendData.labels.length > 1" class="px-6 pb-4">
           <h4 class="text-base font-bold text-gray-800 mb-3">📈 최근 성적 트렌드 (영역별 비교)</h4>
           <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <div class="w-full h-[280px]">
+            <div class="w-full h-[350px]">
               <Bar :data="trendData" :options="trendOptions" :plugins="[ChartDataLabels]" />
             </div>
             <p class="text-xs text-gray-400 mt-2 text-center">* 동일한 영역만 비교 표시됩니다 (막대 위 숫자 = 실제 점수)</p>
@@ -482,8 +478,8 @@ const trendOptions = {
   maintainAspectRatio: false,
   layout: {
     padding: {
-      top: 80,
-      bottom: 10,
+      top: 10,
+      bottom: 50,
       left: 10,
       right: 10
     }
@@ -491,15 +487,23 @@ const trendOptions = {
   scales: {
     y: {
       beginAtZero: true,
-      max: 100,
+      max: 110,
       ticks: { 
         stepSize: 20, 
         font: { size: 11 },
         callback: function(value: any) {
+          if (value > 100) return '';
           return value + '%';
         }
       },
-      grid: { color: 'rgba(0,0,0,0.06)' }
+      grid: { 
+        color: function(context: any) {
+          if (context.tick && context.tick.value === 110) {
+            return 'transparent';
+          }
+          return 'rgba(0,0,0,0.06)';
+        }
+      }
     },
     x: {
       ticks: { font: { size: 12, weight: 'bold' as const } },
@@ -509,11 +513,11 @@ const trendOptions = {
   plugins: {
     legend: {
       display: true,
-      position: 'top' as const,
+      position: 'bottom' as const,
       align: 'center' as const,
       padding: {
-        top: 20,
-        bottom: 30
+        top: 30,
+        bottom: 10
       },
       labels: { 
         font: { size: 11, weight: 'bold' as const }, 
