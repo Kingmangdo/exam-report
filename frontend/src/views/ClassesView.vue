@@ -11,17 +11,41 @@
       </button>
     </div>
 
-    <!-- 오늘 숙제 검사 알림 배너 -->
-    <div v-if="homeworkDueToday.length > 0" class="mb-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm animate-pulse-slow">
+    <!-- 오늘 숙제 검사 알림 배너 (숙제) -->
+    <div
+      v-if="homeworkDueTodayHomework.length > 0"
+      class="mb-3 bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm animate-pulse-slow"
+    >
       <div class="flex items-center gap-2 mb-2">
         <span class="text-2xl">🔔</span>
-        <h3 class="text-lg font-bold text-red-700">오늘 숙제 검사일입니다!</h3>
+        <h3 class="text-lg font-bold text-red-700">오늘 숙제 검사날입니다.!</h3>
       </div>
       <div class="flex flex-wrap gap-2">
         <span
-          v-for="due in homeworkDueToday"
+          v-for="due in homeworkDueTodayHomework"
           :key="due.id"
           class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-sm font-bold cursor-pointer hover:bg-red-200 transition"
+          @click="goToClassHomeworkCheck(due)"
+        >
+          📋 {{ due.class_name || '반' }} - {{ due.content?.substring(0, 20) }}{{ (due.content?.length || 0) > 20 ? '...' : '' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 오늘 RT 검사 알림 배너 (RT) -->
+    <div
+      v-if="homeworkDueTodayRT.length > 0"
+      class="mb-6 bg-purple-50 border-l-4 border-purple-500 rounded-lg p-4 shadow-sm animate-pulse-slow"
+    >
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">🔔</span>
+        <h3 class="text-lg font-bold text-purple-700">오늘 RT 검사날입니다.!</h3>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="due in homeworkDueTodayRT"
+          :key="due.id"
+          class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-sm font-bold cursor-pointer hover:bg-purple-200 transition"
           @click="goToClassHomeworkCheck(due)"
         >
           📋 {{ due.class_name || '반' }} - {{ due.content?.substring(0, 20) }}{{ (due.content?.length || 0) > 20 ? '...' : '' }}
@@ -53,7 +77,7 @@
           selectedClass?.id === item.id ? 'ring-2 ring-primary bg-blue-50' : '',
           getCategoryColor(item.category)
         ]"
-        @click="selectClass(item)"
+        @click="toggleClassSelection(item)"
       >
         <!-- 숙제 검사일 배지 -->
         <div v-if="hasHomeworkDue(item.id)" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow animate-bounce">
@@ -114,7 +138,7 @@
                 </td>
                 <td class="px-2 py-2.5 text-sm text-gray-600">
                   <div class="flex flex-col gap-0.5">
-                    <span class="font-bold">학: {{ formatPhone(student.student_no) }}</span>
+                    <span class="font-bold">학: {{ formatPhone((student as any).student_no) }}</span>
                     <span class="font-extrabold text-blue-700">부: {{ formatPhone(student.parent_phone) }}</span>
                   </div>
                 </td>
@@ -157,9 +181,16 @@
         <div v-if="activeRightTab === 'learning'">
           <div class="p-4 bg-primary text-white flex justify-between items-center">
             <h3 class="text-lg font-bold">{{ selectedClass.name }} 학습 일지</h3>
-            <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
               <label class="text-xs opacity-90">선택 날짜:</label>
               <input v-model="learningLogDate" type="date" class="px-2 py-1 text-xs border rounded text-gray-800" @change="fetchLearningLog" />
+            <button
+              type="button"
+              @click.stop="clearSelectedClass"
+              class="ml-2 text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white font-bold"
+            >
+              ✕ 닫기
+            </button>
             </div>
           </div>
           
@@ -214,39 +245,110 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-base font-bold text-gray-700 mb-3">오늘 내준 숙제</label>
-                  <div class="space-y-2">
-                    <div v-for="(hw, idx) in learningLog.homeworks" :key="idx" class="flex items-center gap-2">
-                      <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
-                      <input 
-                        v-model="hw.content" 
-                        type="text" 
-                        class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium" 
-                        :placeholder="`숙제 ${idx + 1}`" 
-                      />
-                      <div class="flex items-center gap-1 flex-shrink-0">
-                        <span class="text-xs text-red-600 font-bold">검사일:</span>
-                        <input 
-                          v-model="hw.deadline" 
-                          type="date" 
-                          class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]" 
+                  <div class="space-y-4">
+                    <!-- 일반 숙제 -->
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <label class="block text-base font-bold text-gray-700">오늘 내준 숙제</label>
+                        <button
+                          type="button"
+                          class="text-xs px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 disabled:opacity-40"
+                          @click="addHomework('homework')"
+                          :disabled="homeworkItems.length >= 3"
+                        >
+                          + 추가
+                        </button>
+                      </div>
+                      <div v-if="homeworkItems.length === 0" class="text-xs text-gray-400">
+                        등록된 숙제가 없습니다. (+ 추가 버튼으로 추가하세요)
+                      </div>
+                      <div
+                        v-for="(hw, idx) in homeworkItems"
+                        :key="`hw-${idx}`"
+                        class="flex items-center gap-2 mb-2"
+                      >
+                        <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
+                        <input
+                          v-model="hw.content"
+                          type="text"
+                          class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium"
+                          :placeholder="`숙제 ${idx + 1}`"
                         />
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                          <span class="text-xs text-red-600 font-bold">검사일:</span>
+                          <input
+                            v-model="hw.deadline"
+                            type="date"
+                            class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- RT 숙제 -->
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <label class="block text-base font-bold text-gray-700">오늘 내준 RT</label>
+                        <button
+                          type="button"
+                          class="text-xs px-3 py-1 rounded-full bg-purple-50 text-purple-700 font-bold hover:bg-purple-100 disabled:opacity-40"
+                          @click="addHomework('rt')"
+                          :disabled="rtItems.length >= 3"
+                        >
+                          + 추가
+                        </button>
+                      </div>
+                      <div v-if="rtItems.length === 0" class="text-xs text-gray-400">
+                        등록된 RT 숙제가 없습니다. (+ 추가 버튼으로 추가하세요)
+                      </div>
+                      <div
+                        v-for="(hw, idx) in rtItems"
+                        :key="`rt-${idx}`"
+                        class="flex items-center gap-2 mb-2"
+                      >
+                        <span class="text-xs font-bold text-gray-400 w-5 flex-shrink-0">{{ idx + 1 }}</span>
+                        <input
+                          v-model="hw.content"
+                          type="text"
+                          class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium"
+                          :placeholder="`RT ${idx + 1}`"
+                        />
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                          <span class="text-xs text-red-600 font-bold">검사일:</span>
+                          <input
+                            v-model="hw.deadline"
+                            type="date"
+                            class="px-2 py-1.5 text-xs border-2 border-red-200 rounded-lg outline-none focus:ring-1 focus:ring-red-400 font-bold text-red-700 w-[140px]"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <!-- 오늘 검사해야 할 숙제 영역 (강조) -->
+                <!-- 오늘 검사해야 할 숙제 / RT 영역 (강조) -->
                 <div v-if="todayDueHomeworks.length > 0" class="bg-red-50 border-2 border-red-200 rounded-lg p-5 shadow-md">
                   <div class="flex justify-between items-center mb-3">
                     <h5 class="text-base font-bold text-red-700 flex items-center gap-2">
-                      <span class="text-2xl">🚨</span> 오늘 검사해야 할 숙제
+                      <span class="text-2xl">🚨</span> 오늘 검사해야 할 숙제 · RT
                     </h5>
+                  </div>
+                  <div class="flex gap-4 mb-3 text-sm font-bold">
+                    <span v-if="todayHomeworkCount > 0" class="text-blue-700">숙제 {{ todayHomeworkCount }}개</span>
+                    <span v-if="todayRTCount > 0" class="text-purple-700">RT {{ todayRTCount }}개</span>
                   </div>
                   <div class="space-y-2">
                     <div v-for="(dueHw, idx) in todayDueHomeworks" :key="idx" class="flex items-center gap-3 bg-white p-3 rounded-lg border border-red-100">
                       <span class="text-red-500 font-bold text-sm">{{ idx + 1 }}</span>
-                      <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
+                      <span class="flex items-center gap-2 flex-1">
+                        <span
+                          class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          :class="dueHw.type === 'rt' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                        >
+                          {{ dueHw.type === 'rt' ? 'RT' : '숙제' }}
+                        </span>
+                        <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
+                      </span>
                       <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">{{ dueHw.log_date }} 부여 {{ dueHw.created_by ? `| 출제: ${dueHw.created_by}` : '' }}</span>
                     </div>
                   </div>
@@ -271,9 +373,18 @@
         <div v-else-if="activeRightTab === 'supplementary'" class="p-6">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold text-gray-800">보강 스케줄</h3>
-            <button @click="openSupplementaryModal" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-sm">
-              + 보강 일정 추가
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click.stop="clearSelectedClass"
+                class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 font-bold"
+              >
+                ✕ 닫기
+              </button>
+              <button @click="openSupplementaryModal" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-sm">
+                + 보강 일정 추가
+              </button>
+            </div>
           </div>
 
           <!-- 3주 히스토리 (전전주, 전주, 금주) -->
@@ -441,7 +552,7 @@
                 </td>
                 <td class="px-4 py-2 font-medium">{{ s.name }}</td>
                 <td class="px-4 py-2 text-sm text-gray-600">{{ s.school || '-' }} / {{ s.grade ? s.grade + '학년' : '-' }}</td>
-                <td class="px-4 py-2 text-sm text-gray-600">{{ formatPhone(s.student_no) }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600">{{ formatPhone((s as any).student_no) }}</td>
                 <td class="px-4 py-2 text-xs text-gray-500">{{ s.class_name || '-' }}</td>
               </tr>
             </tbody>
@@ -545,7 +656,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { classApi, studentApi, counselingApi, supplementaryApi } from '../services/api';
 import type { Student } from '../types';
 
@@ -558,6 +670,7 @@ const getTodayFull = () => {
   return `${y}-${m}-${dd}`;
 };
 
+const route = useRoute();
 const classes = ref<any[]>([]);
 const selectedClass = ref<any>(null);
 const classStudents = ref<any[]>([]);
@@ -592,10 +705,7 @@ const getCategoryColor = (cat: string) => {
 };
 
 const emptyHomeworks = () => [
-  { content: '', deadline: '' },
-  { content: '', deadline: '' },
-  { content: '', deadline: '' },
-  { content: '', deadline: '' }
+  { type: 'homework', content: '', deadline: '' }
 ];
 
 const learningLog = ref({
@@ -610,6 +720,40 @@ const saveStatus = ref('');
 const recentLogDates = ref<any[]>([]);
 const todayDueHomeworks = ref<any[]>([]);
 const homeworkDueToday = ref<any[]>([]);
+
+// 오늘 검사할 숙제 / RT 개수
+const todayHomeworkCount = computed(
+  () => todayDueHomeworks.value.filter((h: any) => h.type !== 'rt').length
+);
+const todayRTCount = computed(
+  () => todayDueHomeworks.value.filter((h: any) => h.type === 'rt').length
+);
+
+// 상단 배너용 숙제 / RT 분리 목록
+const homeworkDueTodayHomework = computed(() =>
+  homeworkDueToday.value.filter((h: any) => h.type !== 'rt')
+);
+const homeworkDueTodayRT = computed(() =>
+  homeworkDueToday.value.filter((h: any) => h.type === 'rt')
+);
+
+// 학습일지 입력용: 숙제 / RT 구분된 목록
+const homeworkItems = computed(() =>
+  learningLog.value.homeworks.filter((h: any) => h.type !== 'rt')
+);
+const rtItems = computed(() =>
+  learningLog.value.homeworks.filter((h: any) => h.type === 'rt')
+);
+
+const addHomework = (type: 'homework' | 'rt') => {
+  const currentList = type === 'rt' ? rtItems.value : homeworkItems.value;
+  if (currentList.length >= 3) return;
+  learningLog.value.homeworks.push({
+    type,
+    content: '',
+    deadline: ''
+  });
+};
 
 // 보강 관리 관련 상태
 const showSupplementaryModal = ref(false);
@@ -626,30 +770,40 @@ const supplementaryWeeks = ref<any[]>([]); // 3주치 데이터
 
 // DB에 저장된 homework 문자열을 homeworks 배열로 파싱
 const parseHomeworks = (homework: string, homework_deadline: string) => {
-  const hws = emptyHomeworks();
-  if (!homework) return hws;
+  const hws: any[] = [];
+  if (!homework) return emptyHomeworks();
   try {
     const parsed = JSON.parse(homework);
     if (Array.isArray(parsed)) {
-      parsed.forEach((item: any, i: number) => {
-        if (i < 4) {
-          hws[i].content = item.content || '';
-          hws[i].deadline = item.deadline || '';
-        }
+      parsed.forEach((item: any) => {
+        hws.push({
+          type: item.type === 'rt' ? 'rt' : 'homework',
+          content: item.content || '',
+          deadline: item.deadline || ''
+        });
       });
-      return hws;
+      return hws.length > 0 ? hws : emptyHomeworks();
     }
   } catch (e) {
-    // JSON이 아닌 기존 데이터: 첫 번째 칸에 넣기
-    hws[0].content = homework;
-    hws[0].deadline = homework_deadline || '';
+    // JSON이 아닌 기존 데이터: 첫 번째 칸에 숙제로 넣기
+    hws.push({
+      type: 'homework',
+      content: homework,
+      deadline: homework_deadline || ''
+    });
   }
-  return hws;
+  return hws.length > 0 ? hws : emptyHomeworks();
 };
 
 // homeworks 배열을 DB 저장용 JSON 문자열로 변환
 const serializeHomeworks = (homeworks: any[]) => {
-  const filtered = homeworks.filter((h: any) => h.content.trim());
+  const filtered = homeworks
+    .filter((h: any) => h.content && h.content.trim())
+    .map((h: any) => ({
+      type: h.type === 'rt' ? 'rt' : 'homework',
+      content: h.content.trim(),
+      deadline: h.deadline || ''
+    }));
   if (filtered.length === 0) return { homework: '', homework_deadline: '' };
   return {
     homework: JSON.stringify(filtered),
@@ -895,9 +1049,10 @@ const selectClass = async (item: any) => {
       const studentsWithCounseling = await Promise.all(students.map(async (student: any) => {
         try {
           const logsRes = await counselingApi.getLogs(student.id);
-          if (logsRes.data.success && logsRes.data.data.length > 0) {
+          const logs = logsRes.data?.data || [];
+          if (logsRes.data.success && logs.length > 0) {
             // 날짜순 정렬하여 가장 최근 날짜 추출
-            const sortedLogs = logsRes.data.data.sort((a: any, b: any) => 
+            const sortedLogs = logs.sort((a: any, b: any) => 
               b.consultation_date.localeCompare(a.consultation_date)
             );
             return { ...student, last_counseling_date: sortedLogs[0].consultation_date };
@@ -917,6 +1072,19 @@ const selectClass = async (item: any) => {
     console.error('반 학생 로드 실패:', err);
   } finally {
     loading.value = false;
+  }
+};
+
+// 반 카드 클릭 시: 동일 반이면 닫기, 아니면 상세 열기
+const clearSelectedClass = () => {
+  selectedClass.value = null;
+};
+
+const toggleClassSelection = async (item: any) => {
+  if (selectedClass.value && selectedClass.value.id === item.id) {
+    clearSelectedClass();
+  } else {
+    await selectClass(item);
   }
 };
 
@@ -975,15 +1143,27 @@ const fetchTodayDueHomeworks = async () => {
           const parsed = JSON.parse(log.homework);
           if (Array.isArray(parsed)) {
             parsed.forEach((h: any) => {
+              const itemType = h.type === 'rt' ? 'rt' : 'homework';
               if (h.content && h.deadline === today) {
-                dueItems.push({ ...h, log_date: log.log_date, created_by: log.created_by });
+                dueItems.push({
+                  ...h,
+                  type: itemType,
+                  log_date: log.log_date,
+                  created_by: log.created_by
+                });
               }
             });
           }
         } catch (e) {
-          // 구형 데이터: homework_deadline으로 체크
+          // 구형 데이터: homework_deadline으로 체크 (모두 일반 숙제로 처리)
           if (log.homework_deadline === today && log.homework) {
-            dueItems.push({ content: log.homework, deadline: today, log_date: log.log_date, created_by: log.created_by });
+            dueItems.push({
+              type: 'homework',
+              content: log.homework,
+              deadline: today,
+              log_date: log.log_date,
+              created_by: log.created_by
+            });
           }
         }
       }
@@ -1137,15 +1317,28 @@ const fetchHomeworkDue = async () => {
               const parsed = JSON.parse(log.homework);
               if (Array.isArray(parsed)) {
                 parsed.forEach((h: any) => {
+                  const itemType = h.type === 'rt' ? 'rt' : 'homework';
                   if (h.content && h.deadline === today) {
-                    allDue.push({ ...h, class_name: cls.name, class_id: cls.id, id: `${log.id}-${h.content}` });
+                    allDue.push({
+                      ...h,
+                      type: itemType,
+                      class_name: cls.name,
+                      class_id: cls.id,
+                      id: `${log.id}-${itemType}-${h.content}`
+                    });
                   }
                 });
               }
             } catch (e) {
-              // 구형 데이터
+              // 구형 데이터 (모두 일반 숙제로 처리)
               if (log.homework_deadline === today && log.homework) {
-                allDue.push({ content: log.homework, class_name: cls.name, class_id: cls.id, id: log.id });
+                allDue.push({
+                  type: 'homework',
+                  content: log.homework,
+                  class_name: cls.name,
+                  class_id: cls.id,
+                  id: log.id
+                });
               }
             }
           }
@@ -1321,6 +1514,20 @@ onMounted(async () => {
   fetchAllStudents();
   // 반 목록 로드 후 숙제 검사일 체크
   await fetchHomeworkDue();
+
+  // 보강 관리 화면 등에서 넘어온 경우: 특정 반 + 탭 자동 선택
+  const initialClassId = route.query.classId ? Number(route.query.classId) : null;
+  const initialTab = (route.query.tab as string) || '';
+
+  if (initialClassId) {
+    const targetClass = classes.value.find((c: any) => c.id === initialClassId);
+    if (targetClass) {
+      await selectClass(targetClass);
+      if (initialTab === 'supplementary') {
+        activeRightTab.value = 'supplementary';
+      }
+    }
+  }
 });
 </script>
 

@@ -345,6 +345,10 @@ export const kakaoApi = {
   },
   getReservationSendStatus: () => {
     return api.get<ApiResponse<any[]>>('/kakao/reservation-send-status');
+  },
+  // 보강 수업 알림톡
+  sendSupplementaryNotification: (sessionId: number) => {
+    return api.post<ApiResponse<any>>('/kakao/send-supplementary', { session_id: sessionId });
   }
 };
 

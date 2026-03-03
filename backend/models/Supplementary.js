@@ -129,4 +129,23 @@ export class Supplementary {
 
     return data;
   }
+
+  // 단일 보강 세션 + 참여 학생 조회 (알림톡 발송용)
+  static async getSessionWithStudents(sessionId) {
+    const { data, error } = await supabase
+      .from('supplementary_sessions')
+      .select(`
+        *,
+        classes (name),
+        supplementary_students (
+          student_id,
+          students (name, parent_phone, phone)
+        )
+      `)
+      .eq('id', sessionId)
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data;
+  }
 }

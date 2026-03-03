@@ -7,7 +7,7 @@
           <div class="flex items-center space-x-4">
             <router-link to="/" class="flex items-center space-x-4 hover:text-gray-200 transition">
               <img src="/logo.png" alt="독강영어 로고" class="h-16 w-16 object-contain rounded-full bg-white p-1 shadow-sm" />
-              <span class="text-2xl font-bold">독강영어 학생관리 시스템</span>
+              <span class="text-2xl font-bold">독강영어 학습관리 시스템</span>
             </router-link>
           </div>
           <div class="flex items-center space-x-4">
@@ -83,7 +83,15 @@ const activeDropdown = ref('');
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
   { name: '학생 관리', path: '/students', adminOnly: true },
-  { name: '반 관리', path: '/classes', adminOnly: false },
+  {
+    name: '반 관리',
+    path: '/classes',
+    adminOnly: false,
+    children: [
+      { name: '반 관리', path: '/classes' },
+      { name: '보강 관리', path: '/supplementary' }
+    ]
+  },
   { 
     name: '성적 입력', 
     path: '/scores-input', 

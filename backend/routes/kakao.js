@@ -8,7 +8,8 @@ import {
   verifyBimonthlyReportAccess,
   getBimonthlySendStatus,
   sendReservationNotification,
-  getReservationSendStatus
+  getReservationSendStatus,
+  sendSupplementaryNotification
 } from '../controllers/kakaoController.js';
 
 const router = express.Router();
@@ -39,5 +40,8 @@ router.post('/send-reservation', sendReservationNotification);
 
 // GET /api/kakao/reservation-send-status - 예약 안내 발송 상태 조회
 router.get('/reservation-send-status', getReservationSendStatus);
+
+// POST /api/kakao/send-supplementary - 보강 수업 알림톡 발송
+router.post('/send-supplementary', sendSupplementaryNotification);
 
 export default router;

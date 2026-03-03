@@ -6,6 +6,7 @@ import { BimonthlyScore } from '../models/BimonthlyScore.js';
 import { Student } from '../models/Student.js';
 import { Score } from '../models/Score.js';
 import { Reservation } from '../models/Reservation.js';
+import { Supplementary } from '../models/Supplementary.js';
 
 export const sendScoreReport = async (req, res) => {
   try {
@@ -122,6 +123,128 @@ ${reportUrl}
     res.status(500).json({
       success: false,
       message: `알림톡 발송 중 오류가 발생했습니다: ${error.message}`
+    });
+  }
+};
+
+// ========== 보강 수업 알림톡 발송 ==========
+export const sendSupplementaryNotification = async (req, res) => {
+  try {
+    const { session_id } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ success: false, message: '보강 세션 ID가 필요합니다.' });
+    }
+
+    // 1. 보강 세션 및 참여 학생 조회
+    const session = await Supplementary.getSessionWithStudents(session_id);
+    if (!session) {
+      return res.status(404).json({ success: false, message: '보강 세션을 찾을 수 없습니다.' });
+    }
+
+    const className = session.classes?.name || '반';
+    const sessionDate = new Date(session.session_date);
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const MM = String(sessionDate.getMonth() + 1).padStart(2, '0');
+    const DD = String(sessionDate.getDate()).padStart(2, '0');
+    const HH = String(sessionDate.getHours()).padStart(2, '0');
+    const MIN = String(sessionDate.getMinutes()).padStart(2, '0');
+    const dayName = dayNames[sessionDate.getDay()];
+
+    const participants = session.supplementary_students || [];
+    if (participants.length === 0) {
+      return res.status(400).json({ success: false, message: '보강 참여 학생이 없습니다.' });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    const results = [];
+
+    // 2. 학생별로 알림톡 발송
+    for (const p of participants) {
+      const studentName = p.students?.name || '';
+      // 우선 순위: parent_phone > phone
+      const receiverPhone = p.students?.parent_phone || p.students?.phone;
+      if (!receiverPhone) {
+        failCount++;
+        results.push({ studentName, status: 'no_phone' });
+        continue;
+      }
+
+      // 템플릿 텍스트 (알리고에 동일한 내용으로 등록 필요)
+      const message = `[보강 수업 안내]
+
+안녕하세요, ${studentName} 학생 학부모님.
+독강영어학원입니다.
+
+${MM}월 ${DD}일 (${dayName}) ${HH}:${MIN}에 ${className} 보강 수업이 예정되어 있습니다.
+보강 내용: ${session.content}
+
+※ 보강 일정과 시간이 변경되는 경우, 학원에서 개별 안내드리겠습니다.
+
+오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.`;
+
+      const aligoData = {
+        receiver_1: receiverPhone,
+        subject_1: '보강 수업 안내',
+        message_1: message,
+        // TODO: 실제 알리고 템플릿 코드로 교체 필요
+        tpl_code: process.env.ALIGO_SUPPLEMENTARY_TEMPLATE_CODE || 'UF_SUPPLEMENTARY',
+        button_1: {
+          button: [
+            {
+              name: '채널 추가',
+              linkType: 'AC'
+            }
+          ]
+        }
+      };
+
+      try {
+        const result = await sendAligoAlimtalk(aligoData);
+
+        let isSuccess = false;
+        if (result) {
+          if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+          else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+          else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+        }
+
+        if (isSuccess) successCount++;
+        else failCount++;
+
+        results.push({
+          studentName,
+          phone: receiverPhone,
+          isSuccess,
+          raw: result
+        });
+      } catch (err) {
+        console.error('보강 알림톡 개별 발송 실패:', err);
+        failCount++;
+        results.push({
+          studentName,
+          phone: receiverPhone,
+          isSuccess: false,
+          error: err.message
+        });
+      }
+    }
+
+    return res.json({
+      success: failCount === 0,
+      message: `보강 알림톡 발송 완료 (성공 ${successCount}건, 실패 ${failCount}건)`,
+      data: {
+        successCount,
+        failCount,
+        results
+      }
+    });
+  } catch (error) {
+    console.error('보강 알림톡 발송 에러:', error);
+    res.status(500).json({
+      success: false,
+      message: `보강 알림톡 발송 중 오류가 발생했습니다: ${error.message}`
     });
   }
 };
