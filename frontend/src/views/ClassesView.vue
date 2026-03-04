@@ -505,6 +505,31 @@
             <input v-model="classForm.teacher_name" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="선생님 이름" />
           </div>
           <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">수업 요일</label>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="day in weekdayOptions"
+                :key="day"
+                class="cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  class="sr-only peer"
+                  :value="day"
+                  v-model="(classForm as any).weekdays"
+                />
+                <div
+                  class="px-3 py-1 rounded-lg border text-sm text-gray-700 bg-white peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition"
+                >
+                  {{ day }}
+                </div>
+              </label>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">
+              수업이 있는 요일만 선택하세요. 선택하지 않으면 요일 제한이 없는 반으로 처리됩니다.
+            </p>
+          </div>
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
             <textarea v-model="classForm.description" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="반에 대한 설명 입력"></textarea>
           </div>
@@ -656,7 +681,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { classApi, studentApi, counselingApi, supplementaryApi } from '../services/api';
 import type { Student } from '../types';
@@ -855,6 +880,9 @@ const user = JSON.parse(localStorage.getItem('user') || '{}');
 const isAdmin = computed(() => user.role === 'admin');
 const isCommon = computed(() => user.username?.startsWith('staff'));
 
+// 수업 요일 옵션 (월~일)
+const weekdayOptions = ['월', '화', '수', '목', '금', '토', '일'];
+
 // 상담 모달 관련
 const showCounselingModal = ref(false);
 const selectedStudentForCounseling = ref<Student | null>(null);
@@ -951,11 +979,13 @@ const formatDateWithDay = (dateStr: string) => {
 
 const showClassModal = ref(false);
 const classModalMode = ref<'create' | 'edit'>('create');
+// 수업 요일: 기본은 빈 배열 (필요 시 월~금 등으로 채워도 됨)
 const classForm = ref({ 
   name: '', 
   teacher_name: '', 
   description: '',
-  category: 'regular'
+  category: 'regular',
+  weekdays: [] as string[]
 });
 
 const showStudentAssignModal = ref(false);
@@ -1209,14 +1239,16 @@ const openClassModal = (mode: 'create' | 'edit', item?: any) => {
   if (mode === 'edit' && item) {
     classForm.value = { 
       ...item,
-      category: item.category || 'regular'
+      category: item.category || 'regular',
+      weekdays: item.weekdays || []
     };
   } else {
     classForm.value = { 
       name: '', 
       teacher_name: '', 
       description: '',
-      category: 'regular'
+      category: 'regular',
+      weekdays: []
     };
   }
   showClassModal.value = true;
@@ -1300,52 +1332,55 @@ const assignStudents = async () => {
   }
 };
 
-// 모든 반의 오늘 숙제 검사 예정 데이터 로드
+// 모든 반의 오늘 숙제/RT 검사 예정 데이터 로드 (요일 + 날짜 기반 전용 API 사용)
 const fetchHomeworkDue = async () => {
   try {
     const today = getTodayFull();
-    const allDue: any[] = [];
-    
-    for (const cls of classes.value) {
-      try {
-        const res = await classApi.getAllLogs(cls.id);
-        if (res.data.success) {
-          const logs = res.data.data || [];
-          for (const log of logs) {
-            if (!log.homework) continue;
-            try {
-              const parsed = JSON.parse(log.homework);
-              if (Array.isArray(parsed)) {
-                parsed.forEach((h: any) => {
-                  const itemType = h.type === 'rt' ? 'rt' : 'homework';
-                  if (h.content && h.deadline === today) {
-                    allDue.push({
-                      ...h,
-                      type: itemType,
-                      class_name: cls.name,
-                      class_id: cls.id,
-                      id: `${log.id}-${itemType}-${h.content}`
-                    });
-                  }
-                });
-              }
-            } catch (e) {
-              // 구형 데이터 (모두 일반 숙제로 처리)
-              if (log.homework_deadline === today && log.homework) {
-                allDue.push({
-                  type: 'homework',
-                  content: log.homework,
-                  class_name: cls.name,
-                  class_id: cls.id,
-                  id: log.id
-                });
-              }
-            }
-          }
-        }
-      } catch (e) { /* 무시 */ }
+
+    // 백엔드에서 이미 "해당 날짜 + 수업 요일에 해당하는 반"만 필터링해서 내려줌
+    const res = await classApi.getHomeworkDue(today);
+    if (!res.data.success) {
+      homeworkDueToday.value = [];
+      return;
     }
-    
+
+    const rows = res.data.data || [];
+    const allDue: any[] = [];
+
+    for (const log of rows) {
+      const cls = (log as any).classes || {};
+
+      if (!log.homework) continue;
+      try {
+        const parsed = JSON.parse(log.homework);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((h: any) => {
+            const itemType = h.type === 'rt' ? 'rt' : 'homework';
+            if (h.content && h.deadline === today) {
+              allDue.push({
+                ...h,
+                type: itemType,
+                class_name: cls.name || '-',
+                class_id: log.class_id,
+                id: `${log.id}-${itemType}-${h.content}`
+              });
+            }
+          });
+        }
+      } catch (e) {
+        // 구형 데이터 (모두 일반 숙제로 처리)
+        if (log.homework_deadline === today && log.homework) {
+          allDue.push({
+            type: 'homework',
+            content: log.homework,
+            class_name: cls.name || '-',
+            class_id: log.class_id,
+            id: log.id
+          });
+        }
+      }
+    }
+
     homeworkDueToday.value = allDue;
   } catch (err) {
     console.error('숙제 검사일 로드 실패:', err);
@@ -1509,26 +1544,52 @@ const organizeWeeks = (sessions: any[], startDate: Date) => {
   supplementaryWeeks.value = weeks;
 };
 
-onMounted(async () => {
-  await fetchClasses();
-  fetchAllStudents();
-  // 반 목록 로드 후 숙제 검사일 체크
-  await fetchHomeworkDue();
-
-  // 보강 관리 화면 등에서 넘어온 경우: 특정 반 + 탭 자동 선택
+// 라우트 쿼리(classId, tab, className)에 따라 자동으로 반 및 탭 선택
+const applyRouteSelection = async () => {
   const initialClassId = route.query.classId ? Number(route.query.classId) : null;
+  const initialClassName = (route.query.className as string) || '';
   const initialTab = (route.query.tab as string) || '';
 
+  if (!initialClassId && !initialClassName) return;
+
+  let targetClass = null as any;
   if (initialClassId) {
-    const targetClass = classes.value.find((c: any) => c.id === initialClassId);
-    if (targetClass) {
-      await selectClass(targetClass);
-      if (initialTab === 'supplementary') {
-        activeRightTab.value = 'supplementary';
-      }
+    targetClass = classes.value.find((c: any) => c.id === initialClassId) || null;
+  }
+  // id로 못 찾은 경우 이름으로도 한 번 더 시도
+  if (!targetClass && initialClassName) {
+    targetClass = classes.value.find((c: any) => c.name === initialClassName) || null;
+  }
+
+  if (targetClass) {
+    await selectClass(targetClass);
+    if (initialTab === 'supplementary') {
+      activeRightTab.value = 'supplementary';
     }
   }
+};
+
+onMounted(async () => {
+  // 1) 먼저 반 목록만 불러와서 화면을 빨리 띄우고
+  await fetchClasses();
+
+  // 2) 라우트 쿼리(classId, tab 등)에 맞춰 해당 반/탭을 우선 선택
+  await applyRouteSelection();
+
+  // 3) 그 다음에 무거운 작업들은 백그라운드에서 천천히 처리
+  //    - 전체 학생 목록 (배정 모달/검색용)
+  //    - 모든 반의 '오늘 숙제 검사' 배너 데이터
+  fetchAllStudents();
+  fetchHomeworkDue();
 });
+
+// 같은 화면 안에서 쿼리만 바뀌는 경우도 반영
+watch(
+  () => route.query,
+  async () => {
+    await applyRouteSelection();
+  }
+);
 </script>
 
 <style scoped>

@@ -4,8 +4,11 @@ import * as supplementaryController from '../controllers/supplementaryController
 
 const router = express.Router();
 
-// 보강 일정 조회
+// 보강 일정 조회 (특정 반)
 router.get('/class/:classId', supplementaryController.getSessions);
+
+// 보강 대시보드용: 모든 반의 보강 일정 조회 (주간 요약 등)
+router.get('/dashboard', supplementaryController.getDashboardSessions);
 
 // 보강 일정 생성
 router.post('/', supplementaryController.createSession);

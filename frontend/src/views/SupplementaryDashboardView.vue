@@ -97,7 +97,6 @@ import { useRouter } from 'vue-router';
 import { classApi, supplementaryApi, kakaoApi } from '../services/api';
 
 const router = useRouter();
-const classes = ref<any[]>([]);
 const supplementaryDashboardSessions = ref<any[]>([]);
 const supplementaryDashboardLoading = ref(false);
 const sendingSessionId = ref<number | null>(null);
@@ -113,53 +112,31 @@ const getThisWeekRange = () => {
   return { start: monday, end: sunday };
 };
 
-const fetchClasses = async () => {
-  try {
-    const res = await classApi.getAll();
-    if (res.data.success) {
-      classes.value = res.data.data || [];
-    }
-  } catch (err) {
-    console.error('반 목록 로드 실패:', err);
-  }
-};
-
-// 보강 대시보드 데이터 로드 (모든 반 기준)
+// 보강 대시보드 데이터 로드 (모든 반 기준, 전용 API 사용)
 const fetchSupplementaryDashboard = async () => {
   try {
     supplementaryDashboardLoading.value = true;
     const { start, end } = getThisWeekRange();
-    const allSessions: any[] = [];
 
-    for (const cls of classes.value) {
-      try {
-        const res = await supplementaryApi.getSessions(
-          cls.id,
-          start.toISOString(),
-          end.toISOString()
-        );
-        if (res.data.success) {
-          const sessions = res.data.data || [];
-          sessions.forEach((s: any) => {
-            allSessions.push({
-              ...s,
-              class_name: cls.name,
-              class_id: cls.id
-            });
-          });
-        }
-      } catch (e) {
-        // 개별 반 오류는 무시하고 계속 진행
-      }
+    const res = await supplementaryApi.getDashboardSessions(
+      start.toISOString(),
+      end.toISOString()
+    );
+
+    if (!res.data.success) {
+      supplementaryDashboardSessions.value = [];
+      return;
     }
 
-    // 날짜순 정렬
-    allSessions.sort(
-      (a, b) =>
+    const sessions = res.data.data || [];
+
+    // 날짜순 정렬 (백엔드에서도 정렬하지만, 안전하게 한 번 더)
+    sessions.sort(
+      (a: any, b: any) =>
         new Date(a.session_date).getTime() - new Date(b.session_date).getTime()
     );
 
-    supplementaryDashboardSessions.value = allSessions;
+    supplementaryDashboardSessions.value = sessions;
   } catch (err) {
     console.error('보강 대시보드 로드 실패:', err);
   } finally {
@@ -184,7 +161,8 @@ const openClassFromDashboard = (session: any) => {
     path: '/classes',
     query: {
       classId: String(session.class_id),
-      tab: 'supplementary'
+      tab: 'supplementary',
+      className: session.class_name || ''
     }
   });
 };
@@ -210,7 +188,6 @@ const sendSupplementaryAlimtalk = async (session: any) => {
 };
 
 onMounted(async () => {
-  await fetchClasses();
   await fetchSupplementaryDashboard();
 });
 </script>

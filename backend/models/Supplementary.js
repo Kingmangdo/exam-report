@@ -29,6 +29,33 @@ export class Supplementary {
     return data;
   }
 
+  // 보강 대시보드용: 모든 반의 보강 일정 조회 (날짜 범위 + 반/학생 정보 포함)
+  static async getSessionsForRange(startDate, endDate) {
+    let query = supabase
+      .from('supplementary_sessions')
+      .select(`
+        *,
+        classes (id, name),
+        supplementary_students (
+          student_id,
+          attendance_status,
+          students (name, phone)
+        )
+      `)
+      .order('session_date', { ascending: true });
+
+    if (startDate) {
+      query = query.gte('session_date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('session_date', endDate);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
   // 보강 일정 생성
   static async createSession(sessionData) {
     const { class_id, session_date, content } = sessionData;

@@ -14,6 +14,25 @@ export const getSessions = async (req, res) => {
   }
 };
 
+// 보강 대시보드용: 모든 반의 보강 일정 조회 (주간 요약 등)
+export const getDashboardSessions = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+    const sessions = await Supplementary.getSessionsForRange(start_date, end_date);
+
+    // classes 정보를 평탄화하여 class_name, class_id 필드로 내려주기
+    const flattened = (sessions || []).map((s) => ({
+      ...s,
+      class_id: s.class_id,
+      class_name: s.classes?.name || null
+    }));
+
+    res.json({ success: true, data: flattened });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // 보강 일정 생성
 export const createSession = async (req, res) => {
   try {

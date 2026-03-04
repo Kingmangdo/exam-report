@@ -48,14 +48,16 @@ export class Class {
 
   // 반 생성
   static async create(classData) {
-    const { name, description, teacher_name, category } = classData;
+    const { name, description, teacher_name, category, weekdays } = classData;
     const { data, error } = await supabase
       .from('classes')
       .insert({ 
         name, 
         description: description || null, 
         teacher_name: teacher_name || null,
-        category: category || 'regular'
+        category: category || 'regular',
+        // 수업 요일: 배열이 비어있으면 null 처리 (의미: 요일 미지정/제한 없음)
+        weekdays: Array.isArray(weekdays) && weekdays.length > 0 ? weekdays : null
       })
       .select('*')
       .single();
@@ -69,7 +71,7 @@ export class Class {
     // 기존 반 이름 조회 (이름 변경 시 학생들의 class_name 업데이트용)
     const existing = await this.getById(id);
     const oldName = existing?.name;
-    const { name, description, teacher_name, category } = classData;
+    const { name, description, teacher_name, category, weekdays } = classData;
     
     const { data, error } = await supabase
       .from('classes')
@@ -78,6 +80,8 @@ export class Class {
         description: description || null, 
         teacher_name: teacher_name || null, 
         category: category || 'regular',
+        // 수업 요일 업데이트 (없으면 null)
+        weekdays: Array.isArray(weekdays) && weekdays.length > 0 ? weekdays : null,
         updated_at: new Date().toISOString() 
       })
       .eq('id', id)
@@ -228,9 +232,38 @@ export class Class {
 
   // 특정 날짜에 숙제 검사 예정인 로그 조회 (모든 반 대상)
   static async getHomeworkDueByDate(date) {
+    // 1) 날짜에 해당하는 요일 계산 (0=일요일)
+    const targetDate = new Date(date);
+    if (Number.isNaN(targetDate.getTime())) {
+      throw new Error('Invalid date for getHomeworkDueByDate');
+    }
+    const dayIndex = targetDate.getDay();
+    const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekday = weekdayNames[dayIndex];
+
+    // 2) 모든 반에서 수업 요일이 해당 요일에 포함된 반만 필터링
+    const { data: classes, error: classError } = await supabase
+      .from('classes')
+      .select('id, name, weekdays');
+
+    if (classError) throw new Error(classError.message);
+
+    const eligibleClasses = (classes || []).filter(c => {
+      // weekdays가 없거나 비어 있으면 "요일 제한 없음"으로 간주 → 항상 포함
+      if (!c.weekdays || c.weekdays.length === 0) return true;
+      return c.weekdays.includes(weekday);
+    });
+
+    const classIds = eligibleClasses.map(c => c.id);
+    if (classIds.length === 0) {
+      return [];
+    }
+
+    // 3) 해당 반들 중에서, 해당 날짜에 숙제 마감인 로그만 조회
     const { data, error } = await supabase
       .from('class_learning_logs')
-      .select('*, classes!inner(name)')
+      .select('*, classes!inner(id, name)')
+      .in('class_id', classIds)
       .eq('homework_deadline', date)
       .not('homework', 'is', null);
     

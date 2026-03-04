@@ -149,6 +149,12 @@ export const supplementaryApi = {
   getSessions: (classId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>(`/supplementary/class/${classId}`, { params: { start_date: startDate, end_date: endDate } });
   },
+  // 보강 대시보드용: 모든 반의 보강 일정 조회
+  getDashboardSessions: (startDate?: string, endDate?: string) => {
+    return api.get<ApiResponse<any[]>>('/supplementary/dashboard', {
+      params: { start_date: startDate, end_date: endDate }
+    });
+  },
   createSession: (data: any) => {
     return api.post<ApiResponse<any>>('/supplementary', data);
   },
