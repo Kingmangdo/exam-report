@@ -309,7 +309,7 @@ ${reportUrl}
       receiver_1: student.parent_phone,
       subject_1: '성취평가 결과 안내',
       message_1: message,
-      emtitle_1: '독강영어학원 성취평가 결과 안내',
+      emtitle_1: '',
       tpl_code: 'UF_7024',
       button_1: {
         button: [
