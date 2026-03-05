@@ -65,7 +65,7 @@ export const authApi = {
 
 // 학생 관리 API
 export const studentApi = {
-  getAll: (filters?: { class_name?: string; grade?: string; search?: string }) => {
+  getAll: (filters?: { class_name?: string; grade?: string; search?: string; status?: string }) => {
     return api.get<ApiResponse<Student[]>>('/students', { params: filters });
   },
   getById: (id: number) => {
@@ -85,6 +85,14 @@ export const studentApi = {
       student_ids: studentIds,
       class_names: classNames
     });
+  },
+  // 퇴원 처리
+  withdraw: (id: number, data: { withdraw_date: string; withdraw_reason?: string; withdraw_teacher?: string }) => {
+    return api.post<ApiResponse<Student>>(`/students/${id}/withdraw`, data);
+  },
+  // 재등록(복귀)
+  reEnroll: (id: number) => {
+    return api.post<ApiResponse<Student>>(`/students/${id}/re-enroll`);
   }
 };
 
@@ -172,6 +180,10 @@ export const supplementaryApi = {
   },
   getStudentHistory: (studentId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>(`/supplementary/student/${studentId}`, { params: { start_date: startDate, end_date: endDate } });
+  },
+  // 보강 출결/결석 사유 업데이트
+  updateAttendance: (sessionId: number, studentId: number, data: { attendance_status: 'pending' | 'present' | 'absent'; absent_reason?: string }) => {
+    return api.patch<ApiResponse<any>>(`/supplementary/${sessionId}/students/${studentId}/attendance`, data);
   }
 };
 

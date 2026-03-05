@@ -22,6 +22,11 @@ export class Student {
     
     let query = supabase.from('students').select('*').order(orderColumn, { ascending });
 
+    // 재원/퇴원 상태 필터 (기본은 컨트롤러에서 'active'로 설정)
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+
     if (filters.class_name) {
       const className = filters.class_name;
       // class_name이 쉼표로 구분된 문자열이므로, 정확한 일치를 위해 like 패턴 사용
@@ -110,6 +115,12 @@ export class Student {
     if (data.monthly_tuition !== undefined) updateData.monthly_tuition = data.monthly_tuition;
     // 등록일시 수정도 지원 (날짜 변경이 필요한 경우)
     if (data.created_at !== undefined) updateData.created_at = data.created_at;
+
+    // 퇴원 관련 필드 및 상태 변경
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.withdraw_date !== undefined) updateData.withdraw_date = data.withdraw_date || null;
+    if (data.withdraw_reason !== undefined) updateData.withdraw_reason = data.withdraw_reason || null;
+    if (data.withdraw_teacher !== undefined) updateData.withdraw_teacher = data.withdraw_teacher || null;
 
     const { data: updated, error } = await supabase
       .from('students')

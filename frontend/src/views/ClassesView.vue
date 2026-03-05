@@ -39,7 +39,7 @@
     >
       <div class="flex items-center gap-2 mb-2">
         <span class="text-2xl">🔔</span>
-        <h3 class="text-lg font-bold text-purple-700">오늘 RT 검사날입니다.!</h3>
+        <h3 class="text-lg font-bold text-purple-700">오늘 RT</h3>
       </div>
       <div class="flex flex-wrap gap-2">
         <span
@@ -163,17 +163,9 @@
         <div class="flex border-b">
           <button 
             @click="activeRightTab = 'learning'" 
-            class="flex-1 py-3 text-center font-bold text-sm transition-colors"
-            :class="activeRightTab === 'learning' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
+            class="flex-1 py-3 text-center font-bold text-sm transition-colors bg-primary text-white"
           >
             📚 학습 관리
-          </button>
-          <button 
-            @click="activeRightTab = 'supplementary'" 
-            class="flex-1 py-3 text-center font-bold text-sm transition-colors"
-            :class="activeRightTab === 'supplementary' ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'"
-          >
-            🕒 보강 관리
           </button>
         </div>
 
@@ -225,14 +217,6 @@
 
             <!-- 입력 및 상세 내용 -->
             <div class="md:col-span-3 p-6 space-y-6">
-              <!-- 작성자 정보 표시 -->
-              <div v-if="learningLog.created_by || learningLog.updated_by" class="flex items-center gap-3 text-sm bg-blue-50 px-4 py-2.5 rounded-lg border border-blue-100">
-                <span class="text-blue-500">👤</span>
-                <span class="text-blue-700 font-bold">작성: {{ learningLog.created_by || '-' }}</span>
-                <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-gray-400">|</span>
-                <span v-if="learningLog.updated_by && learningLog.updated_by !== learningLog.created_by" class="text-orange-600 font-bold">수정: {{ learningLog.updated_by }}</span>
-              </div>
-
               <div class="grid grid-cols-1 gap-6">
                 <div class="flex gap-4">
                   <div class="w-[65%]">
@@ -349,7 +333,9 @@
                         </span>
                         <span class="text-sm text-gray-800 font-medium flex-1">{{ dueHw.content }}</span>
                       </span>
-                      <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">{{ dueHw.log_date }} 부여 {{ dueHw.created_by ? `| 출제: ${dueHw.created_by}` : '' }}</span>
+                      <span class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                        {{ dueHw.log_date }} 부여
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -369,48 +355,7 @@
           </div>
         </div>
 
-        <!-- 보강 관리 내용 -->
-        <div v-else-if="activeRightTab === 'supplementary'" class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-gray-800">보강 스케줄</h3>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                @click.stop="clearSelectedClass"
-                class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 font-bold"
-              >
-                ✕ 닫기
-              </button>
-              <button @click="openSupplementaryModal" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold text-sm">
-                + 보강 일정 추가
-              </button>
-            </div>
-          </div>
-
-          <!-- 3주 히스토리 (전전주, 전주, 금주) -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div v-for="(week, idx) in supplementaryWeeks" :key="idx" class="bg-gray-50 rounded-lg p-4 border">
-              <h4 class="text-sm font-bold text-gray-700 mb-3 text-center border-b pb-2">
-                {{ week.label }} <span class="text-xs font-normal text-gray-500">({{ week.range }})</span>
-              </h4>
-              <div v-if="week.sessions.length === 0" class="text-center py-4 text-gray-400 text-xs">일정 없음</div>
-              <div class="space-y-3">
-                <div v-for="session in week.sessions" :key="session.id" class="bg-white p-3 rounded shadow-sm border border-gray-100 hover:shadow-md transition">
-                  <div class="flex justify-between items-start mb-1">
-                    <span class="text-xs font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{{ formatTime(session.session_date) }}</span>
-                    <button @click="deleteSupplementary(session.id)" class="text-gray-400 hover:text-red-500 text-xs">&times;</button>
-                  </div>
-                  <p class="text-sm font-bold text-gray-800 mb-1">{{ session.content }}</p>
-                  <div class="flex flex-wrap gap-1">
-                    <span v-for="student in session.supplementary_students" :key="student.student_id" class="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                      {{ student.students?.name }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- 기존 '보강 관리' 탭은 제거되었으며, 보강 일정 등록/수정은 상단 메뉴의 보강 캘린더에서만 가능합니다. -->
       </div>
     </div>
 
@@ -593,96 +538,12 @@
       </div>
     </div>
 
-    <!-- 보강 일정 등록 모달 -->
-    <div v-if="showSupplementaryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
-        <h3 class="text-xl font-bold mb-4">보강 일정 등록</h3>
-        
-        <div class="space-y-4 mb-6">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">날짜</label>
-              <input v-model="supplementaryForm.date" type="date" class="w-full px-4 py-2 border rounded-lg" />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">시간</label>
-              <input v-model="supplementaryForm.time" type="time" class="w-full px-4 py-2 border rounded-lg" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">보강 내용</label>
-            <input v-model="supplementaryForm.content" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="예: 관계대명사 보충" />
-          </div>
-        </div>
-
-        <div class="flex-1 flex flex-col min-h-0">
-          <div class="flex justify-between items-center mb-2">
-            <label class="block text-sm font-bold text-gray-700">참여 학생 선택</label>
-            <button @click="openStudentSearchForSupplementary" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 font-bold">
-              + 다른 반 학생 추가
-            </button>
-          </div>
-          
-          <div class="border rounded-lg overflow-y-auto flex-1 p-2">
-            <!-- 현재 반 학생 목록 -->
-            <div v-if="classStudents.length > 0">
-              <div class="text-xs font-bold text-gray-500 mb-1 px-2">현재 반 학생</div>
-              <div v-for="student in classStudents" :key="student.id" class="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer" @click="toggleSupplementaryStudent(student)">
-                <input type="checkbox" :checked="selectedSupplementaryStudents.some(s => s.id === student.id)" class="w-4 h-4 mr-2 text-purple-600 rounded focus:ring-purple-500" />
-                <span class="text-sm">{{ student.name }}</span>
-              </div>
-            </div>
-            
-            <!-- 추가된 타 반 학생 목록 -->
-            <div v-if="otherClassStudents.length > 0" class="mt-3">
-              <div class="text-xs font-bold text-gray-500 mb-1 px-2 border-t pt-2">추가된 학생</div>
-              <div v-for="student in otherClassStudents" :key="student.id" class="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer" @click="toggleSupplementaryStudent(student)">
-                <input type="checkbox" :checked="selectedSupplementaryStudents.some(s => s.id === student.id)" class="w-4 h-4 mr-2 text-purple-600 rounded focus:ring-purple-500" />
-                <span class="text-sm">{{ student.name }} <span class="text-xs text-gray-400">({{ student.class_name || '반 없음' }})</span></span>
-              </div>
-            </div>
-          </div>
-          <div class="mt-2 text-right text-sm text-gray-600">
-            총 {{ selectedSupplementaryStudents.length }}명 선택됨
-          </div>
-        </div>
-
-        <div class="flex justify-end space-x-3 mt-6">
-          <button @click="showSupplementaryModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">취소</button>
-          <button @click="saveSupplementary" class="px-6 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700">저장</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 타 반 학생 검색 모달 (보강용) -->
-    <div v-if="showStudentSearchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl h-[500px] flex flex-col">
-        <h3 class="text-lg font-bold mb-4">학생 검색</h3>
-        <input v-model="supplementaryStudentSearch" type="text" placeholder="이름 검색..." class="w-full px-4 py-2 border rounded-lg mb-4" />
-        
-        <div class="flex-1 overflow-y-auto border rounded-lg">
-          <div v-for="student in filteredAllStudentsForSearch" :key="student.id" 
-               class="px-4 py-3 border-b hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-               @click="addOtherStudentToSupplementary(student)">
-            <div>
-              <div class="font-bold">{{ student.name }}</div>
-              <div class="text-xs text-gray-500">{{ student.school }} / {{ student.class_name }}</div>
-            </div>
-            <button class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">선택</button>
-          </div>
-        </div>
-        <div class="mt-4 text-right">
-          <button @click="showStudentSearchModal = false" class="px-4 py-2 bg-gray-200 rounded-lg">닫기</button>
-        </div>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { classApi, studentApi, counselingApi, supplementaryApi } from '../services/api';
 import type { Student } from '../types';
 
@@ -696,6 +557,7 @@ const getTodayFull = () => {
 };
 
 const route = useRoute();
+const router = useRouter();
 const classes = ref<any[]>([]);
 const selectedClass = ref<any>(null);
 const classStudents = ref<any[]>([]);
@@ -1552,6 +1414,13 @@ const applyRouteSelection = async () => {
 
   if (!initialClassId && !initialClassName) return;
 
+  // 예전 보강 관리 대시보드에서 넘어오는 링크 호환:
+  // tab=supplementary 인 경우, 새로운 보강 캘린더 화면으로 바로 이동
+  if (initialTab === 'supplementary') {
+    router.push({ name: 'supplementary-dashboard' });
+    return;
+  }
+
   let targetClass = null as any;
   if (initialClassId) {
     targetClass = classes.value.find((c: any) => c.id === initialClassId) || null;
@@ -1563,9 +1432,6 @@ const applyRouteSelection = async () => {
 
   if (targetClass) {
     await selectClass(targetClass);
-    if (initialTab === 'supplementary') {
-      activeRightTab.value = 'supplementary';
-    }
   }
 };
 

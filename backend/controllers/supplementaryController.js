@@ -36,8 +36,8 @@ export const getDashboardSessions = async (req, res) => {
 // 보강 일정 생성
 export const createSession = async (req, res) => {
   try {
-    const { class_id, session_date, content, student_ids } = req.body;
-    const session = await Supplementary.createSession({ class_id, session_date, content });
+    const { class_id, session_date, content, teacher_name, student_ids } = req.body;
+    const session = await Supplementary.createSession({ class_id, session_date, content, teacher_name });
     
     if (student_ids && student_ids.length > 0) {
       await Supplementary.addStudents(session.id, student_ids);
@@ -53,8 +53,8 @@ export const createSession = async (req, res) => {
 export const updateSession = async (req, res) => {
   try {
     const { id } = req.params;
-    const { session_date, content, student_ids } = req.body;
-    const session = await Supplementary.updateSession(id, { session_date, content });
+    const { session_date, content, teacher_name, student_ids } = req.body;
+    const session = await Supplementary.updateSession(id, { session_date, content, teacher_name });
 
     // 학생 목록 업데이트 (기존 삭제 후 재등록 방식이 간단함)
     // 하지만 출석 상태 보존을 위해 추가/삭제 로직을 분리하는 것이 좋음.
@@ -104,6 +104,32 @@ export const removeStudent = async (req, res) => {
     const { id, studentId } = req.params;
     await Supplementary.removeStudent(id, studentId);
     res.json({ success: true, message: '학생이 보강 명단에서 제외되었습니다.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 보강 참여 학생 출결/결석 사유 업데이트
+export const updateStudentAttendance = async (req, res) => {
+  try {
+    const { id, studentId } = req.params;
+    const { attendance_status, absent_reason } = req.body;
+
+    if (!attendance_status || !['pending', 'present', 'absent'].includes(attendance_status)) {
+      return res.status(400).json({
+        success: false,
+        message: '유효한 출결 상태가 아닙니다. (pending, present, absent 중 하나여야 합니다.)'
+      });
+    }
+
+    const updated = await Supplementary.updateStudentAttendance(
+      id,
+      studentId,
+      attendance_status,
+      absent_reason
+    );
+
+    res.json({ success: true, data: updated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

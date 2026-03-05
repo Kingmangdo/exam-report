@@ -7,7 +7,9 @@ export const getAllStudents = async (req, res) => {
       class_name: req.query.class_name,
       grade: req.query.grade,
       search: req.query.search,
-      sort_by: req.query.sort_by // 'name', 'created_at', 'created_at_desc'
+      sort_by: req.query.sort_by, // 'name', 'created_at', 'created_at_desc'
+      // 기본값: 재원생만 조회, 쿼리로 status=withdrawn 을 넘기면 퇴원생만 조회
+      status: req.query.status || 'active'
     };
 
     const students = await Student.getAll(filters);
@@ -20,6 +22,82 @@ export const getAllStudents = async (req, res) => {
     res.status(500).json({
       success: false,
       message: '학생 목록 조회 중 오류가 발생했습니다.',
+      error: error.message
+    });
+  }
+};
+
+// 학생 퇴원 처리
+export const withdrawStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { withdraw_date, withdraw_reason, withdraw_teacher } = req.body;
+
+    const existingStudent = await Student.getById(id);
+    if (!existingStudent) {
+      return res.status(404).json({
+        success: false,
+        message: '학생을 찾을 수 없습니다.'
+      });
+    }
+
+    if (!withdraw_date) {
+      return res.status(400).json({
+        success: false,
+        message: '퇴원 날짜는 필수입니다.'
+      });
+    }
+
+    const updateData = {
+      status: 'withdrawn',
+      withdraw_date,
+      withdraw_reason: withdraw_reason || null,
+      withdraw_teacher: withdraw_teacher || null
+    };
+
+    const student = await Student.update(id, updateData);
+
+    res.json({
+      success: true,
+      message: '학생이 퇴원 처리되었습니다.',
+      data: student
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: '학생 퇴원 처리 중 오류가 발생했습니다.',
+      error: error.message
+    });
+  }
+};
+
+// 퇴원생 재등록(복귀) 처리
+export const reEnrollStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existingStudent = await Student.getById(id);
+    if (!existingStudent) {
+      return res.status(404).json({
+        success: false,
+        message: '학생을 찾을 수 없습니다.'
+      });
+    }
+
+    const student = await Student.update(id, {
+      status: 'active'
+      // 최근 퇴원 정보는 기록 용도로 students 테이블에 남겨둔다.
+    });
+
+    res.json({
+      success: true,
+      message: '학생이 재등록(복귀)되었습니다.',
+      data: student
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: '학생 재등록 처리 중 오류가 발생했습니다.',
       error: error.message
     });
   }

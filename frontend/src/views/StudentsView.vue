@@ -39,8 +39,27 @@
     <div class="bg-white rounded-lg shadow p-4 mb-6">
       <div class="flex justify-between items-center mb-4">
         <div class="text-sm font-medium text-gray-600">
-          전체 학생 수: <span class="text-primary font-bold">{{ totalStudentCount }}</span>명 | 
-          검색 결과: <span class="text-green-600 font-bold">{{ students.length }}</span>명
+          <span class="mr-4">
+            전체 학생 수: <span class="text-primary font-bold">{{ totalStudentCount }}</span>명 |
+            검색 결과: <span class="text-green-600 font-bold">{{ students.length }}</span>명
+          </span>
+        </div>
+        <!-- 재원생 / 퇴원생 토글 -->
+        <div class="flex items-center space-x-2">
+          <button
+            class="px-3 py-1 rounded-full text-sm font-medium border"
+            :class="currentStatus === 'active' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-300'"
+            @click="changeStatusFilter('active')"
+          >
+            재원생
+          </button>
+          <button
+            class="px-3 py-1 rounded-full text-sm font-medium border"
+            :class="currentStatus === 'withdrawn' ? 'bg-red-600 text-white border-red-700' : 'bg-white text-gray-700 border-gray-300'"
+            @click="changeStatusFilter('withdrawn')"
+          >
+            퇴원생
+          </button>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -202,6 +221,15 @@
             <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">담임</th>
             <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학생 연락처</th>
             <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">학부모 연락처</th>
+            <th v-if="currentStatus === 'withdrawn'" class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">
+              퇴원일
+            </th>
+            <th v-if="currentStatus === 'withdrawn'" class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">
+              퇴원 사유
+            </th>
+            <th v-if="currentStatus === 'withdrawn'" class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase">
+              퇴원 담당
+            </th>
             <th class="px-6 py-3 text-center text-base font-bold text-gray-700 uppercase">상담내용</th>
             <th v-if="isAdmin" class="px-6 py-3 text-center text-base font-bold text-gray-700 uppercase">관리</th>
           </tr>
@@ -256,6 +284,26 @@
                 </span>
               </div>
             </td>
+            <td
+              v-if="currentStatus === 'withdrawn'"
+              class="px-6 py-4 whitespace-nowrap text-base text-gray-600"
+            >
+              {{ formatDate(student.withdraw_date || '') }}
+            </td>
+            <td
+              v-if="currentStatus === 'withdrawn'"
+              class="px-6 py-4 whitespace-nowrap text-base text-gray-600"
+            >
+              <span class="line-clamp-2" :title="student.withdraw_reason || '-'">
+                {{ student.withdraw_reason || '-' }}
+              </span>
+            </td>
+            <td
+              v-if="currentStatus === 'withdrawn'"
+              class="px-6 py-4 whitespace-nowrap text-base text-gray-600"
+            >
+              {{ student.withdraw_teacher || '-' }}
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-base text-center">
               <button
                 @click="openCounselingModal(student)"
@@ -264,12 +312,26 @@
                 상담
               </button>
             </td>
-            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-base text-center font-medium">
+            <td v-if="isAdmin" class="px-6 py-4 whitespace-nowrap text-base text-center font-medium space-x-3">
               <button
                 @click="openModal('edit', student)"
-                class="text-primary hover:text-primary-dark mr-3"
+                class="text-primary hover:text-primary-dark"
               >
                 수정
+              </button>
+              <button
+                v-if="currentStatus === 'active'"
+                @click="openWithdrawModal(student)"
+                class="text-orange-600 hover:text-orange-800"
+              >
+                퇴원
+              </button>
+              <button
+                v-if="currentStatus === 'withdrawn'"
+                @click="reEnrollStudent(student)"
+                class="text-green-600 hover:text-green-800"
+              >
+                재등록
               </button>
               <button
                 @click="deleteStudent(student.id)"
@@ -459,6 +521,73 @@
       </div>
     </div>
 
+    <!-- 퇴원 처리 모달 -->
+    <div
+      v-if="showWithdrawModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h3 class="text-xl font-bold mb-4">
+          {{ withdrawTargetStudent?.name }} 학생 퇴원 처리
+        </h3>
+
+        <form @submit.prevent="submitWithdraw">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                퇴원 날짜 <span class="text-red-500">*</span>
+              </label>
+              <input
+                v-model="withdrawForm.withdraw_date"
+                type="date"
+                required
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">담당 선생님</label>
+              <select
+                v-model="withdrawForm.withdraw_teacher"
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">선생님 선택</option>
+                <option value="댄T">댄T</option>
+                <option value="마이크T">마이크T</option>
+                <option value="첼시원장">첼시원장</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">퇴원 사유</label>
+              <textarea
+                v-model="withdrawForm.withdraw_reason"
+                rows="3"
+                placeholder="퇴원 사유를 입력하세요."
+                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              @click="closeWithdrawModal"
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              퇴원 처리
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- 상담일지 모달 -->
     <div
       v-if="showCounselingModal"
@@ -548,6 +677,8 @@ const isAdmin = user?.role === 'admin';
 
 const students = ref<Student[]>([]);
 const dateSortOrder = ref<'asc' | 'desc'>('desc');
+// 재원/퇴원 상태 필터
+const currentStatus = ref<'active' | 'withdrawn'>('active');
 
 const sortedStudents = computed(() => {
   const list = [...students.value];
@@ -590,6 +721,19 @@ const availableClasses = ref<string[]>([]);
 // 학교 직접 입력 관련
 const showCustomSchoolInput = ref(false);
 const customSchoolName = ref('');
+
+// 퇴원 처리 관련 상태
+const showWithdrawModal = ref(false);
+const withdrawTargetStudent = ref<Student | null>(null);
+const withdrawForm = ref<{
+  withdraw_date: string;
+  withdraw_reason: string;
+  withdraw_teacher: string;
+}>({
+  withdraw_date: new Date().toISOString().split('T')[0],
+  withdraw_reason: '',
+  withdraw_teacher: ''
+});
 
 const handleSchoolChange = () => {
   if (form.value.school === 'custom') {
@@ -740,6 +884,7 @@ const fetchStudents = async () => {
     if (filters.value.search) activeFilters.search = filters.value.search;
     if (filters.value.class_name) activeFilters.class_name = filters.value.class_name;
     if (filters.value.grade) activeFilters.grade = filters.value.grade;
+    activeFilters.status = currentStatus.value;
 
     const response = await studentApi.getAll(activeFilters);
     if (response.data.success && response.data.data) {
@@ -762,6 +907,14 @@ const fetchStudents = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const changeStatusFilter = (status: 'active' | 'withdrawn') => {
+  if (currentStatus.value === status) return;
+  currentStatus.value = status;
+  // 상태 변경 시 선택된 학생 초기화 및 목록 재조회
+  selectedStudents.value = [];
+  fetchStudents();
 };
 
 // 전체 선택/해제
@@ -877,6 +1030,64 @@ const closeModal = () => {
   form.value = { classes: [], created_at: '' };
   showNewClassInput.value = false;
   newClassName.value = '';
+};
+
+// 퇴원 모달 열기
+const openWithdrawModal = (student: Student) => {
+  withdrawTargetStudent.value = student;
+  showWithdrawModal.value = true;
+  withdrawForm.value = {
+    withdraw_date: new Date().toISOString().split('T')[0],
+    withdraw_reason: '',
+    withdraw_teacher: ''
+  };
+};
+
+const closeWithdrawModal = () => {
+  showWithdrawModal.value = false;
+  withdrawTargetStudent.value = null;
+};
+
+const submitWithdraw = async () => {
+  if (!withdrawTargetStudent.value) return;
+
+  if (!withdrawForm.value.withdraw_date) {
+    alert('퇴원 날짜를 선택해주세요.');
+    return;
+  }
+
+  if (!confirm(`${withdrawTargetStudent.value.name} 학생을 퇴원 처리하시겠습니까?`)) {
+    return;
+  }
+
+  try {
+    await studentApi.withdraw(withdrawTargetStudent.value.id, {
+      withdraw_date: withdrawForm.value.withdraw_date,
+      withdraw_reason: withdrawForm.value.withdraw_reason || undefined,
+      withdraw_teacher: withdrawForm.value.withdraw_teacher || undefined
+    });
+    alert('퇴원 처리가 완료되었습니다.');
+    closeWithdrawModal();
+    await initFilterOptions();
+    await fetchStudents();
+  } catch (err: any) {
+    alert(err.response?.data?.message || '퇴원 처리 중 오류가 발생했습니다.');
+    console.error(err);
+  }
+};
+
+// 재등록 처리
+const reEnrollStudent = async (student: Student) => {
+  if (!confirm(`${student.name} 학생을 재등록 처리하시겠습니까?`)) return;
+  try {
+    await studentApi.reEnroll(student.id);
+    alert('재등록(복귀) 처리가 완료되었습니다.');
+    await initFilterOptions();
+    await fetchStudents();
+  } catch (err: any) {
+    alert((err as any).response?.data?.message || '재등록 처리 중 오류가 발생했습니다.');
+    console.error(err);
+  }
 };
 
 const saveStudent = async () => {

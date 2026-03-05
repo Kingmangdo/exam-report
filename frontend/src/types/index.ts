@@ -12,6 +12,11 @@ export interface Student {
   parent_phone: string;
   created_at?: string;
   updated_at?: string;
+  // 재원/퇴원 상태 및 퇴원 정보
+  status?: 'active' | 'withdrawn';
+  withdraw_date?: string | null;
+  withdraw_reason?: string | null;
+  withdraw_teacher?: string | null;
 }
 
 // 성적 타입

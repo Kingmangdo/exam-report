@@ -33,7 +33,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'supplementary',
         name: 'supplementary-dashboard',
-        component: () => import('../views/SupplementaryDashboardView.vue')
+        component: () => import('../views/SupplementaryCalendarView.vue')
       },
       {
         path: 'scores/new',

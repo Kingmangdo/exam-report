@@ -11,6 +11,7 @@ export class Supplementary {
         supplementary_students (
           student_id,
           attendance_status,
+          absent_reason,
           students (name, phone)
         )
       `)
@@ -39,6 +40,7 @@ export class Supplementary {
         supplementary_students (
           student_id,
           attendance_status,
+          absent_reason,
           students (name, phone)
         )
       `)
@@ -58,10 +60,10 @@ export class Supplementary {
 
   // 보강 일정 생성
   static async createSession(sessionData) {
-    const { class_id, session_date, content } = sessionData;
+    const { class_id, session_date, content, teacher_name } = sessionData;
     const { data, error } = await supabase
       .from('supplementary_sessions')
-      .insert({ class_id, session_date, content })
+      .insert({ class_id, session_date, content, teacher_name })
       .select('*')
       .single();
 
@@ -71,10 +73,15 @@ export class Supplementary {
 
   // 보강 일정 수정
   static async updateSession(id, sessionData) {
-    const { session_date, content } = sessionData;
+    const { session_date, content, teacher_name } = sessionData;
+    const updateData = { session_date, content };
+    if (teacher_name !== undefined) {
+      updateData.teacher_name = teacher_name || null;
+    }
+
     const { data, error } = await supabase
       .from('supplementary_sessions')
-      .update({ session_date, content })
+      .update(updateData)
       .eq('id', id)
       .select('*')
       .single();
@@ -123,6 +130,23 @@ export class Supplementary {
 
     if (error) throw new Error(error.message);
     return true;
+  }
+
+  // 보강 참여 학생 출결/결석 사유 업데이트
+  static async updateStudentAttendance(sessionId, studentId, attendanceStatus, absentReason) {
+    const { data, error } = await supabase
+      .from('supplementary_students')
+      .update({
+        attendance_status: attendanceStatus,
+        absent_reason: absentReason || null
+      })
+      .eq('session_id', sessionId)
+      .eq('student_id', studentId)
+      .select('*')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   // 학생별 보강 히스토리 조회 (최근 3주 등)

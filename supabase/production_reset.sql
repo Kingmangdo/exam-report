@@ -254,6 +254,7 @@ CREATE TABLE public.supplementary_sessions (
   class_id BIGINT REFERENCES public.classes(id) ON DELETE CASCADE,
   session_date TIMESTAMP WITH TIME ZONE NOT NULL,
   content TEXT,
+  teacher_name TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

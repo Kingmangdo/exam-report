@@ -25,6 +25,9 @@ router.post('/:id/students', supplementaryController.addStudents);
 // 보강 참여 학생 제거
 router.delete('/:id/students/:studentId', supplementaryController.removeStudent);
 
+// 보강 참여 학생 출결/결석 사유 업데이트
+router.patch('/:id/students/:studentId/attendance', supplementaryController.updateStudentAttendance);
+
 // 학생별 보강 히스토리 조회
 router.get('/student/:studentId', supplementaryController.getStudentHistory);
 
