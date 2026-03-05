@@ -37,7 +37,13 @@
             <div class="flex items-center justify-between mb-1">
               <span
                 class="text-xs md:text-sm font-bold"
-                :class="day.isToday ? 'text-blue-600' : 'text-gray-800'"
+                :class="
+                  day.isToday
+                    ? 'text-blue-600'
+                    : day.isHoliday
+                      ? 'text-red-500'
+                      : 'text-gray-800'
+                "
               >
                 {{ day.day }}
               </span>
@@ -384,6 +390,25 @@ const formatDateKey = (date: Date) => {
   return `${year}-${mm}-${dd}`;
 };
 
+// 대한민국 주요 양력 공휴일 (해당 연도 기준)
+// * 설/추석 등 음력 공휴일은 필요 시 연도별로 직접 추가하는 방식으로 확장 가능
+const holidaySet = computed(() => {
+  const y = currentYear.value;
+  return new Set<string>([
+    `${y}-01-01`, // 신정
+    `${y}-03-01`, // 삼일절
+    `${y}-05-05`, // 어린이날
+    `${y}-06-06`, // 현충일
+    `${y}-07-17`, // 제헌절 (요청에 따라 휴일 처리)
+    `${y}-08-15`, // 광복절
+    `${y}-09-24`, // 추석 연휴 (요청: 9/24)
+    `${y}-09-25`, // 추석 연휴 (요청: 9/25)
+    `${y}-10-03`, // 개천절
+    `${y}-10-09`, // 한글날
+    `${y}-12-25` // 성탄절
+  ]);
+});
+
 // 캘린더용 날짜 배열
 const calendarDays = computed(() => {
   const year = currentYear.value;
@@ -427,6 +452,8 @@ const buildDay = (date: Date, inCurrentMonth: boolean) => {
   const key = formatDateKey(date); // 로컬 기준 YYYY-MM-DD
   const todayKey = formatDateKey(new Date());
   const isToday = key === todayKey;
+  const weekday = date.getDay();
+  const isHoliday = weekday === 0 || holidaySet.value.has(key); // 일요일 or 지정 공휴일
 
   const sessions = monthlySessions.value.filter((s: any) =>
     (s.session_date || '').startsWith(key)
@@ -440,6 +467,7 @@ const buildDay = (date: Date, inCurrentMonth: boolean) => {
     day,
     inCurrentMonth,
     isToday,
+    isHoliday,
     sessions
   };
 };
