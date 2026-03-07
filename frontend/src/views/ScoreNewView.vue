@@ -79,29 +79,37 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(student, sIdx) in classStudents" :key="student.id" class="hover:bg-gray-50">
+            <tr v-for="(student, sIdx) in classStudents" :key="student.id" :class="scoreForms[sIdx]?.absent ? 'bg-gray-100 opacity-60' : 'hover:bg-gray-50'">
               <!-- 학생명 -->
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
-                {{ student.name || '이름없음' }}
+                <div class="flex items-center gap-2">
+                  <span>{{ student.name || '이름없음' }}</span>
+                  <button 
+                    @click="toggleAbsent(sIdx)" 
+                    class="text-[10px] px-2 py-1 rounded border transition"
+                    :class="scoreForms[sIdx]?.absent ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200 hover:border-red-300'"
+                  >
+                    결석
+                  </button>
+                </div>
               </td>
 
               <!-- RT 맞춘 문제 입력 -->
               <td v-for="(test, tIdx) in rtTestTypes" :key="'rt-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
-                <input v-if="scoreForms[sIdx]?.rt_details?.[tIdx]" v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center" @input="calculateScore(sIdx)" />
+                <input v-if="scoreForms[sIdx]?.rt_details?.[tIdx]" v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent" @input="calculateScore(sIdx)" />
               </td>
 
               <!-- 단어 맞춘 문제 입력 -->
               <td v-for="(test, tIdx) in wordTestTypes" :key="'word-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
                 <div v-if="scoreForms[sIdx]?.word_details?.[tIdx]" class="flex flex-col items-center gap-1">
-                  <input v-model.number="scoreForms[sIdx].word_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-100" :disabled="scoreForms[sIdx].word_details[tIdx].retest" @input="calculateScore(sIdx)" />
-                  <button @click="toggleRetest(sIdx, tIdx)" class="text-[10px] px-1 rounded border" :class="scoreForms[sIdx].word_details[tIdx].retest ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200'">재시험</button>
+                  <input v-model.number="scoreForms[sIdx].word_details[tIdx].correct" type="number" min="0" :max="test.total" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent || scoreForms[sIdx].word_details[tIdx].retest" @input="calculateScore(sIdx)" />
                 </div>
               </td>
 
               <!-- 과제점수 (A, B, C, F) -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3 text-center">
                 <div class="flex gap-1 justify-center">
-                  <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" class="w-8 h-8 text-xs font-bold rounded-full border transition" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
+                  <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
                     {{ grade }}
                   </button>
                 </div>
@@ -114,7 +122,7 @@
 
               <!-- 코멘트 -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3">
-                <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary" @input="onCommentInput(sIdx)"></textarea>
+                <textarea v-model="scoreForms[sIdx].comment" rows="1" placeholder="코멘트" class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent" @input="onCommentInput(sIdx)"></textarea>
               </td>
 
               <!-- 개별 저장 -->
@@ -222,6 +230,21 @@ const updateAllScoreForms = () => {
   });
 };
 
+const toggleAbsent = (sIdx: number) => {
+  const form = scoreForms.value[sIdx];
+  form.absent = !form.absent;
+  
+  if (form.absent) {
+    // 결석 처리 시 모든 점수 0으로 초기화
+    form.rt_details.forEach((d: any) => { d.correct = 0; });
+    form.word_details.forEach((d: any) => { d.correct = 0; d.retest = false; });
+    form.assignment_grade = '';
+    form.assignment_score = 0;
+  }
+  
+  calculateScore(sIdx);
+};
+
 const setAssignmentGrade = (sIdx: number, grade: string) => {
   scoreForms.value[sIdx].assignment_grade = grade;
   scoreForms.value[sIdx].assignment_score = assignmentMap[grade];
@@ -259,6 +282,17 @@ const onCommentInput = (sIdx: number) => {
 
 const calculateScore = (sIdx: number) => {
   const form = scoreForms.value[sIdx];
+  
+  // 결석 처리된 경우 모든 점수를 0으로 설정
+  if (form.absent) {
+    calculatedScores.value[sIdx] = {
+      rtScore: 0,
+      wordScore: 0,
+      total: 0,
+      average: 0
+    };
+    return;
+  }
   
   // RT 평균 점수
   let rtSum = 0;
@@ -339,7 +373,8 @@ const onClassChange = () => {
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
-    commentManuallyEdited: false
+    commentManuallyEdited: false,
+    absent: false
   }));
   
   calculatedScores.value = classStudents.value.map(() => ({ total: 0, average: 0 }));
@@ -358,7 +393,8 @@ const loadExistingScores = async () => {
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
-    commentManuallyEdited: false
+    commentManuallyEdited: false,
+    absent: false
   }));
   calculatedScores.value = classStudents.value.map(() => ({ 
     rtScore: 0, 
@@ -396,13 +432,16 @@ const loadExistingScores = async () => {
       classStudents.value.forEach((student, sIdx) => {
         const score = data.find((s: any) => s.student_id === student.id);
         if (score) {
+          // average_score가 0이면 결석으로 간주
+          const isAbsent = (score.average_score === 0 || score.average_score === null);
           scoreForms.value[sIdx] = {
             rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(() => ({ correct: 0 })),
             word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
             assignment_score: score.assignment_score || 0,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
             comment: score.comment || '',
-            commentManuallyEdited: true  // 서버에서 불러온 데이터는 항상 수동편집 취급 (자동 덮어쓰기 방지)
+            commentManuallyEdited: true,  // 서버에서 불러온 데이터는 항상 수동편집 취급 (자동 덮어쓰기 방지)
+            absent: isAbsent
           };
           calculateScore(sIdx);
         }
@@ -571,7 +610,8 @@ const resetAllScores = () => {
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
-    commentManuallyEdited: false
+    commentManuallyEdited: false,
+    absent: false
   }));
   
   calculatedScores.value = classStudents.value.map(() => ({ 

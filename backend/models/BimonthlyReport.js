@@ -102,7 +102,7 @@ export class BimonthlyReport {
         name: student.name,
         grade: student.grade,
         school: student.school,
-        class_name: student.class_name
+        class_name: score.class_name || student.class_name  // 실제 성적이 입력된 반 이름 사용
       },
       score: {
         id: score.id,
