@@ -649,7 +649,15 @@ const onClassChange = async () => {
     form.value.teacher_name = cls.teacher_name || '';
     const res = await studentApi.getAll({ class_name: cls.name });
     if (res.data.success) {
-      availableStudents.value = res.data.data || [];
+      // 백엔드 필터링 후 프론트엔드에서도 추가 필터링 (공백 처리 및 정확한 매칭)
+      // 학생의 class_name이 쉼표로 구분된 여러 반을 포함할 수 있으므로 정확히 매칭
+      const filtered = (res.data.data || []).filter((s: any) => {
+        if (!s.class_name) return false;
+        // class_name을 쉼표로 분리하고 공백 제거 후 해당 반이 포함되는지 확인
+        const studentClasses = s.class_name.split(',').map((c: string) => c.trim());
+        return studentClasses.includes(cls.name);
+      });
+      availableStudents.value = filtered;
     }
   } catch (err) {
     console.error('학생 목록 로드 실패:', err);
