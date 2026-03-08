@@ -144,13 +144,15 @@ export class Score {
       comment
     } = data;
 
-    // 카테고리별 점수 계산 (상세 내역이 있으면 개별 테스트의 평균 백분율로 계산)
+    // 카테고리별 점수 계산 (RT는 100점 만점으로 직접 입력된 점수 사용)
     let rtScore = 0;
     if (rt_details && rt_details.length > 0) {
-      const rtPercentages = rt_details.map(rt => (rt.total > 0 ? (rt.correct / rt.total) * 100 : 0));
-      rtScore = rtPercentages.reduce((a, b) => a + b, 0) / rt_details.length;
+      // rt.correct가 이미 0-100 점수이므로 직접 사용
+      const rtScores = rt_details.map(rt => Number(rt.correct) || 0);
+      rtScore = rtScores.reduce((a, b) => a + b, 0) / rt_details.length;
     } else {
-      rtScore = rt_total > 0 ? (rt_correct / rt_total) * 100 : 0;
+      // 레거시 지원: rt_total이 100이면 rt_correct를 점수로 사용, 아니면 백분율 계산
+      rtScore = rt_total === 100 ? rt_correct : (rt_total > 0 ? (rt_correct / rt_total) * 100 : 0);
     }
 
     let wordScore = 0;
@@ -255,13 +257,15 @@ export class Score {
       return null;
     }
 
-    // 카테고리별 점수 계산
+    // 카테고리별 점수 계산 (RT는 100점 만점으로 직접 입력된 점수 사용)
     let rtScore = 0;
     if (rt_details && rt_details.length > 0) {
-      const rtPercentages = rt_details.map(rt => (rt.total > 0 ? (rt.correct / rt.total) * 100 : 0));
-      rtScore = rtPercentages.reduce((a, b) => a + b, 0) / rt_details.length;
+      // rt.correct가 이미 0-100 점수이므로 직접 사용
+      const rtScores = rt_details.map(rt => Number(rt.correct) || 0);
+      rtScore = rtScores.reduce((a, b) => a + b, 0) / rt_details.length;
     } else {
-      rtScore = rt_total > 0 ? (rt_correct / rt_total) * 100 : 0;
+      // 레거시 지원: rt_total이 100이면 rt_correct를 점수로 사용, 아니면 백분율 계산
+      rtScore = rt_total === 100 ? rt_correct : (rt_total > 0 ? (rt_correct / rt_total) * 100 : 0);
     }
 
     let wordScore = 0;

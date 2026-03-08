@@ -326,11 +326,19 @@
               </div>
             </div>
 
-            <!-- 출결 저장 버튼 (보강 등록과 색상 구분: 초록색) -->
+            <!-- 출결 저장 및 알림톡 발송 버튼 -->
             <div
               v-if="selectedAttendanceSession"
-              class="flex justify-end mt-3"
+              class="flex justify-end gap-2 mt-3"
             >
+              <button
+                type="button"
+                class="px-4 py-1.5 rounded-lg bg-blue-500 text-white text-[11px] font-bold hover:bg-blue-600 disabled:opacity-60"
+                :disabled="sendingAlimtalk"
+                @click="sendAlimtalk"
+              >
+                {{ sendingAlimtalk ? '발송 중...' : '보강 알림톡 발송' }}
+              </button>
               <button
                 type="button"
                 class="px-4 py-1.5 rounded-lg bg-emerald-500 text-white text-[11px] font-bold hover:bg-emerald-600 disabled:opacity-60"
@@ -367,7 +375,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { supplementaryApi, classApi, studentApi } from '../services/api';
+import { supplementaryApi, classApi, studentApi, kakaoApi } from '../services/api';
 
 const loading = ref(false);
 const monthlySessions = ref<any[]>([]);
@@ -552,6 +560,7 @@ const selectedDaySessions = ref<any[]>([]);
 const selectedAttendanceSession = ref<any | null>(null);
 const attendanceMap = ref<Record<number, { status: 'pending' | 'present' | 'absent'; reason: string }>>({});
 const attendanceSaving = ref(false);
+const sendingAlimtalk = ref(false);
 
 const form = ref<{
   class_id: number | '';
@@ -716,6 +725,39 @@ const saveAttendance = async () => {
     alert(err.response?.data?.message || '출결 저장 중 오류가 발생했습니다.');
   } finally {
     attendanceSaving.value = false;
+  }
+};
+
+const sendAlimtalk = async () => {
+  if (!selectedAttendanceSession.value) return;
+  
+  const session = selectedAttendanceSession.value;
+  const studentCount = (session.supplementary_students || []).length;
+  
+  if (studentCount === 0) {
+    alert('보강 참여 학생이 없습니다.');
+    return;
+  }
+  
+  if (!confirm(`보강 알림톡을 ${studentCount}명에게 발송하시겠습니까?`)) {
+    return;
+  }
+  
+  try {
+    sendingAlimtalk.value = true;
+    const res = await kakaoApi.sendSupplementaryNotification(session.id);
+    
+    if (res.data.success) {
+      const { successCount, failCount } = res.data.data;
+      alert(`보강 알림톡 발송 완료\n성공: ${successCount}건, 실패: ${failCount}건`);
+    } else {
+      alert(`알림톡 발송 실패: ${res.data.message || '알 수 없는 오류'}`);
+    }
+  } catch (err: any) {
+    console.error('알림톡 발송 오류:', err);
+    alert(`알림톡 발송 중 오류가 발생했습니다: ${err.response?.data?.message || err.message}`);
+  } finally {
+    sendingAlimtalk.value = false;
   }
 };
 
