@@ -22,21 +22,16 @@ export class Student {
     
     let query = supabase.from('students').select('*').order(orderColumn, { ascending });
 
-    // 재원/퇴원 상태 필터 (기본은 컨트롤러에서 'active'로 설정)
-    if (filters.status) {
+    // 재원/퇴원 상태 필터 (status가 명시적으로 전달된 경우에만 적용)
+    if (filters.status !== undefined && filters.status !== null && filters.status !== '') {
       query = query.eq('status', filters.status);
     }
 
     if (filters.class_name) {
-      const className = filters.class_name;
-      // class_name이 쉼표로 구분된 문자열이므로, 정확한 일치를 위해 like 패턴 사용
-      // 1. "A" (정확히 일치)
-      // 2. "A,..." (시작)
-      // 3. "...,A,..." (중간)
-      // 4. "...,A" (끝)
-      query = query.or(
-        `class_name.eq."${className}",class_name.like."${className},%",class_name.like."%,${className},%",class_name.like."%,${className}"`
-      );
+      // class_name 필터링은 Class.getStudents와 동일한 방식 사용
+      // ilike로 넓게 매칭한 후 메모리에서 정확히 필터링
+      const className = filters.class_name.trim();
+      query = query.ilike('class_name', `%${className}%`);
     }
 
     if (filters.grade) {
@@ -51,7 +46,20 @@ export class Student {
     const { data, error } = await query;
     if (error) throw new Error(error.message);
 
-    return (data || []).map(withClasses);
+    let result = (data || []).map(withClasses);
+    
+    // class_name 필터가 있는 경우, 메모리에서 정확히 필터링 (공백 처리 및 OR 조건)
+    if (filters.class_name) {
+      const className = filters.class_name.trim();
+      result = result.filter(student => {
+        if (!student.class_name) return false;
+        // class_name을 쉼표로 분리하고 공백 제거 후 해당 반이 포함되는지 확인
+        const studentClasses = student.class_name.split(',').map(c => c.trim());
+        return studentClasses.includes(className);
+      });
+    }
+
+    return result;
   }
 
   // 학생 ID로 조회

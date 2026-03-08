@@ -8,8 +8,9 @@ export const getAllStudents = async (req, res) => {
       grade: req.query.grade,
       search: req.query.search,
       sort_by: req.query.sort_by, // 'name', 'created_at', 'created_at_desc'
-      // 기본값: 재원생만 조회, 쿼리로 status=withdrawn 을 넘기면 퇴원생만 조회
-      status: req.query.status || 'active'
+      // status가 명시적으로 전달된 경우에만 필터 적용
+      // undefined나 빈 문자열이면 status 필터 없이 모든 학생 조회 (반 관리와 동일)
+      status: req.query.status && req.query.status !== '' ? req.query.status : undefined
     };
 
     const students = await Student.getAll(filters);
