@@ -525,19 +525,32 @@ export const sendReservationNotification = async (req, res) => {
       return res.status(400).json({ success: false, message: '학부모 연락처가 등록되지 않았습니다.' });
     }
 
-    // 2. 방문일시 포맷 변수 추출 (KST 변환)
-    const dbDate = new Date(reservation.visit_date);
-    // DB에 저장된 시간이 UTC라고 가정하고 한국 시간(KST, UTC+9)으로 변환
-    // 만약 서버가 이미 KST라면 이 변환이 중복될 수 있으나, 보통 클라우드 서버는 UTC임
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const visitDate = new Date(dbDate.getTime() + kstOffset);
+    // 2. 방문일시 포맷 변수 추출 (서버 로컬 타임존과 무관하게 KST 고정)
+    const visitDate = new Date(reservation.visit_date);
+    const kstDateParts = new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(visitDate);
 
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    const MM = String(visitDate.getMonth() + 1).padStart(2, '0');
-    const DD = String(visitDate.getDate()).padStart(2, '0');
-    const HH = String(visitDate.getHours()).padStart(2, '0');
-    const MIN = String(visitDate.getMinutes()).padStart(2, '0');
-    const dayName = dayNames[visitDate.getDay()];
+    const partMap = {};
+    kstDateParts.forEach(part => {
+      partMap[part.type] = part.value;
+    });
+
+    const MM = partMap.month;
+    const DD = partMap.day;
+    const HH = partMap.hour;
+    const MIN = partMap.minute;
+    const dayName = new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      weekday: 'short'
+    })
+      .format(visitDate)
+      .replace('요일', '');
 
     // 3. 알림톡 메시지 구성 (알리고 템플릿과 100% 일치해야 함)
     const message = `예약을 통해 신청해 주신 입학 학습진단 일정을 안내드립니다.
