@@ -206,6 +206,20 @@ export const bimonthlyApi = {
   }
 };
 
+// AI 코멘트 API (로컬 Ollama)
+export const aiApi = {
+  generateBimonthlyComment: (data: {
+    student_name: string;
+    class_name?: string;
+    exam_date: string;
+    average_score?: number;
+    parts: Array<{ name: string; score: number; max_score: number }>;
+    previous_comment?: string;
+  }) => {
+    return api.post<ApiResponse<{ comment: string }>>('/ai/generate-comment', data);
+  }
+};
+
 // 성적 관리 API
 export const scoreApi = {
   getAll: (filters?: { 

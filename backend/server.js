@@ -72,6 +72,7 @@ import kakaoRouter from './routes/kakao.js';
 import bimonthlyRouter from './routes/bimonthly.js';
 import reservationsRouter from './routes/reservations.js';
 import supplementaryRouter from './routes/supplementary.js';
+import aiRouter from './routes/ai.js';
 
 app.use('/api/students', studentsRouter);
 app.use('/api/scores', scoresRouter);
@@ -87,6 +88,7 @@ app.use('/api/kakao', kakaoRouter);
 app.use('/api/bimonthly', bimonthlyRouter);
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/supplementary', supplementaryRouter);
+app.use('/api/ai', aiRouter);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {

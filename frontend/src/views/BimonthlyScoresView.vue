@@ -216,13 +216,22 @@
           <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
             <div class="flex items-center justify-between mb-2">
               <label class="text-xs font-bold text-gray-600">✏️ 코멘트 작성 / 수정</label>
-              <button 
-                @click="saveComment" 
-                :disabled="commentSaving"
-                class="px-4 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold disabled:opacity-50"
-              >
-                {{ commentSaving ? '저장 중...' : '코멘트 저장' }}
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="generateAiComment"
+                  :disabled="aiCommentLoading"
+                  class="px-4 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold disabled:opacity-50"
+                >
+                  {{ aiCommentLoading ? '생성 중...' : 'AI 코멘트 초안 생성' }}
+                </button>
+                <button
+                  @click="saveComment"
+                  :disabled="commentSaving"
+                  class="px-4 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold disabled:opacity-50"
+                >
+                  {{ commentSaving ? '저장 중...' : '코멘트 저장' }}
+                </button>
+              </div>
             </div>
             <textarea 
               v-model="editComment" 
@@ -260,7 +269,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { studentApi, bimonthlyApi, kakaoApi } from '../services/api';
+import { studentApi, bimonthlyApi, kakaoApi, aiApi } from '../services/api';
 import { Radar, Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -290,6 +299,7 @@ const selectedScore = ref<any>(null);
 const trendLoading = ref(false);
 const editComment = ref('');
 const commentSaving = ref(false);
+const aiCommentLoading = ref(false);
 const classAverage = ref<any>(null);
 const selectedIds = ref<number[]>([]);
 const sendStatusMap = ref<Record<number, string>>({});
@@ -570,6 +580,32 @@ const saveComment = async () => {
     alert('코멘트 저장 실패: ' + (err.response?.data?.message || err.message));
   } finally {
     commentSaving.value = false;
+  }
+};
+
+const generateAiComment = async () => {
+  if (!selectedScore.value) return;
+  aiCommentLoading.value = true;
+  try {
+    const res = await aiApi.generateBimonthlyComment({
+      student_name: selectedScore.value.student_name,
+      class_name: selectedScore.value.class_name,
+      exam_date: selectedScore.value.exam_date,
+      average_score: selectedScore.value.average_score,
+      parts: selectedScore.value.parts || [],
+      previous_comment: editComment.value || selectedScore.value.comment || ''
+    });
+
+    if (res.data.success && res.data.data?.comment) {
+      editComment.value = res.data.data.comment;
+      showToast('AI 코멘트 초안이 생성되었습니다.');
+    } else {
+      alert('AI 코멘트 생성 실패: ' + (res.data.message || '알 수 없는 오류'));
+    }
+  } catch (err: any) {
+    alert('AI 코멘트 생성 실패: ' + (err.response?.data?.message || err.message));
+  } finally {
+    aiCommentLoading.value = false;
   }
 };
 
