@@ -58,7 +58,8 @@
               <div
                 v-for="(s, idx) in day.sessions.slice(0, 2)"
                 :key="s.id + '-' + idx"
-                class="text-[10px] md:text-xs px-1 py-0.5 rounded bg-purple-50 text-purple-700 truncate"
+                class="text-[10px] md:text-xs px-1 py-0.5 rounded truncate"
+                :class="sessionHighlightClass(s)"
               >
                 {{ formatTimeShort(s.session_date) }}
                 · {{ s.class_name || '-' }}
@@ -241,9 +242,19 @@
               <label class="block text-xs font-medium text-gray-600">
                 기존 보강 출결 관리
               </label>
-              <span class="text-[11px] text-gray-400">
-                {{ selectedDaySessions.length }}개 보강
-              </span>
+              <div class="flex items-center gap-2 text-[11px] text-gray-400">
+                <span>
+                  {{ selectedDaySessions.length }}개 보강
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="inline-block w-3 h-3 rounded bg-emerald-200 border border-emerald-400"></span>
+                  <span>시간 지남 + 출석 있음</span>
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="inline-block w-3 h-3 rounded bg-red-200 border border-red-400"></span>
+                  <span>시간 지남 + 출석 없음</span>
+                </span>
+              </div>
             </div>
 
             <!-- 세션 선택 버튼 -->
@@ -253,11 +264,7 @@
                 :key="session.id"
                 type="button"
                 class="px-3 py-1.5 rounded-full text-[11px] border font-medium whitespace-nowrap"
-                :class="
-                  selectedAttendanceSession && selectedAttendanceSession.id === session.id
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                "
+                :class="sessionSelectButtonClass(session)"
                 @click="selectAttendanceSession(session)"
               >
                 {{ formatTimeShort(session.session_date) }} · {{ session.class_name || '반' }}
@@ -331,6 +338,14 @@
               v-if="selectedAttendanceSession"
               class="flex justify-end gap-2 mt-3"
             >
+              <button
+                type="button"
+                class="px-4 py-1.5 rounded-lg bg-red-500 text-white text-[11px] font-bold hover:bg-red-600 disabled:opacity-60 mr-auto"
+                :disabled="deletingSession"
+                @click="deleteSelectedSession"
+              >
+                {{ deletingSession ? '삭제 중...' : '보강 삭제' }}
+              </button>
               <button
                 type="button"
                 class="px-4 py-1.5 rounded-lg bg-blue-500 text-white text-[11px] font-bold hover:bg-blue-600 disabled:opacity-60"
@@ -561,6 +576,7 @@ const selectedAttendanceSession = ref<any | null>(null);
 const attendanceMap = ref<Record<number, { status: 'pending' | 'present' | 'absent'; reason: string }>>({});
 const attendanceSaving = ref(false);
 const sendingAlimtalk = ref(false);
+const deletingSession = ref(false);
 
 const form = ref<{
   class_id: number | '';
@@ -762,6 +778,100 @@ const sendAlimtalk = async () => {
   } finally {
     sendingAlimtalk.value = false;
   }
+};
+
+// 보강 세션 삭제
+const deleteSelectedSession = async () => {
+  if (!selectedAttendanceSession.value) return;
+
+  const session = selectedAttendanceSession.value;
+
+  if (
+    !confirm(
+      `선택한 보강 일정(${formatTimeShort(session.session_date)} · ${
+        session.class_name || '반'
+      })을(를) 삭제하시겠습니까?\n해당 보강의 출결 정보도 함께 삭제됩니다.`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    deletingSession.value = true;
+    const res = await supplementaryApi.deleteSession(session.id);
+    if (!res.data.success) {
+      alert(res.data.message || '보강 삭제에 실패했습니다.');
+      return;
+    }
+
+    await fetchMonthlySessions();
+
+    if (selectedDate.value) {
+      const key = selectedDate.value;
+      const sessionsForDate = monthlySessions.value.filter((s: any) =>
+        (s.session_date || '').startsWith(key)
+      );
+      selectedDaySessions.value = sessionsForDate;
+
+      if (sessionsForDate.length > 0) {
+        selectAttendanceSession(sessionsForDate[0]);
+      } else {
+        selectedAttendanceSession.value = null;
+        attendanceMap.value = {};
+      }
+    }
+
+    alert('보강 일정이 삭제되었습니다.');
+  } catch (err: any) {
+    console.error('보강 삭제 실패:', err);
+    alert(err.response?.data?.message || '보강 삭제 중 오류가 발생했습니다.');
+  } finally {
+    deletingSession.value = false;
+  }
+};
+
+// ====== 세션 하이라이트(색상) 규칙 ======
+// - 현재 시간 이전인 경우만 색상 적용
+// - 출석(present) 학생이 한 명이라도 있으면 초록
+// - 출석(present) 학생이 한 명도 없으면 빨강
+const getSessionStatus = (session: any): 'upcoming' | 'past_with_present' | 'past_without_present' => {
+  if (!session || !session.session_date) return 'upcoming';
+  const now = new Date();
+  const dt = new Date(session.session_date);
+  if (isNaN(dt.getTime()) || now <= dt) return 'upcoming';
+
+  const students = session.supplementary_students || [];
+  const hasPresent = students.some((s: any) => s.attendance_status === 'present');
+  return hasPresent ? 'past_with_present' : 'past_without_present';
+};
+
+// 캘린더 칸 안의 작은 보강 뱃지 색상
+const sessionHighlightClass = (session: any) => {
+  const status = getSessionStatus(session);
+  if (status === 'past_with_present') {
+    return 'bg-emerald-100 text-emerald-700';
+  }
+  if (status === 'past_without_present') {
+    return 'bg-red-100 text-red-700';
+  }
+  return 'bg-purple-50 text-purple-700';
+};
+
+// 출결 관리 모달 상단 세션 선택 버튼 색상
+const sessionSelectButtonClass = (session: any) => {
+  if (selectedAttendanceSession.value && selectedAttendanceSession.value.id === session.id) {
+    // 선택된 세션은 항상 보라색으로 강조
+    return 'bg-purple-600 text-white border-purple-600';
+  }
+
+  const status = getSessionStatus(session);
+  if (status === 'past_with_present') {
+    return 'bg-white text-emerald-700 border-emerald-400 hover:bg-emerald-50';
+  }
+  if (status === 'past_without_present') {
+    return 'bg-white text-red-700 border-red-400 hover:bg-red-50';
+  }
+  return 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
 };
 
 // 시간 시/분 선택이 바뀔 때마다 form.time 을 "HH:MM" 형식으로 동기화
