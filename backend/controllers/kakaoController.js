@@ -174,7 +174,7 @@ export const sendSupplementaryNotification = async (req, res) => {
       // 템플릿 텍스트 (알리고에 동일한 내용으로 등록 필요)
       // {학생이름}과 {보강일시}는 동적으로 치환됩니다.
       const formattedDateTime = `${MM}월 ${DD}일 (${dayName}) ${HH}:${MIN}`;
-      const message = `[독강영어 플러스 케어 일정 안내]
+      const message = `
 안녕하세요! 꼼꼼한 관리, 독강영어 입니다.
   정규 수업에서 배운 내용을 학생의 실력으로 확실히 정착시키기 위해 운영되는 [플러스 케어 타임] 일정을 안내드립니다.
 
@@ -208,7 +208,7 @@ export const sendSupplementaryNotification = async (req, res) => {
           button: [
             {
               name: '문의하기기',
-              linkType: 'AC'
+              linkType: 'MD'
             }
           ]
         }
