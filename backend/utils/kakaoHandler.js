@@ -40,8 +40,15 @@ export const sendAligoAlimtalk = async (data) => {
   if (emtitle_1) form.append('emtitle_1', emtitle_1);
   
   if (button_1) {
-    // 알리고 가이드에 따라 JSON 문자열을 최대한 단순하게(공백 없이) 변환하여 전송
-    const buttonString = JSON.stringify(button_1);
+    /**
+     * button_1 전달 규칙
+     * - 알리고 상담사 가이드: "템플릿 원본 JSON과 1:1로 일치하도록, escape나 개행 없이 문자열 그대로 전송"
+     * - 따라서 이미 JSON 문자열로 넘어온 경우에는 절대 다시 JSON.stringify 하지 않고 그대로 사용
+     * - 객체로 넘어온 경우에만 한 번만 JSON.stringify 해서 전송
+     */
+    const buttonString =
+      typeof button_1 === 'string' ? button_1 : JSON.stringify(button_1);
+
     form.append('button_1', buttonString);
     console.log('[DEBUG] Aligo Button_1 String:', buttonString);
   }

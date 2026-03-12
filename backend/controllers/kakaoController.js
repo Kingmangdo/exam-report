@@ -198,19 +198,23 @@ export const sendSupplementaryNotification = async (req, res) => {
 
   학습의 연속성을 완성하는 귀한 시간인 만큼, 배정된 일정에 차질 없이 참석하여 학생이 자신감 있게 다음 학습을 이어갈 수 있도록 가정에서도 지도 부탁드립니다.`;
 
+      /**
+       * 알리고 상담사 가이드:
+       * - "button_1 값은 템플릿 원본 JSON과 1:1로 일치하도록, escape나 개행 없이 문자열 그대로 전송"
+       * => button_1 은 JSON 문자열 그대로 넘기고, utils에서 다시 stringify 하지 않도록 처리함.
+       * 
+       * 아래 JSON 문자열은 알리고 템플릿에 등록된 버튼 JSON과 똑같이 맞춰야 합니다.
+       * (필요 시 알리고 콘솔에서 복사한 원본으로 교체)
+       */
+      const supplementaryButtonJson = '{"button":[{"name":"문의하기","linkType":"MD"}]}';
+
       const aligoData = {
         receiver_1: receiverPhone,
         subject_1: '플러스 케어 일정 안내',
         message_1: message,
         tpl_code: 'UF_9469',
-        button_1: {
-          button: [
-            {
-              name: '문의하기기',
-              linkType: 'MD'
-            }
-          ]
-        }
+        // button_1 은 JSON 문자열 그대로 전달 (이 문자열이 템플릿에 등록된 값과 100% 동일해야 함)
+        button_1: supplementaryButtonJson
       };
 
       try {
