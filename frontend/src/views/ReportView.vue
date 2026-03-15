@@ -153,6 +153,12 @@
                     </p>
                   </div>
                 </div>
+                <!-- 누적 정답수 표시 -->
+                <div class="mt-3 p-4 bg-yellow-100 rounded-lg border border-yellow-200">
+                  <p class="text-base font-bold text-gray-800 text-center" style="font-size: 1.2rem;">
+                    {{ reportData.student.name }} 학생이 독강영어와 암기한 단어: 총 {{ reportData.score.word?.cumulative_correct || 0 }}개 ✏️
+                  </p>
+                </div>
               </div>
               <!-- 단어 합산 (상세가 없을 경우 대비) -->
               <div v-else class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
@@ -167,6 +173,12 @@
                 </div>
                 <p class="text-2xl font-bold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-primary'">
                   {{ reportData.score.word.score.toFixed(1) }}점
+                </p>
+              </div>
+              <!-- 누적 정답수 표시 (상세가 없을 경우) -->
+              <div v-if="!reportData.score.word_details || reportData.score.word_details.length === 0" class="mt-3 p-4 bg-yellow-100 rounded-lg border border-yellow-200">
+                <p class="text-base font-bold text-gray-800 text-center" style="font-size: 1.2rem;">
+                  {{ reportData.student.name }} 학생이 독강영어와 암기한 단어: 총 {{ reportData.score.word?.cumulative_correct || 0 }}개 ✏️
                 </p>
               </div>
 

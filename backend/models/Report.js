@@ -127,6 +127,30 @@ export class Report {
     // 단어시험 84점 이하 확인
     const wordRetest = score.word_score !== null && score.word_score <= 84;
 
+    // 학생의 전체 누적 단어 시험 정답수 계산
+    // 해당 학생의 모든 성적을 조회하여 모든 단어 시험의 정답수 합산
+    let totalCumulativeWordCorrect = 0;
+    try {
+      const { data: allScores, error: allScoresError } = await supabase
+        .from('scores')
+        .select('word_details')
+        .eq('student_id', score.student_id);
+      
+      if (!allScoresError && allScores) {
+        allScores.forEach(s => {
+          const wordDetails = s.word_details || [];
+          if (Array.isArray(wordDetails)) {
+            wordDetails.forEach(word => {
+              totalCumulativeWordCorrect += Number(word.correct) || 0;
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.error('누적 단어 정답수 계산 중 오류:', err);
+      // 에러가 발생해도 0으로 설정하고 계속 진행
+    }
+
     return {
       student: {
         id: student.id,
@@ -146,7 +170,8 @@ export class Report {
           total: score.word_total || 0,
           correct: score.word_correct || 0,
           score: score.word_score || 0,
-          retest: wordRetest
+          retest: wordRetest,
+          cumulative_correct: totalCumulativeWordCorrect
         },
         rt_details: score.rt_details || [],
         word_details: score.word_details || [],
