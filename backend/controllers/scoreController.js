@@ -216,3 +216,84 @@ export const deleteScore = async (req, res) => {
     });
   }
 };
+
+// 임시저장 저장
+export const saveDraft = async (req, res) => {
+  try {
+    const { class_name, exam_date, draft_data, last_modified_by } = req.body;
+
+    if (!class_name || !exam_date || !draft_data || !last_modified_by) {
+      return res.status(400).json({
+        success: false,
+        message: '필수 항목이 누락되었습니다.'
+      });
+    }
+
+    await Score.saveDraft(class_name, exam_date, draft_data, last_modified_by);
+
+    res.json({
+      success: true,
+      message: '임시저장되었습니다.'
+    });
+  } catch (error) {
+    console.error('임시저장 에러:', error);
+    res.status(500).json({
+      success: false,
+      message: `임시저장 실패: ${error.message}`
+    });
+  }
+};
+
+// 임시저장 조회
+export const getDraft = async (req, res) => {
+  try {
+    const { class_name, exam_date } = req.params;
+
+    if (!class_name || !exam_date) {
+      return res.status(400).json({
+        success: false,
+        message: '반 이름과 시험일자는 필수입니다.'
+      });
+    }
+
+    const draft = await Score.getDraft(class_name, exam_date);
+
+    res.json({
+      success: true,
+      data: draft
+    });
+  } catch (error) {
+    console.error('임시저장 조회 에러:', error);
+    res.status(500).json({
+      success: false,
+      message: `임시저장 조회 실패: ${error.message}`
+    });
+  }
+};
+
+// 임시저장 삭제
+export const deleteDraft = async (req, res) => {
+  try {
+    const { class_name, exam_date } = req.params;
+
+    if (!class_name || !exam_date) {
+      return res.status(400).json({
+        success: false,
+        message: '반 이름과 시험일자는 필수입니다.'
+      });
+    }
+
+    await Score.deleteDraft(class_name, exam_date);
+
+    res.json({
+      success: true,
+      message: '임시저장이 삭제되었습니다.'
+    });
+  } catch (error) {
+    console.error('임시저장 삭제 에러:', error);
+    res.status(500).json({
+      success: false,
+      message: `임시저장 삭제 실패: ${error.message}`
+    });
+  }
+};

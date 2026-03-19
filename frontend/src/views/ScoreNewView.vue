@@ -409,9 +409,6 @@ const loadExistingScores = async () => {
     if (res.data.success && res.data.data.length > 0) {
       const data = res.data.data;
       
-      // 서버에 저장된 데이터가 있으면 임시저장 삭제 (서버가 최신)
-      localStorage.removeItem(draftKey);
-      
       // 첫 번째 성적 데이터에서 테스트 종류 복원 (있다면)
       const firstScore = data[0];
       if (firstScore.rt_details?.length) {
@@ -450,17 +447,24 @@ const loadExistingScores = async () => {
   }
 
   // 서버에 데이터가 없을 때만 임시저장 확인
-  const draft = localStorage.getItem(draftKey);
-  if (draft) {
-    try {
-      const parsed = JSON.parse(draft);
+  try {
+    const draftRes = await scoreApi.getDraft(selectedClass.value, examDate.value);
+    if (draftRes.data.success && draftRes.data.data) {
+      const draft = draftRes.data.data;
+      const parsed = draft.draft_data;
+      
+      // 현재 사용자와 마지막 수정자가 다르면 경고 표시
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (draft.last_modified_by && draft.last_modified_by !== currentUser.name) {
+        const dateStr = new Date(draft.updated_at).toLocaleString();
+        alert(`⚠️ [${draft.last_modified_by}]님이 ${dateStr}에 임시저장한 내역이 있습니다.\n확인 후 작업해주세요.`);
+      }
+      
       if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
       if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
       if (parsed.scoreForms) {
         if (parsed.scoreForms.length === classStudents.value.length) {
           scoreForms.value = parsed.scoreForms;
-        } else {
-          localStorage.removeItem(draftKey);
         }
       }
       scoreForms.value.forEach((form, i) => {
@@ -474,21 +478,48 @@ const loadExistingScores = async () => {
         if (form.word_details.length > wordTestTypes.value.length) form.word_details.splice(wordTestTypes.value.length);
         calculateScore(i);
       });
-    } catch (e) {
-      console.error('임시저장 데이터 로드 실패:', e);
-      localStorage.removeItem(draftKey);
     }
+  } catch (e) {
+    console.error('임시저장 데이터 로드 실패:', e);
   }
 };
 
-const saveDraftAll = () => {
-  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
-  localStorage.setItem(key, JSON.stringify({
+const saveDraftAll = async () => {
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  // 기존 임시저장 내역 확인 (다른 사람이 수정한 경우 경고)
+  try {
+    const draftRes = await scoreApi.getDraft(selectedClass.value, examDate.value);
+    if (draftRes.data.success && draftRes.data.data) {
+      const draft = draftRes.data.data;
+      if (draft.last_modified_by && draft.last_modified_by !== currentUser.name) {
+        if (!confirm(`⚠️ [${draft.last_modified_by}]님이 작업 중인 내용입니다.\n정말 덮어쓰시겠습니까?`)) {
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('임시저장 확인 실패:', e);
+  }
+
+  const draftData = {
     rtTestTypes: rtTestTypes.value,
     wordTestTypes: wordTestTypes.value,
     scoreForms: scoreForms.value
-  }));
-  showToast('임시저장 되었습니다.');
+  };
+
+  try {
+    await scoreApi.saveDraft({
+      class_name: selectedClass.value,
+      exam_date: examDate.value,
+      draft_data: draftData,
+      last_modified_by: currentUser.name || '알 수 없음'
+    });
+    showToast('임시저장 되었습니다.');
+  } catch (err: any) {
+    console.error('임시저장 실패:', err);
+    alert(`임시저장 실패: ${err.response?.data?.message || err.message}`);
+  }
 };
 
 const saveSingleScore = async (sIdx: number) => {
@@ -525,8 +556,13 @@ const saveSingleScore = async (sIdx: number) => {
     };
 
     await scoreApi.create(payload);
-    // 개별 저장 후 임시저장 데이터 삭제 (다음 로드 시 서버 데이터 우선)
-    localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
+    
+    try {
+      await scoreApi.deleteDraft(selectedClass.value, examDate.value);
+    } catch (e) {
+      console.error('임시저장 삭제 실패:', e);
+    }
+    
     savedSingle.value[sIdx] = true;
     showToast(`${student.name} 성적이 저장되었습니다.`);
     setTimeout(() => { savedSingle.value[sIdx] = false; }, 2000);
@@ -578,7 +614,12 @@ const saveAllScores = async () => {
       await scoreApi.create(payload);
     }
     
-    localStorage.removeItem(`scoreDraft:${selectedClass.value}:${examDate.value}`);
+    try {
+      await scoreApi.deleteDraft(selectedClass.value, examDate.value);
+    } catch (e) {
+      console.error('임시저장 삭제 실패:', e);
+    }
+    
     showToast('모든 성적이 저장되었습니다.');
   } catch (err: any) {
     console.error('성적 저장 오류 상세:', err.response?.data || err.message);
@@ -589,12 +630,14 @@ const saveAllScores = async () => {
   }
 };
 
-const resetAllScores = () => {
+const resetAllScores = async () => {
   if (!confirm('정말 초기화하시겠습니까? 입력 중인 모든 데이터가 삭제됩니다.')) return;
   
-  // 현재 반의 임시저장 데이터 삭제
-  const key = `scoreDraft:${selectedClass.value}:${examDate.value}`;
-  localStorage.removeItem(key);
+  try {
+    await scoreApi.deleteDraft(selectedClass.value, examDate.value);
+  } catch (e) {
+    console.error('임시저장 삭제 실패:', e);
+  }
   
   // 테스트 종류 초기화
   rtTestTypes.value = [{ name: 'RT 1' }];

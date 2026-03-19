@@ -243,6 +243,15 @@ export const scoreApi = {
   },
   delete: (id: number) => {
     return api.delete<ApiResponse<void>>(`/scores/${id}`);
+  },
+  saveDraft: (data: { class_name: string; exam_date: string; draft_data: any; last_modified_by: string }) => {
+    return api.post<ApiResponse<any>>('/scores/draft', data);
+  },
+  getDraft: (className: string, examDate: string) => {
+    return api.get<ApiResponse<any>>(`/scores/draft/${encodeURIComponent(className)}/${examDate}`);
+  },
+  deleteDraft: (className: string, examDate: string) => {
+    return api.delete<ApiResponse<any>>(`/scores/draft/${encodeURIComponent(className)}/${examDate}`);
   }
 };
 

@@ -385,4 +385,63 @@ export class Score {
     if (error) throw new Error(error.message);
     return data || [];
   }
+
+  // 임시저장 데이터 저장
+  static async saveDraft(className, examDate, draftData, lastModifiedBy) {
+    const { data: existing, error: findError } = await supabase
+      .from('score_drafts')
+      .select('id')
+      .eq('class_name', className)
+      .eq('exam_date', examDate)
+      .maybeSingle();
+
+    if (findError) throw new Error(findError.message);
+
+    const payload = {
+      class_name: className,
+      exam_date: examDate,
+      draft_data: draftData,
+      last_modified_by: lastModifiedBy,
+      updated_at: new Date().toISOString()
+    };
+
+    if (existing) {
+      const { error } = await supabase
+        .from('score_drafts')
+        .update(payload)
+        .eq('id', existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase
+        .from('score_drafts')
+        .insert(payload);
+      if (error) throw new Error(error.message);
+    }
+    return true;
+  }
+
+  // 임시저장 데이터 조회
+  static async getDraft(className, examDate) {
+    const { data, error } = await supabase
+      .from('score_drafts')
+      .select('*')
+      .eq('class_name', className)
+      .eq('exam_date', examDate)
+      .maybeSingle();
+    
+    if (error) throw new Error(error.message);
+    return data || null;
+  }
+
+  // 임시저장 데이터 삭제
+  static async deleteDraft(className, examDate) {
+    const { error } = await supabase
+      .from('score_drafts')
+      .delete()
+      .eq('class_name', className)
+      .eq('exam_date', examDate);
+    
+    if (error) throw new Error(error.message);
+    return true;
+  }
 }
