@@ -175,12 +175,12 @@
 
               <!-- 학생점수 & 반평균 -->
               <div class="grid grid-cols-2 gap-3 mt-6">
-                <div class="bg-blue-50 p-3 rounded-xl text-center border border-blue-100">
+                <div class="bg-blue-50 p-3 rounded-xl text-center border border-blue-100" :class="{'col-span-2': !editShowClassAverage}">
                   <div class="text-xs text-blue-600 font-bold mb-1">학생점수</div>
                   <div class="text-2xl font-black text-blue-900">{{ selectedScore?.total_score }}</div>
                   <div class="text-xs text-blue-400">/ {{ selectedScore?.parts?.reduce((s: number, p: any) => s + (p.max_score || 0), 0) || 0 }}</div>
                 </div>
-                <div class="bg-purple-50 p-3 rounded-xl text-center border border-purple-100">
+                <div v-if="editShowClassAverage" class="bg-purple-50 p-3 rounded-xl text-center border border-purple-100">
                   <div class="text-xs text-purple-600 font-bold mb-1">반 평균</div>
                   <div class="text-2xl font-black text-purple-700">{{ classAverage?.class_average?.toFixed(1) || '-' }}</div>
                 </div>
@@ -216,7 +216,15 @@
           <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
             <div class="flex items-center justify-between mb-2">
               <label class="text-xs font-bold text-gray-600">✏️ 코멘트 작성 / 수정</label>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-4">
+                <label class="flex items-center cursor-pointer">
+                  <div class="relative">
+                    <input type="checkbox" v-model="editShowClassAverage" class="sr-only" />
+                    <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': editShowClassAverage}"></div>
+                    <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': editShowClassAverage}"></div>
+                  </div>
+                  <div class="ml-2 text-xs font-bold text-gray-600">반 평균 표시</div>
+                </label>
                 <button
                   @click="saveComment"
                   :disabled="commentSaving"
@@ -291,6 +299,7 @@ const showReportModal = ref(false);
 const selectedScore = ref<any>(null);
 const trendLoading = ref(false);
 const editComment = ref('');
+const editShowClassAverage = ref(true);
 const commentSaving = ref(false);
 const aiCommentLoading = ref(false);
 const classAverage = ref<any>(null);
@@ -562,15 +571,20 @@ const saveComment = async () => {
       parts: selectedScore.value.parts,
       total_score: selectedScore.value.total_score,
       average_score: selectedScore.value.average_score,
-      comment: editComment.value
+      comment: editComment.value,
+      show_class_average: editShowClassAverage.value
     });
     selectedScore.value.comment = editComment.value;
+    selectedScore.value.show_class_average = editShowClassAverage.value;
     const found = scores.value.find((s: any) => s.id === selectedScore.value.id);
-    if (found) found.comment = editComment.value;
-    showToast('코멘트가 저장되었습니다!');
+    if (found) {
+      found.comment = editComment.value;
+      found.show_class_average = editShowClassAverage.value;
+    }
+    showToast('저장되었습니다!');
   } catch (err: any) {
-    console.error('코멘트 저장 실패:', err);
-    alert('코멘트 저장 실패: ' + (err.response?.data?.message || err.message));
+    console.error('저장 실패:', err);
+    alert('저장 실패: ' + (err.response?.data?.message || err.message));
   } finally {
     commentSaving.value = false;
   }
@@ -624,6 +638,7 @@ const fetchScores = async () => {
 const openReport = async (score: any) => {
   selectedScore.value = score;
   editComment.value = score.comment || '';
+  editShowClassAverage.value = score.show_class_average !== false;
   showReportModal.value = true;
   classAverage.value = null;
   
