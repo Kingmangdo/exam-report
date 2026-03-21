@@ -17,7 +17,7 @@ const api = axios.create({
   }
 });
 
-// ì¸í„°ì…‰í„° ì¶”ê°€: ë¡œì»¬ ìŠ¤í† ë¦¬ì§€ì—ì„œ í† í° ê°€ì ¸ì™€ í—¤ë”ì— ì¶”ê°€
+// ?¸í?°??í?° ì¶?ê?: ë¡?ì»¬ ?¤í? ë¦¬ì??ì?? ? í° ê°??¸ì? ?¤ë???ì¶?ê?
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -26,7 +26,7 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// ì¸í„°ì…‰í„° ì¶”ê°€: 401 ì—ëŸ¬(ì¸ì¦ ë§Œë£Œ) ì²˜ë¦¬
+// ?¸í?°??í?° ì¶?ê?: 401 ?ë?¬(?¸ì¦ ë§?ë£?) ì²?ë¦¬
 api.interceptors.response.use(
   response => response,
   error => {
@@ -41,7 +41,7 @@ api.interceptors.response.use(
   }
 );
 
-// ì¸ì¦ API
+// ?¸ì¦ API
 export const authApi = {
   login: (credentials: any) => {
     return api.post<ApiResponse<{ user: any; token: string }>>('/auth/login', credentials);
@@ -63,7 +63,7 @@ export const authApi = {
   }
 };
 
-// í•™ìƒ ê´€ë¦¬ API
+// ??ì? ê´?ë¦?API
 export const studentApi = {
   getAll: (filters?: { class_name?: string; grade?: string; search?: string; status?: string }) => {
     return api.get<ApiResponse<Student[]>>('/students', { params: filters });
@@ -86,17 +86,17 @@ export const studentApi = {
       class_names: classNames
     });
   },
-  // í‡´ì› ì²˜ë¦¬
+  // ?´ì? ì²?ë¦¬
   withdraw: (id: number, data: { withdraw_date: string; withdraw_reason?: string; withdraw_teacher?: string }) => {
     return api.post<ApiResponse<Student>>(`/students/${id}/withdraw`, data);
   },
-  // ì¬ë“±ë¡(ë³µê·€)
+  // ?¬ë?±ë¡?ë³µê?)
   reEnroll: (id: number) => {
     return api.post<ApiResponse<Student>>(`/students/${id}/re-enroll`);
   }
 };
 
-// ìƒë‹´ ê´€ë¦¬ API
+// ?ë?´ ê´?ë¦?API
 export const counselingApi = {
   getLogs: (studentId: number) => {
     return api.get<ApiResponse<any[]>>(`/counseling/student/${studentId}`);
@@ -112,7 +112,7 @@ export const counselingApi = {
   }
 };
 
-// ë°˜ ê´€ë¦¬ API
+// ë°?ê´?ë¦?API
 export const classApi = {
   getAll: () => {
     return api.get<ApiResponse<any[]>>('/classes');
@@ -152,12 +152,12 @@ export const classApi = {
   }
 };
 
-// ë³´ê°• ê´€ë¦¬ API
+// ë³´ê°? ê´?ë¦?API
 export const supplementaryApi = {
   getSessions: (classId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>(`/supplementary/class/${classId}`, { params: { start_date: startDate, end_date: endDate } });
   },
-  // ë³´ê°• ëŒ€ì‹œë³´ë“œìš©: ëª¨ë“  ë°˜ì˜ ë³´ê°• ì¼ì • ì¡°íšŒ
+  // ë³´ê°? ????ë³´??ì?©: ëª¨ë?  ë°?ì? ë³´ê°? ?¼ì ? ì¡°í??
   getDashboardSessions: (startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>('/supplementary/dashboard', {
       params: { start_date: startDate, end_date: endDate }
@@ -181,13 +181,13 @@ export const supplementaryApi = {
   getStudentHistory: (studentId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>(`/supplementary/student/${studentId}`, { params: { start_date: startDate, end_date: endDate } });
   },
-  // ë³´ê°• ì¶œê²°/ê²°ì„ ì‚¬ìœ  ì—…ë°ì´íŠ¸
+  // ë³´ê°? ì¶?ê²°/ê²°ì? ?¬ì?  ??ë°?´í?¸
   updateAttendance: (sessionId: number, studentId: number, data: { attendance_status: 'pending' | 'present' | 'absent'; absent_reason?: string }) => {
     return api.patch<ApiResponse<any>>(`/supplementary/${sessionId}/students/${studentId}/attendance`, data);
   }
 };
 
-// ì„±ì·¨í‰ê°€ API
+// ?±ì·¨??ê? API
 export const bimonthlyApi = {
   getAll: (filters?: { class_name?: string; exam_date?: string; student_id?: number }) => {
     return api.get<ApiResponse<any[]>>('/bimonthly', { params: filters });
@@ -206,7 +206,7 @@ export const bimonthlyApi = {
   }
 };
 
-// AI ì½”ë©˜íŠ¸ API (ë¡œì»¬ Ollama)
+// AI ì½?ë©???API (ë¡?ì»¬ Ollama)
 export const aiApi = {
   generateBimonthlyComment: (data: {
     student_name: string;
@@ -220,7 +220,7 @@ export const aiApi = {
   }
 };
 
-// ì„±ì  ê´€ë¦¬ API
+// ?±ì  ê´?ë¦?API
 export const scoreApi = {
   getAll: (filters?: { 
     student_id?: number; 
@@ -255,7 +255,7 @@ export const scoreApi = {
   }
 };
 
-// í†µê³„ API
+// ?µê³? API
 export const statisticsApi = {
   getOverall: () => {
     return api.get<ApiResponse<Statistics>>('/statistics/overall');
@@ -272,7 +272,7 @@ export const statisticsApi = {
   }
 };
 
-// ì„±ì í‘œ API
+// ?±ì ??API
 export const reportApi = {
   generateLink: (scoreId: number) => {
     return api.post<ApiResponse<{ token: string; url: string; expires_at: string }>>(
@@ -299,7 +299,7 @@ export const reportApi = {
   }
 };
 
-// ì„¤ì • API
+// ?¤ì ? API
 export const settingsApi = {
   getComment: () => {
     return api.get<ApiResponse<{ key: string; value: string }>>('/settings/comment');
@@ -337,7 +337,7 @@ export const excelApi = {
   }
 };
 
-// ê²°ì œ ê´€ë¦¬ API
+// ê²°ì ? ê´?ë¦?API
 export const paymentApi = {
   getAll: (filters?: any) => {
     return api.get<ApiResponse<any[]>>('/payments', { params: filters });
@@ -356,12 +356,12 @@ export const paymentApi = {
   }
 };
 
-// ì¹´ì¹´ì˜¤ ì•Œë¦¼í†¡ API
+// ì¹´ì¹´????ë¦¼??API
 export const kakaoApi = {
   sendReport: (scoreId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-report', { score_id: scoreId });
   },
-  // ì„±ì·¨í‰ê°€ ì•Œë¦¼í†¡
+  // ?±ì·¨??ê? ??ë¦¼??
   sendBimonthlyReport: (bimonthlyScoreId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-bimonthly', { bimonthly_score_id: bimonthlyScoreId });
   },
@@ -380,20 +380,20 @@ export const kakaoApi = {
   getBimonthlySendStatus: (className: string, examDate: string) => {
     return api.get<ApiResponse<any[]>>('/kakao/bimonthly-send-status', { params: { class_name: className, exam_date: examDate } });
   },
-  // ì˜ˆì•½ ì•ˆë‚´ ì•Œë¦¼í†¡
+  // ??ì?½ ??ë?´ ??ë¦¼??
   sendReservationNotification: (reservationId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-reservation', { reservation_id: reservationId });
   },
   getReservationSendStatus: () => {
     return api.get<ApiResponse<any[]>>('/kakao/reservation-send-status');
   },
-  // ë³´ê°• ìˆ˜ì—… ì•Œë¦¼í†¡
+  // ë³´ê°? ??ì?? ??ë¦¼??
   sendSupplementaryNotification: (sessionId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-supplementary', { session_id: sessionId });
   }
 };
 
-// ì˜ˆì•½ì ê´€ë¦¬ API
+// ??ì?½??ê´?ë¦?API
 export const reservationApi = {
   getAll: (filters?: { status?: string; search?: string }) => {
     return api.get<ApiResponse<any[]>>('/reservations', { params: filters });
@@ -410,11 +410,11 @@ export const reservationApi = {
   delete: (id: number) => {
     return api.delete<ApiResponse<void>>(`/reservations/${id}`);
   },
-  // ì…í•™ ì²˜ë¦¬
+  // ??í?? ì²?ë¦¬
   enroll: (id: number) => {
     return api.post<ApiResponse<any>>(`/reservations/${id}/enroll`);
   },
-  // ë ˆë²¨í…ŒìŠ¤íŠ¸
+  // ??ë²¨??ì?¤??
   getLevelTest: (reservationId: number) => {
     return api.get<ApiResponse<any>>(`/reservations/${reservationId}/level-test`);
   },
@@ -427,7 +427,7 @@ export const reservationApi = {
   deleteLevelTest: (id: number) => {
     return api.delete<ApiResponse<void>>(`/reservations/level-test/${id}`);
   },
-  // ë ˆë²¨í…ŒìŠ¤íŠ¸ ì„±ì í‘œ ë§í¬
+  // ??ë²¨??ì?¤???±ì ??ë§í¬
   generateReportLink: (levelTestId: number, name: string, phoneLast4: string) => {
     return api.post<ApiResponse<{ token: string; url: string }>>('/reports/level-test/generate', {
       level_test_id: levelTestId, name, phone_last4: phoneLast4
@@ -439,3 +439,7 @@ export const reservationApi = {
 };
 
 export default api;
+export const dailyBoardApi = {
+  getBoard: (date: string) => api.get<ApiResponse<any>>(`/daily-board/${date}`),
+  saveBoard: (date: string, data: any) => api.post<ApiResponse<any>>(`/daily-board/${date}`, data)
+};

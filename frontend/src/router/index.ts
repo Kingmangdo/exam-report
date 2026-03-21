@@ -12,15 +12,21 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: Layout,
-    children: [
-      {
-        path: '',
-        name: 'dashboard',
-        component: () => import('../views/DashboardView.vue'),
-        meta: { adminOnly: true }
-      },
-      {
-        path: 'students',
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          component: () => import('../views/DashboardView.vue'),
+          meta: { adminOnly: true }
+        },
+        {
+          path: 'daily-board',
+          name: 'dailyBoard',
+          component: () => import('../views/DailyBoardView.vue'),
+          meta: { title: '독강 데일리 보드' }
+        },
+        {
+          path: 'students',
         name: 'students',
         component: () => import('../views/StudentsView.vue'),
         meta: { adminOnly: true }

@@ -82,6 +82,7 @@ const activeDropdown = ref('');
 
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
+  { name: '독강 데일리 보드', path: '/daily-board', adminOnly: false },
   { name: '학생 관리', path: '/students', adminOnly: true },
   {
     name: '반 관리',
