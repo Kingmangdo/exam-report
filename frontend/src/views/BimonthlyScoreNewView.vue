@@ -70,37 +70,74 @@
 
     <!-- 성적 입력 테이블 -->
     <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-      <div class="p-4 border-b bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h3 class="text-lg font-semibold text-gray-800">
-          {{ selectedClass }} 성취평가 성적 입력 ({{ classStudents.length }}명)
-        </h3>
+      <!-- 일괄 설정 패널 (개선안 1) -->
+      <div class="p-5 border-b bg-blue-50/50">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <span>📝 {{ selectedClass }} 성적 입력 ({{ classStudents.length }}명)</span>
+          </h3>
+        </div>
         
-        <!-- 일괄 설정 컨트롤 -->
-        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
-          <label class="flex items-center cursor-pointer">
-            <div class="relative">
-              <input type="checkbox" v-model="bulkShowClassAverage" class="sr-only" />
-              <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': bulkShowClassAverage}"></div>
-              <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': bulkShowClassAverage}"></div>
+        <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+          <h4 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-1">
+            <span>⚙️ 성적표 반평균 표시 설정 (일괄 적용)</span>
+          </h4>
+          
+          <div class="flex flex-col md:flex-row md:items-center gap-6">
+            <!-- 1. 표시 여부 토글 -->
+            <div class="flex-1">
+              <label class="flex items-center cursor-pointer mb-1">
+                <div class="relative">
+                  <input type="checkbox" v-model="bulkShowClassAverage" class="sr-only" />
+                  <div class="block bg-gray-300 w-10 h-6 rounded-full transition-colors" :class="{'bg-blue-500': bulkShowClassAverage}"></div>
+                  <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform" :class="{'transform translate-x-4': bulkShowClassAverage}"></div>
+                </div>
+                <div class="ml-3 text-sm font-bold" :class="bulkShowClassAverage ? 'text-blue-700' : 'text-gray-500'">
+                  {{ bulkShowClassAverage ? '반평균 노출 (ON)' : '반평균 숨김 (OFF)' }}
+                </div>
+              </label>
+              <p class="text-xs text-gray-500 ml-13 mt-1">
+                <span v-if="bulkShowClassAverage">학부모 성적표와 알림톡에 반평균이 표시됩니다.</span>
+                <span v-else>성적표에 반평균이 숨겨지고, 알림톡엔 '집계중'으로 나갑니다.</span>
+              </p>
             </div>
-            <div class="ml-2 text-sm font-bold text-gray-700">반 평균 표시 (일괄)</div>
-          </label>
-          <div v-if="bulkShowClassAverage" class="flex items-center gap-1 border-l pl-3 ml-1">
-            <input 
-              type="number" 
-              v-model="bulkManualClassAverage" 
-              step="0.1"
-              placeholder="자동계산"
-              class="w-20 px-2 py-1 text-sm border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <span class="text-sm text-gray-500">점</span>
+
+            <!-- 2. 점수 입력 (ON일 때만 활성화) -->
+            <div class="flex-1 border-l pl-6" :class="{'opacity-50 pointer-events-none': !bulkShowClassAverage}">
+              <div class="text-sm font-bold text-gray-700 mb-2">표시할 평균 점수</div>
+              <div class="flex items-center gap-2">
+                <select 
+                  v-model="bulkManualClassAverageType"
+                  class="px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                  :disabled="!bulkShowClassAverage"
+                >
+                  <option value="auto">자동 계산 (실제 평균)</option>
+                  <option value="manual">수동 입력</option>
+                </select>
+                
+                <div v-if="bulkManualClassAverageType === 'manual'" class="flex items-center gap-1">
+                  <input 
+                    type="number" 
+                    v-model="bulkManualClassAverage" 
+                    step="0.1"
+                    placeholder="점수"
+                    class="w-20 px-2 py-1.5 text-sm border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <span class="text-sm text-gray-600 font-medium">점</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 일괄 적용 버튼 -->
+            <div class="flex items-end justify-end">
+              <button 
+                @click="applyBulkSettings"
+                class="px-6 py-2.5 bg-gray-800 text-white text-sm font-bold rounded-lg hover:bg-gray-700 transition shadow-sm flex items-center gap-2"
+              >
+                <span>👇 아래 학생들에게 일괄 적용</span>
+              </button>
+            </div>
           </div>
-          <button 
-            @click="applyBulkSettings"
-            class="ml-2 px-3 py-1 bg-gray-800 text-white text-xs font-bold rounded hover:bg-gray-700 transition"
-          >
-            일괄 적용
-          </button>
         </div>
       </div>
 
@@ -123,11 +160,11 @@
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">총점</th>
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">평균</th>
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-[200px]">코멘트</th>
-              <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-[150px]">반평균 표시</th>
+              <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-[160px]">성적표 반평균 노출</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(student, sIdx) in classStudents" :key="student.id" class="hover:bg-gray-50">
+            <tr v-for="(student, sIdx) in classStudents" :key="student.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 sticky left-0 bg-white z-10">
                 {{ student.name }}
               </td>
@@ -156,28 +193,40 @@
               <td class="px-3 py-3">
                 <textarea 
                   v-model="scoreForms[sIdx].comment" 
-                  rows="1" 
+                  rows="2" 
                   placeholder="코멘트" 
-                  class="w-full px-2 py-1 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  class="w-full px-2 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 ></textarea>
               </td>
-              <td class="px-3 py-3 text-center">
-                <div class="flex flex-col items-center gap-1">
-                  <label class="flex items-center cursor-pointer">
+              <!-- 개별 설정 (개선안 2) -->
+              <td class="px-3 py-3">
+                <div class="flex flex-col items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                  <label class="flex items-center cursor-pointer w-full justify-center">
                     <div class="relative">
                       <input type="checkbox" v-model="scoreForms[sIdx].show_class_average" class="sr-only" />
-                      <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': scoreForms[sIdx].show_class_average}"></div>
-                      <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': scoreForms[sIdx].show_class_average}"></div>
+                      <div class="block bg-gray-300 w-8 h-4 rounded-full transition-colors" :class="{'bg-blue-500': scoreForms[sIdx].show_class_average}"></div>
+                      <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition-transform" :class="{'transform translate-x-4': scoreForms[sIdx].show_class_average}"></div>
                     </div>
+                    <span class="ml-2 text-xs font-bold" :class="scoreForms[sIdx].show_class_average ? 'text-blue-700' : 'text-gray-500'">
+                      {{ scoreForms[sIdx].show_class_average ? '노출' : '숨김' }}
+                    </span>
                   </label>
-                  <input 
-                    v-if="scoreForms[sIdx].show_class_average"
-                    type="number" 
-                    v-model="scoreForms[sIdx].manual_class_average" 
-                    step="0.1"
-                    placeholder="자동"
-                    class="w-16 px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
+                  
+                  <div v-if="scoreForms[sIdx].show_class_average" class="flex items-center gap-1 w-full justify-center">
+                    <span class="text-[10px] text-gray-500">✏️</span>
+                    <input 
+                      type="number" 
+                      v-model="scoreForms[sIdx].manual_class_average" 
+                      step="0.1"
+                      placeholder="자동"
+                      class="w-16 px-1 py-0.5 text-xs border rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      title="수동으로 점수를 입력하면 이 점수가 표시됩니다. 비워두면 자동 계산됩니다."
+                    />
+                    <span class="text-[10px] text-gray-500 font-medium">점</span>
+                  </div>
+                  <div v-else class="text-[10px] text-gray-400 font-medium italic">
+                    (집계중 표시)
+                  </div>
                 </div>
               </td>
             </tr>
@@ -236,6 +285,7 @@ const saving = ref(false);
 const toastMsg = ref('');
 
 const bulkShowClassAverage = ref(true);
+const bulkManualClassAverageType = ref('auto');
 const bulkManualClassAverage = ref<number | null>(null);
 
 const applyBulkSettings = () => {
@@ -243,7 +293,11 @@ const applyBulkSettings = () => {
   
   scoreForms.value.forEach(form => {
     form.show_class_average = bulkShowClassAverage.value;
-    form.manual_class_average = bulkShowClassAverage.value ? bulkManualClassAverage.value : null;
+    if (bulkShowClassAverage.value && bulkManualClassAverageType.value === 'manual') {
+      form.manual_class_average = bulkManualClassAverage.value;
+    } else {
+      form.manual_class_average = null;
+    }
   });
   
   showToast('현재 목록의 모든 학생에게 일괄 적용되었습니다.');
@@ -333,6 +387,7 @@ const onClassChange = () => {
   
   // 반 변경 시 일괄 설정 초기화
   bulkShowClassAverage.value = true;
+  bulkManualClassAverageType.value = 'auto';
   bulkManualClassAverage.value = null;
   
   initScoreForms();
