@@ -298,12 +298,12 @@ export const sendBimonthlyReport = async (req, res) => {
     if (score.show_class_average !== false) {
       if (score.manual_class_average !== null && score.manual_class_average !== undefined) {
         // 수동 입력값이 있으면 그 값을 사용
-        classAvgScoreStr = Number(score.manual_class_average).toFixed(1) + '점';
+        classAvgScoreStr = Number(score.manual_class_average).toFixed(1);
       } else if (score.class_name && score.exam_date) {
         // 수동 입력값이 없으면 계산된 반 평균 사용
         const classAvg = await BimonthlyScore.getClassAverage(score.class_name, score.exam_date);
         if (classAvg && classAvg.class_average > 0) {
-          classAvgScoreStr = classAvg.class_average.toFixed(1) + '점';
+          classAvgScoreStr = classAvg.class_average.toFixed(1);
         }
       }
     }
@@ -322,7 +322,7 @@ ${examMonth} 실시한 성취평가 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
 
 ▶ 우리 학생 점수: ${avgScore}점
-▶ 반 평균: ${classAvgScoreStr}
+▶ 반 평균: ${classAvgScoreStr}점
 
 [상세 성적표 확인하기]
 ${reportUrl}
