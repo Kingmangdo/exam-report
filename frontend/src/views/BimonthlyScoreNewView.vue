@@ -344,11 +344,16 @@ const loadExistingScores = async () => {
       classStudents.value.forEach((student, sIdx) => {
         const score = data.find((s: any) => s.student_id === student.id);
         if (score && score.parts) {
+          // 기존 데이터의 파트 개수와 현재 설정된 파트 개수 맞추기
+          const mappedParts = partSettings.value.map((partSetting) => {
+            const existingPart = score.parts.find((p: any) => p.name === partSetting.name);
+            return {
+              score: existingPart ? (existingPart.score || ((existingPart.correct || 0) * (existingPart.points_per_question || 0))) : 0
+            };
+          });
+          
           scoreForms.value[sIdx] = {
-            parts: score.parts.map((p: any) => ({ 
-              // 기존 데이터 호환성: score가 없으면 correct * points_per_question으로 계산
-              score: p.score || ((p.correct || 0) * (p.points_per_question || 0))
-            })),
+            parts: mappedParts,
             comment: score.comment || '',
             show_class_average: score.show_class_average !== false,
             manual_class_average: score.manual_class_average !== undefined ? score.manual_class_average : null
