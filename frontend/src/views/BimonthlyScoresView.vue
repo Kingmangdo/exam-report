@@ -182,7 +182,9 @@
                 </div>
                 <div v-if="editShowClassAverage" class="bg-purple-50 p-3 rounded-xl text-center border border-purple-100">
                   <div class="text-xs text-purple-600 font-bold mb-1">반 평균</div>
-                  <div class="text-2xl font-black text-purple-700">{{ classAverage?.class_average?.toFixed(1) || '-' }}</div>
+                  <div class="text-2xl font-black text-purple-700">
+                    {{ editManualClassAverage !== null ? editManualClassAverage : (classAverage?.class_average?.toFixed(1) || '-') }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -217,14 +219,25 @@
             <div class="flex items-center justify-between mb-2">
               <label class="text-xs font-bold text-gray-600">✏️ 코멘트 작성 / 수정</label>
               <div class="flex items-center gap-4">
-                <label class="flex items-center cursor-pointer">
-                  <div class="relative">
-                    <input type="checkbox" v-model="editShowClassAverage" class="sr-only" />
-                    <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': editShowClassAverage}"></div>
-                    <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': editShowClassAverage}"></div>
+                <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                  <label class="flex items-center cursor-pointer">
+                    <div class="relative">
+                      <input type="checkbox" v-model="editShowClassAverage" class="sr-only" />
+                      <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': editShowClassAverage}"></div>
+                      <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': editShowClassAverage}"></div>
+                    </div>
+                    <div class="ml-2 text-xs font-bold text-gray-600">반 평균 표시</div>
+                  </label>
+                  <div v-if="editShowClassAverage" class="flex items-center gap-1 border-l pl-2 ml-1">
+                    <input 
+                      type="number" 
+                      v-model="editManualClassAverage" 
+                      step="0.1"
+                      class="w-16 px-1 py-0.5 text-xs border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <span class="text-xs text-gray-500">점</span>
                   </div>
-                  <div class="ml-2 text-xs font-bold text-gray-600">반 평균 표시</div>
-                </label>
+                </div>
                 <button
                   @click="saveComment"
                   :disabled="commentSaving"
@@ -300,6 +313,7 @@ const selectedScore = ref<any>(null);
 const trendLoading = ref(false);
 const editComment = ref('');
 const editShowClassAverage = ref(true);
+const editManualClassAverage = ref<number | null>(null);
 const commentSaving = ref(false);
 const aiCommentLoading = ref(false);
 const classAverage = ref<any>(null);
@@ -572,14 +586,18 @@ const saveComment = async () => {
       total_score: selectedScore.value.total_score,
       average_score: selectedScore.value.average_score,
       comment: editComment.value,
-      show_class_average: editShowClassAverage.value
+      show_class_average: editShowClassAverage.value,
+      manual_class_average: editShowClassAverage.value ? editManualClassAverage.value : null
     });
     selectedScore.value.comment = editComment.value;
     selectedScore.value.show_class_average = editShowClassAverage.value;
+    selectedScore.value.manual_class_average = editShowClassAverage.value ? editManualClassAverage.value : null;
+    
     const found = scores.value.find((s: any) => s.id === selectedScore.value.id);
     if (found) {
       found.comment = editComment.value;
       found.show_class_average = editShowClassAverage.value;
+      found.manual_class_average = editShowClassAverage.value ? editManualClassAverage.value : null;
     }
     showToast('저장되었습니다!');
   } catch (err: any) {
@@ -647,6 +665,10 @@ const openReport = async (score: any) => {
       const avgRes = await bimonthlyApi.getClassAverage(score.class_name, score.exam_date);
       if (avgRes.data.success) {
         classAverage.value = avgRes.data.data;
+        // 수동 입력값이 있으면 그것을, 없으면 실제 계산된 평균을 기본값으로 세팅
+        editManualClassAverage.value = score.manual_class_average !== null && score.manual_class_average !== undefined 
+          ? score.manual_class_average 
+          : (avgRes.data.data?.class_average || 0);
       }
     }
   } catch (err) {

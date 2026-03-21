@@ -3,7 +3,7 @@ import { supabase } from './supabase.js';
 export class BimonthlyScore {
   // 바이먼스리 성적 생성/수정 (upsert)
   static async createOrUpdate(data) {
-    const { student_id, exam_date, class_name, parts, total_score, average_score, comment, show_class_average } = data;
+    const { student_id, exam_date, class_name, parts, total_score, average_score, comment, show_class_average, manual_class_average } = data;
 
     // 기존 데이터 확인
     const { data: existing } = await supabase
@@ -24,6 +24,7 @@ export class BimonthlyScore {
           average_score,
           comment,
           show_class_average: show_class_average !== undefined ? show_class_average : true,
+          manual_class_average: manual_class_average !== undefined ? manual_class_average : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id)
@@ -44,7 +45,8 @@ export class BimonthlyScore {
           total_score,
           average_score,
           comment,
-          show_class_average: show_class_average !== undefined ? show_class_average : true
+          show_class_average: show_class_average !== undefined ? show_class_average : true,
+          manual_class_average: manual_class_average !== undefined ? manual_class_average : null
         })
         .select('*')
         .single();

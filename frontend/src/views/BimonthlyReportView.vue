@@ -96,7 +96,9 @@
                 </div>
                 <div v-if="reportData.score.show_class_average !== false" class="bg-purple-50 p-3 rounded-xl text-center border border-purple-100">
                   <div class="text-xs text-purple-600 font-bold mb-1">반 평균</div>
-                  <div class="text-2xl font-black text-purple-700">{{ reportData.class_average?.class_average?.toFixed(1) || '-' }}</div>
+                  <div class="text-2xl font-black text-purple-700">
+                    {{ reportData.score.manual_class_average !== null && reportData.score.manual_class_average !== undefined ? reportData.score.manual_class_average : (reportData.class_average?.class_average?.toFixed(1) || '-') }}
+                  </div>
                 </div>
               </div>
             </div>

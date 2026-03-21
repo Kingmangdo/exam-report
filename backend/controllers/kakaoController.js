@@ -291,11 +291,21 @@ export const sendBimonthlyReport = async (req, res) => {
     const token = await BimonthlyReport.createAccessLink(bimonthly_score_id, student.name, phoneLast4);
     const reportUrl = `http://exam-report.vercel.app/report/bimonthly/${token}`;
 
-    // 3. 반 평균 조회
-    let classAvgScore = 0;
-    if (score.class_name && score.exam_date) {
-      const classAvg = await BimonthlyScore.getClassAverage(score.class_name, score.exam_date);
-      if (classAvg) classAvgScore = classAvg.class_average;
+    // 3. 반 평균 조회 및 수동 입력값 적용
+    let classAvgScoreStr = '집계중';
+    
+    // show_class_average가 false면 무조건 '집계중'
+    if (score.show_class_average !== false) {
+      if (score.manual_class_average !== null && score.manual_class_average !== undefined) {
+        // 수동 입력값이 있으면 그 값을 사용
+        classAvgScoreStr = Number(score.manual_class_average).toFixed(1) + '점';
+      } else if (score.class_name && score.exam_date) {
+        // 수동 입력값이 없으면 계산된 반 평균 사용
+        const classAvg = await BimonthlyScore.getClassAverage(score.class_name, score.exam_date);
+        if (classAvg && classAvg.class_average > 0) {
+          classAvgScoreStr = classAvg.class_average.toFixed(1) + '점';
+        }
+      }
     }
 
     // 4. 월 추출
@@ -312,7 +322,7 @@ ${examMonth} 실시한 성취평가 성적표가 도착했습니다.
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
 
 ▶ 우리 학생 점수: ${avgScore}점
-▶ 반 평균: ${classAvgScore.toFixed(1)}점
+▶ 반 평균: ${classAvgScoreStr}
 
 [상세 성적표 확인하기]
 ${reportUrl}
