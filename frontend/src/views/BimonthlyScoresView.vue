@@ -218,13 +218,6 @@
               <label class="text-xs font-bold text-gray-600">✏️ 코멘트 작성 / 수정</label>
               <div class="flex items-center gap-2">
                 <button
-                  @click="generateAiComment"
-                  :disabled="aiCommentLoading"
-                  class="px-4 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-bold disabled:opacity-50"
-                >
-                  {{ aiCommentLoading ? '생성 중...' : 'AI 코멘트 초안 생성' }}
-                </button>
-                <button
                   @click="saveComment"
                   :disabled="commentSaving"
                   class="px-4 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold disabled:opacity-50"
@@ -583,31 +576,31 @@ const saveComment = async () => {
   }
 };
 
-const generateAiComment = async () => {
-  if (!selectedScore.value) return;
-  aiCommentLoading.value = true;
-  try {
-    const res = await aiApi.generateBimonthlyComment({
-      student_name: selectedScore.value.student_name,
-      class_name: selectedScore.value.class_name,
-      exam_date: selectedScore.value.exam_date,
-      average_score: selectedScore.value.average_score,
-      parts: selectedScore.value.parts || [],
-      previous_comment: editComment.value || selectedScore.value.comment || ''
-    });
-
-    if (res.data.success && res.data.data?.comment) {
-      editComment.value = res.data.data.comment;
-      showToast('AI 코멘트 초안이 생성되었습니다.');
-    } else {
-      alert('AI 코멘트 생성 실패: ' + (res.data.message || '알 수 없는 오류'));
-    }
-  } catch (err: any) {
-    alert('AI 코멘트 생성 실패: ' + (err.response?.data?.message || err.message));
-  } finally {
-    aiCommentLoading.value = false;
-  }
-};
+// const generateAiComment = async () => {
+//   if (!selectedScore.value) return;
+//   aiCommentLoading.value = true;
+//   try {
+//     const res = await aiApi.generateBimonthlyComment({
+//       student_name: selectedScore.value.student_name,
+//       class_name: selectedScore.value.class_name,
+//       exam_date: selectedScore.value.exam_date,
+//       average_score: selectedScore.value.average_score,
+//       parts: selectedScore.value.parts || [],
+//       previous_comment: editComment.value || selectedScore.value.comment || ''
+//     });
+// 
+//     if (res.data.success && res.data.data?.comment) {
+//       editComment.value = res.data.data.comment;
+//       showToast('AI 코멘트 초안이 생성되었습니다.');
+//     } else {
+//       alert('AI 코멘트 생성 실패: ' + (res.data.message || '알 수 없는 오류'));
+//     }
+//   } catch (err: any) {
+//     alert('AI 코멘트 생성 실패: ' + (err.response?.data?.message || err.message));
+//   } finally {
+//     aiCommentLoading.value = false;
+//   }
+// };
 
 // ============ 데이터 조회 ============
 const fetchScores = async () => {
