@@ -70,10 +70,38 @@
 
     <!-- 성적 입력 테이블 -->
     <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-      <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+      <div class="p-4 border-b bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h3 class="text-lg font-semibold text-gray-800">
           {{ selectedClass }} 성취평가 성적 입력 ({{ classStudents.length }}명)
         </h3>
+        
+        <!-- 일괄 설정 컨트롤 -->
+        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+          <label class="flex items-center cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" v-model="bulkShowClassAverage" class="sr-only" />
+              <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': bulkShowClassAverage}"></div>
+              <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': bulkShowClassAverage}"></div>
+            </div>
+            <div class="ml-2 text-sm font-bold text-gray-700">반 평균 표시 (일괄)</div>
+          </label>
+          <div v-if="bulkShowClassAverage" class="flex items-center gap-1 border-l pl-3 ml-1">
+            <input 
+              type="number" 
+              v-model="bulkManualClassAverage" 
+              step="0.1"
+              placeholder="자동계산"
+              class="w-20 px-2 py-1 text-sm border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <span class="text-sm text-gray-500">점</span>
+          </div>
+          <button 
+            @click="applyBulkSettings"
+            class="ml-2 px-3 py-1 bg-gray-800 text-white text-xs font-bold rounded hover:bg-gray-700 transition"
+          >
+            일괄 적용
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -187,6 +215,20 @@ const scoreForms = ref<any[]>([]);
 const saving = ref(false);
 const toastMsg = ref('');
 
+const bulkShowClassAverage = ref(true);
+const bulkManualClassAverage = ref<number | null>(null);
+
+const applyBulkSettings = () => {
+  if (classStudents.value.length === 0) return;
+  
+  scoreForms.value.forEach(form => {
+    form.show_class_average = bulkShowClassAverage.value;
+    form.manual_class_average = bulkShowClassAverage.value ? bulkManualClassAverage.value : null;
+  });
+  
+  showToast('현재 목록의 모든 학생에게 일괄 적용되었습니다.');
+};
+
 const partSettings = ref([
   { name: '', max_score: 0 },
   { name: '', max_score: 0 },
@@ -275,7 +317,9 @@ const onClassChange = () => {
 const initScoreForms = () => {
   scoreForms.value = classStudents.value.map(() => ({
     parts: partSettings.value.map(() => ({ score: 0 })),
-    comment: ''
+    comment: '',
+    show_class_average: true,
+    manual_class_average: null
   }));
 };
 
@@ -300,7 +344,9 @@ const loadExistingScores = async () => {
               // 기존 데이터 호환성: score가 없으면 correct * points_per_question으로 계산
               score: p.score || ((p.correct || 0) * (p.points_per_question || 0))
             })),
-            comment: score.comment || ''
+            comment: score.comment || '',
+            show_class_average: score.show_class_average !== false,
+            manual_class_average: score.manual_class_average !== undefined ? score.manual_class_average : null
           };
         }
       });
@@ -370,7 +416,9 @@ const saveAllScores = async () => {
         parts,
         total_score: getTotalScore(i),
         average_score: parseFloat(getAveragePercent(i)),
-        comment: form.comment || ''
+        comment: form.comment || '',
+        show_class_average: form.show_class_average !== false,
+        manual_class_average: form.manual_class_average !== undefined ? form.manual_class_average : null
       });
     }
     showToast('모든 성취평가 성적이 저장되었습니다!');
