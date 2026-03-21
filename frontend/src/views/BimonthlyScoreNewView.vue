@@ -310,6 +310,11 @@ const onClassChange = () => {
   classStudents.value = allStudents.value
     .filter(s => s.class_name?.split(',').map((c: string) => c.trim()).includes(selectedClass.value))
     .sort((a, b) => a.name.localeCompare(b.name));
+  
+  // 반 변경 시 일괄 설정 초기화
+  bulkShowClassAverage.value = true;
+  bulkManualClassAverage.value = null;
+  
   initScoreForms();
   loadExistingScores();
 };
