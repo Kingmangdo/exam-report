@@ -123,6 +123,7 @@
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">총점</th>
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase">평균</th>
               <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-[200px]">코멘트</th>
+              <th class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase w-[150px]">반평균 표시</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -159,6 +160,25 @@
                   placeholder="코멘트" 
                   class="w-full px-2 py-1 text-xs border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 ></textarea>
+              </td>
+              <td class="px-3 py-3 text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <label class="flex items-center cursor-pointer">
+                    <div class="relative">
+                      <input type="checkbox" v-model="scoreForms[sIdx].show_class_average" class="sr-only" />
+                      <div class="block bg-gray-300 w-8 h-4 rounded-full" :class="{'bg-primary': scoreForms[sIdx].show_class_average}"></div>
+                      <div class="dot absolute left-1 top-0.5 bg-white w-3 h-3 rounded-full transition" :class="{'transform translate-x-4': scoreForms[sIdx].show_class_average}"></div>
+                    </div>
+                  </label>
+                  <input 
+                    v-if="scoreForms[sIdx].show_class_average"
+                    type="number" 
+                    v-model="scoreForms[sIdx].manual_class_average" 
+                    step="0.1"
+                    placeholder="자동"
+                    class="w-16 px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </td>
             </tr>
           </tbody>
