@@ -1,5 +1,5 @@
 import DailyBoard from '../models/DailyBoard.js';
-import Class from '../models/Class.js';
+import { Class } from '../models/Class.js';
 
 export const getDailyBoard = async (req, res) => {
   try {
