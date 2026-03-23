@@ -173,6 +173,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { studentApi, scoreApi } from '../services/api';
 import { getToday } from '../utils/date';
+import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
 
 const selectedClass = ref<string>('');
@@ -361,7 +362,7 @@ const onClassChange = () => {
   classStudents.value = allStudents.value
     .filter(s => {
       if (!s.class_name || typeof s.class_name !== 'string') return false;
-      return s.class_name.split(',').map(c => c.trim().normalize('NFC')).includes(selectedClass.value);
+      return s.class_name.split(',').map(c => normalizeClassName(c)).includes(normalizeClassName(selectedClass.value));
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
@@ -684,14 +685,14 @@ const classList = computed(() => {
   allStudents.value.forEach(s => {
     if (s.class_name && typeof s.class_name === 'string') {
       s.class_name.split(',').forEach(c => {
-        const trimmed = c.trim().normalize('NFC');
-        if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
-          set.add(trimmed);
+        const normalized = normalizeClassName(c);
+        if (normalized && normalized !== 'undefined' && normalized !== 'null') {
+          set.add(normalized);
         }
       });
     }
   });
-  return Array.from(set).filter(name => name && name.length > 0).sort();
+  return Array.from(set).sort();
 });
 
 const toDateInputValue = (v: string) => v ? `20${v}` : '';

@@ -296,8 +296,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { studentApi, bimonthlyApi, kakaoApi, aiApi } from '../services/api';
+import { normalizeClassName } from '../utils/string';
 import * as XLSX from 'xlsx';
 
 const userJson = localStorage.getItem('user');
@@ -361,8 +362,8 @@ const classList = computed(() => {
   allStudents.value.forEach(s => {
     if (s.class_name && typeof s.class_name === 'string') {
       s.class_name.split(',').forEach((c: string) => {
-        const trimmed = c.trim().normalize('NFC');
-        if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') set.add(trimmed);
+        const normalized = normalizeClassName(c);
+        if (normalized && normalized !== 'undefined' && normalized !== 'null') set.add(normalized);
       });
     }
   });

@@ -545,6 +545,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { classApi, studentApi, counselingApi, supplementaryApi } from '../services/api';
+import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
 
 // 학습관리에서는 YYYY-MM-DD 형식 사용 (DB, input[type=date] 모두 이 형식)
@@ -934,7 +935,7 @@ const selectClass = async (item: any) => {
     const response = await classApi.getStudents(item.name);
     if (response.data.success) {
       const students = (response.data.data || []).filter((s: any) => 
-        s.class_name?.split(',').map((c: string) => c.trim()).includes(item.name)
+        s.class_name?.split(',').map((c: string) => normalizeClassName(c)).includes(normalizeClassName(item.name))
       );
       
       // 각 학생별 최근 상담일자 가져오기
@@ -1166,14 +1167,14 @@ const assignStudents = async () => {
     // 체크된 모든 학생들에게 현재 반 이름을 추가/변경
     for (const student of allStudents.value) {
       const isSelected = selectedStudentIds.value.includes(student.id);
-      const currentClasses = student.class_name?.split(',').map(c => c.trim()).filter(c => c) || [];
-      const hasThisClass = currentClasses.includes(selectedClass.value.name);
+      const currentClasses = student.class_name?.split(',').map(c => normalizeClassName(c)).filter(c => c) || [];
+      const hasThisClass = currentClasses.includes(normalizeClassName(selectedClass.value.name));
       
       let newClasses = [...currentClasses];
       if (isSelected && !hasThisClass) {
-        newClasses.push(selectedClass.value.name);
+        newClasses.push(normalizeClassName(selectedClass.value.name));
       } else if (!isSelected && hasThisClass) {
-        newClasses = newClasses.filter(c => c !== selectedClass.value.name);
+        newClasses = newClasses.filter(c => c !== normalizeClassName(selectedClass.value.name));
       }
       
       if (JSON.stringify(currentClasses.sort()) !== JSON.stringify(newClasses.sort())) {

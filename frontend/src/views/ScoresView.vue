@@ -513,9 +513,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { studentApi, scoreApi, reportApi, kakaoApi } from '../services/api';
 import type { Student, Score, ReportData } from '../types';
+import { normalizeClassName } from '../utils/string';
 import * as XLSX from 'xlsx';
 
 const userJson = localStorage.getItem('user');
@@ -615,9 +616,9 @@ const classList = computed(() => {
   students.value.forEach(s => {
     if (s.class_name && typeof s.class_name === 'string') {
       s.class_name.split(',').forEach(c => {
-        const trimmed = c.trim().normalize('NFC');
-        if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
-          set.add(trimmed);
+        const normalized = normalizeClassName(c);
+        if (normalized && normalized !== 'undefined' && normalized !== 'null') {
+          set.add(normalized);
         }
       });
     }
