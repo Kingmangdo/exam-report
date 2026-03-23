@@ -569,19 +569,56 @@ const learningLogDate = ref(getTodayFull());
 const activeRightTab = ref<'learning' | 'supplementary'>('learning');
 
 // 탭 설정
-const currentTab = ref('regular');
+const currentTab = ref('MWF');
 const tabs = [
-  { id: 'regular', label: '정규반' },
+  { id: 'MWF', label: '월수금' },
+  { id: 'TTS', label: '화목토' },
+  { id: 'regular', label: '정규반 (기타)' },
   { id: 'exam', label: '내신대비' },
   { id: 'ongoing', label: 'On-going' }
 ];
 
+const isMWF = (weekdays: string[] | null) => {
+  if (!weekdays || weekdays.length === 0) return false;
+  return weekdays.some(day => ['월', '수', '금'].includes(day));
+};
+
+const isTTS = (weekdays: string[] | null) => {
+  if (!weekdays || weekdays.length === 0) return false;
+  return weekdays.some(day => ['화', '목', '토'].includes(day));
+};
+
 const filteredClasses = computed(() => {
-  return classes.value.filter(c => (c.category || 'regular') === currentTab.value);
+  return classes.value.filter(c => {
+    const cat = c.category || 'regular';
+    
+    if (currentTab.value === 'MWF') {
+      return cat === 'regular' && isMWF(c.weekdays);
+    } else if (currentTab.value === 'TTS') {
+      return cat === 'regular' && isTTS(c.weekdays);
+    } else if (currentTab.value === 'regular') {
+      // 정규반이면서 월수금/화목토가 아닌 경우 (또는 요일 미지정)
+      return cat === 'regular' && !isMWF(c.weekdays) && !isTTS(c.weekdays);
+    } else {
+      return cat === currentTab.value;
+    }
+  });
 });
 
-const getClassCountByCategory = (cat: string) => {
-  return classes.value.filter(c => (c.category || 'regular') === cat).length;
+const getClassCountByCategory = (tabId: string) => {
+  return classes.value.filter(c => {
+    const cat = c.category || 'regular';
+    
+    if (tabId === 'MWF') {
+      return cat === 'regular' && isMWF(c.weekdays);
+    } else if (tabId === 'TTS') {
+      return cat === 'regular' && isTTS(c.weekdays);
+    } else if (tabId === 'regular') {
+      return cat === 'regular' && !isMWF(c.weekdays) && !isTTS(c.weekdays);
+    } else {
+      return cat === tabId;
+    }
+  }).length;
 };
 
 const getCategoryColor = (cat: string) => {
