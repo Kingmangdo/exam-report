@@ -14,14 +14,20 @@ export function getToday(): string {
 
 // 오늘 날짜 (YYYY-MM-DD 형식, 한국 시간 기준)
 export function getTodayFull(): string {
-  const d = new Date();
-  // 한국 시간(KST, UTC+9)으로 변환
-  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  const kst = new Date(utc + (3600000 * 9));
+  // 브라우저의 Intl.DateTimeFormat을 사용하여 한국 시간대(Asia/Seoul) 강제 적용
+  const formatter = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
   
-  const year = kst.getFullYear();
-  const month = String(kst.getMonth() + 1).padStart(2, '0');
-  const day = String(kst.getDate()).padStart(2, '0');
+  // 결과 예시: "2026. 03. 24." -> 숫자만 추출하여 "2026-03-24" 형태로 변환
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  
   return `${year}-${month}-${day}`;
 }
 
