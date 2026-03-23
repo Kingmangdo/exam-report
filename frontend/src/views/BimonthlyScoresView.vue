@@ -38,6 +38,13 @@
           >
             선택 삭제 ({{ selectedIds.length }})
           </button>
+          <button
+            v-if="isAdmin"
+            @click="downloadExcel"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold flex items-center gap-2 text-sm"
+          >
+            <span>📊 엑셀 다운로드</span>
+          </button>
         </div>
         <div class="text-sm text-gray-500">
           조회된 성적: <span class="font-bold text-primary">{{ filteredScores.length }}</span>건
@@ -284,6 +291,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { studentApi, bimonthlyApi, kakaoApi, aiApi } from '../services/api';
+import * as XLSX from 'xlsx';
+
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = user?.role === 'admin';
+
 import { Radar, Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -635,6 +648,62 @@ const saveComment = async () => {
 // };
 
 // ============ 데이터 조회 ============
+const downloadExcel = () => {
+  if (filteredScores.value.length === 0) {
+    alert('다운로드할 성적 데이터가 없습니다.');
+    return;
+  }
+
+  const excelData = filteredScores.value.map(score => {
+    const row: any = {
+      '날짜': score.exam_date,
+      '반': score.class_name,
+      '학생명': score.student_name,
+    };
+
+    // 파트별 점수
+    if (score.parts && Array.isArray(score.parts)) {
+      score.parts.forEach((part: any, idx: number) => {
+        row[part.name || `파트${idx + 1}`] = part.score;
+      });
+    }
+
+    row['총점'] = score.total_score;
+    row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
+    
+    const status = getSendStatus(score.id);
+    row['발송 상태'] = status === 'success' ? '발송완료' : (status === 'fail' ? '발송실패' : '미발송');
+    
+    return row;
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // 컬럼 너비 자동 조정
+  const colWidths = [
+    { wch: 15 }, // 날짜
+    { wch: 15 }, // 반
+    { wch: 15 }, // 학생명
+  ];
+  
+  partNames.value.forEach(() => colWidths.push({ wch: 10 })); // 파트별 점수
+  
+  colWidths.push({ wch: 10 }); // 총점
+  colWidths.push({ wch: 10 }); // 평균
+  colWidths.push({ wch: 15 }); // 발송상태
+
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, '성취평가');
+  
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  const fileName = `성취평가_${dateStr}.xlsx`;
+  
+  XLSX.writeFile(wb, fileName);
+};
+
 const fetchScores = async () => {
   try {
     const params: any = {};

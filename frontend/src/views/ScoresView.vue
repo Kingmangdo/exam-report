@@ -60,6 +60,13 @@
           >
             선택 알림톡 발송 ({{ selectedIds.length }})
           </button>
+          <button
+            v-if="isAdmin"
+            @click="downloadExcel"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold flex items-center gap-2"
+          >
+            <span>📊 엑셀 다운로드</span>
+          </button>
         </div>
         <div class="text-sm text-gray-500">
           조회된 성적: <span class="font-bold text-primary">{{ scores.length }}</span>건
@@ -502,6 +509,12 @@
 import { ref, onMounted, computed } from 'vue';
 import { studentApi, scoreApi, reportApi, kakaoApi } from '../services/api';
 import type { Student, Score, ReportData } from '../types';
+import * as XLSX from 'xlsx';
+
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = user?.role === 'admin';
+
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -872,6 +885,90 @@ const copyReportLink = async () => {
     alert('링크 생성 및 복사에 실패했습니다.');
     console.error('Link copy error:', err);
   }
+};
+
+const downloadExcel = () => {
+  if (scores.value.length === 0) {
+    alert('다운로드할 성적 데이터가 없습니다.');
+    return;
+  }
+
+  const excelData = scores.value.map(score => {
+    const row: any = {
+      '날짜': score.exam_date,
+      '학생명': score.student_name || '-',
+    };
+
+    // RT 점수
+    if (maxRtCount.value > 0) {
+      for (let i = 0; i < maxRtCount.value; i++) {
+        if (score.rt_details && score.rt_details[i]) {
+          const pct = ((score.rt_details[i].correct / (score.rt_details[i].total || 10)) * 100).toFixed(1);
+          row[`RT ${i + 1}`] = `${pct}%`;
+        } else {
+          row[`RT ${i + 1}`] = '-';
+        }
+      }
+    } else {
+      row['RT'] = score.rt_score !== null ? score.rt_score.toFixed(1) : '-';
+    }
+
+    // 단어 점수
+    if (maxWordCount.value > 0) {
+      for (let i = 0; i < maxWordCount.value; i++) {
+        if (score.word_details && score.word_details[i]) {
+          const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
+          const isRetest = score.word_details[i].retest || Number(pct) <= 84;
+          row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+        } else {
+          row[`단어 ${i + 1}`] = '-';
+        }
+      }
+    } else {
+      row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 ? ' (재시험)' : ''}` : '-';
+    }
+
+    row['과제'] = score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-';
+    row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
+    row['발송 상태'] = score.kakao_status === 'success' ? '발송완료' : (score.kakao_status === 'fail' ? '발송실패' : '미발송');
+    
+    return row;
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // 컬럼 너비 자동 조정
+  const colWidths = [
+    { wch: 15 }, // 날짜
+    { wch: 15 }, // 학생명
+  ];
+  
+  if (maxRtCount.value > 0) {
+    for (let i = 0; i < maxRtCount.value; i++) colWidths.push({ wch: 10 });
+  } else {
+    colWidths.push({ wch: 10 });
+  }
+
+  if (maxWordCount.value > 0) {
+    for (let i = 0; i < maxWordCount.value; i++) colWidths.push({ wch: 15 });
+  } else {
+    colWidths.push({ wch: 15 });
+  }
+
+  colWidths.push({ wch: 10 }); // 과제
+  colWidths.push({ wch: 10 }); // 평균
+  colWidths.push({ wch: 15 }); // 발송상태
+
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Daily Report');
+  
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+  const fileName = `DailyReport_${dateStr}.xlsx`;
+  
+  XLSX.writeFile(wb, fileName);
 };
 
 const resetFilters = () => {
