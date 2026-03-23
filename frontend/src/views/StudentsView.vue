@@ -1009,7 +1009,7 @@ const openModal = (mode: 'create' | 'edit', student?: Student) => {
     form.value = {
       ...student,
       created_at: created_at_date,
-      classes: (student as any).classes || (student.class_name ? student.class_name.split(',').map((c: string) => normalizeClassName(c)).filter((c: string) => c) : [])
+      classes: Array.from(new Set((student as any).classes || (student.class_name ? student.class_name.split(',').map((c: string) => normalizeClassName(c)).filter((c: string) => c) : [])))
     };
     
     // 기존 학교가 목록에 없는 경우 직접 입력 모드로 전환
@@ -1201,7 +1201,7 @@ const downloadStudentList = () => {
       const classes = (student as any).classes 
         ? (student as any).classes.join(', ')
         : student.class_name 
-        ? student.class_name.split(',').map((c: string) => normalizeClassName(c)).join(', ')
+        ? Array.from(new Set(student.class_name.split(',').map((c: string) => normalizeClassName(c)))).join(', ')
         : '-';
       
       // 연락처 포맷팅
