@@ -361,7 +361,7 @@ const onClassChange = () => {
   classStudents.value = allStudents.value
     .filter(s => {
       if (!s.class_name || typeof s.class_name !== 'string') return false;
-      return s.class_name.split(',').map(c => c.trim()).includes(selectedClass.value);
+      return s.class_name.split(',').map(c => c.trim().normalize('NFC')).includes(selectedClass.value);
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
@@ -684,7 +684,7 @@ const classList = computed(() => {
   allStudents.value.forEach(s => {
     if (s.class_name && typeof s.class_name === 'string') {
       s.class_name.split(',').forEach(c => {
-        const trimmed = c.trim();
+        const trimmed = c.trim().normalize('NFC');
         if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
           set.add(trimmed);
         }

@@ -615,7 +615,7 @@ const classList = computed(() => {
   students.value.forEach(s => {
     if (s.class_name && typeof s.class_name === 'string') {
       s.class_name.split(',').forEach(c => {
-        const trimmed = c.trim();
+        const trimmed = c.trim().normalize('NFC');
         if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
           set.add(trimmed);
         }
