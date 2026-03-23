@@ -72,6 +72,12 @@ export class BimonthlyScore {
     if (filters.student_id) {
       query = query.eq('student_id', filters.student_id);
     }
+    if (filters.start_date) {
+      query = query.gte('exam_date', filters.start_date);
+    }
+    if (filters.end_date) {
+      query = query.lte('exam_date', filters.end_date);
+    }
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);

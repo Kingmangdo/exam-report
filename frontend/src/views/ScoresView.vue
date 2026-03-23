@@ -65,7 +65,14 @@
             @click="downloadExcel"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold flex items-center gap-2"
           >
-            <span>📊 엑셀 다운로드</span>
+            <span>📊 현재 목록 엑셀</span>
+          </button>
+          <button
+            v-if="isAdmin"
+            @click="downloadMonthlyExcel"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold flex items-center gap-2"
+          >
+            <span>📅 월별 엑셀 다운로드</span>
           </button>
         </div>
         <div class="text-sm text-gray-500">
@@ -969,6 +976,100 @@ const downloadExcel = () => {
   const fileName = `DailyReport_${dateStr}.xlsx`;
   
   XLSX.writeFile(wb, fileName);
+};
+
+const downloadMonthlyExcel = async () => {
+  const monthStr = prompt('다운로드할 연월을 입력하세요 (예: 2026-03)', new Date().toISOString().substring(0, 7));
+  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) {
+    if (monthStr) alert('올바른 형식(YYYY-MM)으로 입력해주세요.');
+    return;
+  }
+
+  try {
+    const [year, month] = monthStr.split('-');
+    const lastDay = new Date(Number(year), Number(month), 0).getDate();
+    const startDate = `${monthStr}-01`;
+    const endDate = `${monthStr}-${lastDay}`;
+
+    const params: any = { start_date: startDate, end_date: endDate };
+    if (filters.value.class_name) params.class_name = filters.value.class_name;
+
+    const response = await scoreApi.getAll(params);
+    if (response.data.success && response.data.data) {
+      const monthlyScores = response.data.data;
+      
+      if (monthlyScores.length === 0) {
+        alert('해당 월에 저장된 성적 데이터가 없습니다.');
+        return;
+      }
+
+      const excelData = monthlyScores.map((score: any) => {
+        const row: any = {
+          '날짜': score.exam_date,
+          '학생명': score.student_name || '-',
+        };
+
+        // RT 점수
+        if (maxRtCount.value > 0) {
+          for (let i = 0; i < maxRtCount.value; i++) {
+            if (score.rt_details && score.rt_details[i]) {
+              const pct = ((score.rt_details[i].correct / (score.rt_details[i].total || 10)) * 100).toFixed(1);
+              row[`RT ${i + 1}`] = `${pct}%`;
+            } else {
+              row[`RT ${i + 1}`] = '-';
+            }
+          }
+        } else {
+          row['RT'] = score.rt_score !== null ? score.rt_score.toFixed(1) : '-';
+        }
+
+        // 단어 점수
+        if (maxWordCount.value > 0) {
+          for (let i = 0; i < maxWordCount.value; i++) {
+            if (score.word_details && score.word_details[i]) {
+              const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
+              const isRetest = score.word_details[i].retest || Number(pct) <= 84;
+              row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+            } else {
+              row[`단어 ${i + 1}`] = '-';
+            }
+          }
+        } else {
+          row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 ? ' (재시험)' : ''}` : '-';
+        }
+
+        row['과제'] = score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-';
+        row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
+        row['발송 상태'] = score.kakao_status === 'success' ? '발송완료' : (score.kakao_status === 'fail' ? '발송실패' : '미발송');
+        
+        return row;
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      const colWidths = [{ wch: 15 }, { wch: 15 }];
+      if (maxRtCount.value > 0) {
+        for (let i = 0; i < maxRtCount.value; i++) colWidths.push({ wch: 10 });
+      } else {
+        colWidths.push({ wch: 10 });
+      }
+      if (maxWordCount.value > 0) {
+        for (let i = 0; i < maxWordCount.value; i++) colWidths.push({ wch: 15 });
+      } else {
+        colWidths.push({ wch: 15 });
+      }
+      colWidths.push({ wch: 10 }, { wch: 10 }, { wch: 15 });
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Daily Report');
+      const fileName = `DailyReport_월별_${monthStr.replace('-', '')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+  } catch (error) {
+    console.error('월별 엑셀 다운로드 실패:', error);
+    alert('데이터를 불러오는데 실패했습니다.');
+  }
 };
 
 const resetFilters = () => {

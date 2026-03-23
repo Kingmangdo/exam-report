@@ -43,7 +43,14 @@
             @click="downloadExcel"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold flex items-center gap-2 text-sm"
           >
-            <span>📊 엑셀 다운로드</span>
+            <span>📊 현재 목록 엑셀</span>
+          </button>
+          <button
+            v-if="isAdmin"
+            @click="downloadMonthlyExcel"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold flex items-center gap-2 text-sm"
+          >
+            <span>📅 월별 엑셀 다운로드</span>
           </button>
         </div>
         <div class="text-sm text-gray-500">
@@ -702,6 +709,72 @@ const downloadExcel = () => {
   const fileName = `성취평가_${dateStr}.xlsx`;
   
   XLSX.writeFile(wb, fileName);
+};
+
+const downloadMonthlyExcel = async () => {
+  const monthStr = prompt('다운로드할 연월을 입력하세요 (예: 2026-03)', new Date().toISOString().substring(0, 7));
+  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) {
+    if (monthStr) alert('올바른 형식(YYYY-MM)으로 입력해주세요.');
+    return;
+  }
+
+  try {
+    const [year, month] = monthStr.split('-');
+    const lastDay = new Date(Number(year), Number(month), 0).getDate();
+    const startDate = `${monthStr}-01`;
+    const endDate = `${monthStr}-${lastDay}`;
+
+    const params: any = { start_date: startDate, end_date: endDate };
+    if (filters.value.class_name) params.class_name = filters.value.class_name;
+
+    const response = await bimonthlyApi.getAll(params);
+    if (response.data.success && response.data.data) {
+      const monthlyScores = response.data.data;
+      
+      if (monthlyScores.length === 0) {
+        alert('해당 월에 저장된 성적 데이터가 없습니다.');
+        return;
+      }
+
+      const excelData = monthlyScores.map((score: any) => {
+        const row: any = {
+          '날짜': score.exam_date,
+          '반': score.class_name,
+          '학생명': score.student_name,
+        };
+
+        // 파트별 점수
+        if (score.parts && Array.isArray(score.parts)) {
+          score.parts.forEach((part: any, idx: number) => {
+            row[part.name || `파트${idx + 1}`] = part.score;
+          });
+        }
+
+        row['총점'] = score.total_score;
+        row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
+        
+        const status = getSendStatus(score.id);
+        row['발송 상태'] = status === 'success' ? '발송완료' : (status === 'fail' ? '발송실패' : '미발송');
+        
+        return row;
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      const colWidths = [{ wch: 15 }, { wch: 15 }, { wch: 15 }];
+      partNames.value.forEach(() => colWidths.push({ wch: 10 }));
+      colWidths.push({ wch: 10 }, { wch: 10 }, { wch: 15 });
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, '성취평가');
+      const fileName = `성취평가_월별_${monthStr.replace('-', '')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+  } catch (error) {
+    console.error('월별 엑셀 다운로드 실패:', error);
+    alert('데이터를 불러오는데 실패했습니다.');
+  }
 };
 
 const fetchScores = async () => {

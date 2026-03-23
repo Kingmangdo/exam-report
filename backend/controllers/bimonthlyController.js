@@ -15,7 +15,9 @@ export const getAllBimonthlyScores = async (req, res) => {
     const filters = {
       class_name: req.query.class_name || null,
       exam_date: req.query.exam_date || null,
-      student_id: req.query.student_id || null
+      student_id: req.query.student_id || null,
+      start_date: req.query.start_date || null,
+      end_date: req.query.end_date || null
     };
     const data = await BimonthlyScore.getAll(filters);
     res.json({ success: true, data });
