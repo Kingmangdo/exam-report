@@ -1,6 +1,16 @@
 import DailyBoard from '../models/DailyBoard.js';
 import { Class } from '../models/Class.js';
 
+export const getDailyBoardsByMonth = async (req, res) => {
+  try {
+    const { month } = req.params; // format: YYYY-MM
+    const boards = await DailyBoard.getByMonth(month);
+    res.json({ success: true, data: boards });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getDailyBoard = async (req, res) => {
   try {
     const { date } = req.params;

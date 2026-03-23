@@ -5,6 +5,13 @@
         <span>📋</span> 독강 데일리 보드
       </h2>
       <div class="flex items-center gap-4">
+        <button 
+          v-if="isAdmin"
+          @click="downloadMonthlyExcel"
+          class="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-sm flex items-center gap-2 text-sm"
+        >
+          <span>📊 월별 엑셀 다운로드</span>
+        </button>
         <input 
           type="date" 
           v-model="selectedDate" 
@@ -131,6 +138,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { dailyBoardApi } from '../services/api';
+import * as XLSX from 'xlsx';
+
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = user?.role === 'admin';
 
 const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const isLoading = ref(false);
@@ -252,6 +264,63 @@ const saveBoardData = async () => {
     alert('저장에 실패했습니다.');
   } finally {
     isSaving.value = false;
+  }
+};
+
+const downloadMonthlyExcel = async () => {
+  const monthStr = prompt('다운로드할 연월을 입력하세요 (예: 2026-03)', selectedDate.value.substring(0, 7));
+  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) {
+    if (monthStr) alert('올바른 형식(YYYY-MM)으로 입력해주세요.');
+    return;
+  }
+
+  try {
+    const res = await dailyBoardApi.getBoardsByMonth(monthStr);
+    if (res.data.success) {
+      const boards = res.data.data;
+      if (boards.length === 0) {
+        alert('해당 월에 저장된 데일리 보드 데이터가 없습니다.');
+        return;
+      }
+
+      const excelData = boards.map((board: any) => {
+        // RT 메모를 문자열로 변환
+        let rtNotesStr = '';
+        if (board.rt_notes) {
+          rtNotesStr = Object.entries(board.rt_notes)
+            .filter(([_, note]) => note)
+            .map(([className, note]) => `[${className}] ${note}`)
+            .join('\n');
+        }
+
+        return {
+          '날짜': board.target_date,
+          '학원 전체 특이사항': board.global_memo || '',
+          '반별 RT 주의사항': rtNotesStr,
+          '마지막 작성자': board.last_modified_by || ''
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // 컬럼 너비 자동 조정
+      const colWidths = [
+        { wch: 15 }, // 날짜
+        { wch: 50 }, // 학원 전체 특이사항
+        { wch: 50 }, // 반별 RT 주의사항
+        { wch: 15 }  // 마지막 작성자
+      ];
+      ws['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, '데일리보드');
+      
+      const fileName = `독강_데일리보드_${monthStr.replace('-', '')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+  } catch (error) {
+    console.error('엑셀 다운로드 실패:', error);
+    alert('엑셀 데이터를 불러오는데 실패했습니다.');
   }
 };
 

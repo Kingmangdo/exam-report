@@ -17,7 +17,7 @@ const api = axios.create({
   }
 });
 
-// ?¸í?°??í?° ì¶?ê?: ë¡?ì»¬ ?¤í? ë¦¬ì??ì?? ? í° ê°??¸ì? ?¤ë???ì¶?ê?
+// ?¸í?°??í?° ì¶?ê?: ë¡?ì»¬ ?¤í? ë¦¬ì??ì?? ? í° ê°??¸ì? ?¤ë???ì¶?ê?
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -26,7 +26,7 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// ?¸í?°??í?° ì¶?ê?: 401 ?ë?¬(?¸ì¦ ë§?ë£?) ì²?ë¦¬
+// ?¸í?°??í?° ì¶?ê?: 401 ?ë?¬(?¸ì¦ ë§?ë£?) ì²?ë¦¬
 api.interceptors.response.use(
   response => response,
   error => {
@@ -86,7 +86,7 @@ export const studentApi = {
       class_names: classNames
     });
   },
-  // ?´ì? ì²?ë¦¬
+  // ?´ì? ì²?ë¦¬
   withdraw: (id: number, data: { withdraw_date: string; withdraw_reason?: string; withdraw_teacher?: string }) => {
     return api.post<ApiResponse<Student>>(`/students/${id}/withdraw`, data);
   },
@@ -96,7 +96,7 @@ export const studentApi = {
   }
 };
 
-// ?ë?´ ê´?ë¦?API
+// ?ë?´ ê´?ë¦?API
 export const counselingApi = {
   getLogs: (studentId: number) => {
     return api.get<ApiResponse<any[]>>(`/counseling/student/${studentId}`);
@@ -181,7 +181,7 @@ export const supplementaryApi = {
   getStudentHistory: (studentId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any[]>>(`/supplementary/student/${studentId}`, { params: { start_date: startDate, end_date: endDate } });
   },
-  // ë³´ê°? ì¶?ê²°/ê²°ì? ?¬ì?  ??ë°?´í?¸
+  // ë³´ê°? ì¶?ê²°/ê²°ì? ?¬ì?  ??ë°?´í?¸
   updateAttendance: (sessionId: number, studentId: number, data: { attendance_status: 'pending' | 'present' | 'absent'; absent_reason?: string }) => {
     return api.patch<ApiResponse<any>>(`/supplementary/${sessionId}/students/${studentId}/attendance`, data);
   }
@@ -220,7 +220,7 @@ export const aiApi = {
   }
 };
 
-// ?±ì  ê´?ë¦?API
+// ?±ì  ê´?ë¦?API
 export const scoreApi = {
   getAll: (filters?: { 
     student_id?: number; 
@@ -272,7 +272,7 @@ export const statisticsApi = {
   }
 };
 
-// ?±ì ??API
+// ?±ì ??API
 export const reportApi = {
   generateLink: (scoreId: number) => {
     return api.post<ApiResponse<{ token: string; url: string; expires_at: string }>>(
@@ -427,7 +427,7 @@ export const reservationApi = {
   deleteLevelTest: (id: number) => {
     return api.delete<ApiResponse<void>>(`/reservations/level-test/${id}`);
   },
-  // ??ë²¨??ì?¤???±ì ??ë§í¬
+  // ??ë²¨??ì?¤???±ì ??ë§í¬
   generateReportLink: (levelTestId: number, name: string, phoneLast4: string) => {
     return api.post<ApiResponse<{ token: string; url: string }>>('/reports/level-test/generate', {
       level_test_id: levelTestId, name, phone_last4: phoneLast4
@@ -441,5 +441,6 @@ export const reservationApi = {
 export default api;
 export const dailyBoardApi = {
   getBoard: (date: string) => api.get<ApiResponse<any>>(`/daily-board/${date}`),
+  getBoardsByMonth: (month: string) => api.get<ApiResponse<any[]>>(`/daily-board/month/${month}`),
   saveBoard: (date: string, data: any) => api.post<ApiResponse<any>>(`/daily-board/${date}`, data)
 };

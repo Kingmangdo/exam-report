@@ -1,7 +1,10 @@
 import express from 'express';
-import { getDailyBoard, saveDailyBoard } from '../controllers/dailyBoardController.js';
+import { getDailyBoard, saveDailyBoard, getDailyBoardsByMonth } from '../controllers/dailyBoardController.js';
 
 const router = express.Router();
+
+// GET /api/daily-board/month/:month
+router.get('/month/:month', getDailyBoardsByMonth);
 
 // GET /api/daily-board/:date
 router.get('/:date', getDailyBoard);

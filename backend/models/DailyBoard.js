@@ -15,6 +15,25 @@ class DailyBoard {
     return data || { target_date: date, global_memo: '', rt_notes: {} };
   }
 
+  static async getByMonth(yearMonth) {
+    // yearMonth format: 'YYYY-MM'
+    const startDate = `${yearMonth}-01`;
+    // Get the last day of the month
+    const [year, month] = yearMonth.split('-');
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${yearMonth}-${lastDay}`;
+
+    const { data, error } = await supabase
+      .from('daily_boards')
+      .select('*')
+      .gte('target_date', startDate)
+      .lte('target_date', endDate)
+      .order('target_date', { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return data || [];
+  }
+
   static async save(date, data) {
     const { global_memo, rt_notes, last_modified_by } = data;
     
