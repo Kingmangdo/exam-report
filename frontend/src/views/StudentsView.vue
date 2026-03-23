@@ -443,24 +443,37 @@
               </select>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">반 (중복 선택 가능)</label>
-              <div class="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
-                <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
-                  <input
-                    :id="`form-class-${className}`"
-                    type="checkbox"
-                    :value="className"
-                    v-model="form.classes"
-                    class="mr-2 rounded border-gray-300"
-                  />
-                  <label :for="`form-class-${className}`" class="text-sm text-gray-700">
-                    {{ className }}
-                  </label>
-                </div>
-                <div class="flex items-center mt-2">
-                  <input
-                    id="form-class-new"
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">반 (중복 선택 가능)</label>
+                <div class="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                  <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
+                    <input
+                      :id="`form-class-${className}`"
+                      type="checkbox"
+                      :value="className"
+                      v-model="form.classes"
+                      class="mr-2 rounded border-gray-300"
+                    />
+                    <label :for="`form-class-${className}`" class="text-sm text-gray-700">
+                      {{ className }}
+                    </label>
+                  </div>
+                  <!-- DB에는 있지만 allAvailableClasses에 없는 유령 반들을 표시하여 삭제할 수 있게 함 -->
+                  <div v-for="ghostClass in form.classes.filter(c => !allAvailableClasses.includes(c))" :key="'ghost-'+ghostClass" class="flex items-center bg-red-50 p-1 rounded">
+                    <input
+                      :id="`form-class-ghost-${ghostClass}`"
+                      type="checkbox"
+                      :value="ghostClass"
+                      v-model="form.classes"
+                      class="mr-2 rounded border-red-300 text-red-600 focus:ring-red-500"
+                    />
+                    <label :for="`form-class-ghost-${ghostClass}`" class="text-sm text-red-700 line-through">
+                      {{ ghostClass }} (삭제 권장)
+                    </label>
+                  </div>
+                  <div class="flex items-center mt-2">
+                    <input
+                      id="form-class-new"
                     type="checkbox"
                     v-model="showNewClassInput"
                     class="mr-2 rounded border-gray-300"
