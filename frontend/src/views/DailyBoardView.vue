@@ -149,17 +149,19 @@ import { useRoute } from 'vue-router';
 import { dailyBoardApi } from '../services/api';
 import * as XLSX from 'xlsx';
 
+import { getTodayFull } from '../utils/date';
+
 const route = useRoute();
 const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
 const isAdmin = user?.role === 'admin';
 
-const selectedDate = ref(new Date().toISOString().split('T')[0]);
+const selectedDate = ref(getTodayFull());
 const isLoading = ref(false);
 const isSaving = ref(false);
 
 const goToToday = () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayFull();
   if (selectedDate.value !== today) {
     selectedDate.value = today;
     fetchBoardData();
@@ -344,14 +346,14 @@ const downloadMonthlyExcel = async () => {
 
 onMounted(() => {
   // 컴포넌트가 마운트될 때 무조건 오늘 날짜로 초기화
-  selectedDate.value = new Date().toISOString().split('T')[0];
+  selectedDate.value = getTodayFull();
   fetchBoardData();
 });
 
 // 라우트가 변경되어 다시 이 페이지로 올 때도 오늘 날짜로 초기화
 watch(() => route.path, (newPath) => {
   if (newPath === '/daily-board') {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayFull();
     if (selectedDate.value !== today) {
       selectedDate.value = today;
       fetchBoardData();
