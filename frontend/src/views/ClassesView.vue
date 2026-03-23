@@ -569,12 +569,12 @@ const learningLogDate = ref(getTodayFull());
 const activeRightTab = ref<'learning' | 'supplementary'>('learning');
 
 // 탭 설정
-const currentTab = ref('MWF');
+const currentTab = ref('regular_MWF');
 const tabs = [
-  { id: 'MWF', label: '월수금' },
-  { id: 'TTS', label: '화목토' },
-  { id: 'regular', label: '정규반 (기타)' },
-  { id: 'exam', label: '내신대비' },
+  { id: 'regular_MWF', label: '정규반 (월수금)' },
+  { id: 'regular_TTS', label: '정규반 (화목토)' },
+  { id: 'exam_MWF', label: '내신대비 (월수금)' },
+  { id: 'exam_TTS', label: '내신대비 (화목토)' },
   { id: 'ongoing', label: 'On-going' }
 ];
 
@@ -592,13 +592,14 @@ const filteredClasses = computed(() => {
   return classes.value.filter(c => {
     const cat = c.category || 'regular';
     
-    if (currentTab.value === 'MWF') {
+    if (currentTab.value === 'regular_MWF') {
       return cat === 'regular' && isMWF(c.weekdays);
-    } else if (currentTab.value === 'TTS') {
-      return cat === 'regular' && isTTS(c.weekdays);
-    } else if (currentTab.value === 'regular') {
-      // 정규반이면서 월수금/화목토가 아닌 경우 (또는 요일 미지정)
-      return cat === 'regular' && !isMWF(c.weekdays) && !isTTS(c.weekdays);
+    } else if (currentTab.value === 'regular_TTS') {
+      return cat === 'regular' && (!isMWF(c.weekdays) || isTTS(c.weekdays)); // 월수금이 아니면 화목토로 간주하거나 명시적 화목토
+    } else if (currentTab.value === 'exam_MWF') {
+      return cat === 'exam' && isMWF(c.weekdays);
+    } else if (currentTab.value === 'exam_TTS') {
+      return cat === 'exam' && (!isMWF(c.weekdays) || isTTS(c.weekdays));
     } else {
       return cat === currentTab.value;
     }
@@ -609,12 +610,14 @@ const getClassCountByCategory = (tabId: string) => {
   return classes.value.filter(c => {
     const cat = c.category || 'regular';
     
-    if (tabId === 'MWF') {
+    if (tabId === 'regular_MWF') {
       return cat === 'regular' && isMWF(c.weekdays);
-    } else if (tabId === 'TTS') {
-      return cat === 'regular' && isTTS(c.weekdays);
-    } else if (tabId === 'regular') {
-      return cat === 'regular' && !isMWF(c.weekdays) && !isTTS(c.weekdays);
+    } else if (tabId === 'regular_TTS') {
+      return cat === 'regular' && (!isMWF(c.weekdays) || isTTS(c.weekdays));
+    } else if (tabId === 'exam_MWF') {
+      return cat === 'exam' && isMWF(c.weekdays);
+    } else if (tabId === 'exam_TTS') {
+      return cat === 'exam' && (!isMWF(c.weekdays) || isTTS(c.weekdays));
     } else {
       return cat === tabId;
     }
@@ -622,11 +625,9 @@ const getClassCountByCategory = (tabId: string) => {
 };
 
 const getCategoryColor = (cat: string) => {
-  switch(cat) {
-    case 'exam': return 'border-green-500';
-    case 'ongoing': return 'border-orange-500';
-    default: return 'border-primary';
-  }
+  if (cat.startsWith('exam')) return 'border-green-500';
+  if (cat === 'ongoing') return 'border-orange-500';
+  return 'border-primary';
 };
 
 const emptyHomeworks = () => [
