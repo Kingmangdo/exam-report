@@ -307,8 +307,10 @@ const fetchBoardData = async () => {
       });
     }
 
-    // 해당 날짜의 보강 현황 조회
-    const suppRes = await supplementaryApi.getDashboardSessions(selectedDate.value, selectedDate.value);
+    // 해당 날짜의 보강 현황 조회 (KST 기준 해당 날짜의 00:00:00 ~ 23:59:59)
+    const startDate = `${selectedDate.value}T00:00:00+09:00`;
+    const endDate = `${selectedDate.value}T23:59:59+09:00`;
+    const suppRes = await supplementaryApi.getDashboardSessions(startDate, endDate);
     if (suppRes.data.success) {
       suppSessions.value = suppRes.data.data || [];
     }
