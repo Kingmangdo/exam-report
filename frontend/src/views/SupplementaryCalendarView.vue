@@ -5,9 +5,18 @@
         <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
           🗓 보강 캘린더
         </h3>
-        <span class="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700 font-bold">
-          이 달 보강 {{ monthlySessions.length }}건
-        </span>
+        <div class="flex items-center gap-3">
+          <span class="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700 font-bold">
+            이 달 보강 {{ monthlySessions.length }}건
+          </span>
+          <button
+            v-if="isAdmin"
+            @click="downloadMonthlyExcel"
+            class="px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition shadow-sm flex items-center gap-1"
+          >
+            <span>📊 엑셀 다운로드</span>
+          </button>
+        </div>
       </div>
 
       <div v-if="loading" class="py-8 text-center text-gray-400 text-sm">
@@ -391,6 +400,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { supplementaryApi, classApi, studentApi, kakaoApi } from '../services/api';
+import * as XLSX from 'xlsx';
+
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = user?.role === 'admin';
 
 const loading = ref(false);
 const monthlySessions = ref<any[]>([]);
@@ -496,6 +510,81 @@ const buildDay = (date: Date, inCurrentMonth: boolean) => {
 };
 
 // 월간 데이터 로드
+const downloadMonthlyExcel = () => {
+  if (monthlySessions.value.length === 0) {
+    alert('다운로드할 보강 데이터가 없습니다.');
+    return;
+  }
+
+  const excelData: any[] = [];
+
+  // 각 세션별로 학생마다 한 줄씩 데이터 생성
+  monthlySessions.value.forEach(session => {
+    const sessionDate = new Date(session.session_date);
+    const dateStr = sessionDate.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const timeStr = sessionDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    if (session.supplementary_students && session.supplementary_students.length > 0) {
+      session.supplementary_students.forEach((stu: any) => {
+        let statusText = '미체크';
+        if (stu.attendance_status === 'present') statusText = '출석';
+        if (stu.attendance_status === 'absent') statusText = '결석';
+
+        excelData.push({
+          '날짜': dateStr,
+          '시간': timeStr,
+          '반': session.class_name || '반 미지정',
+          '담당 강사': session.teacher_name || '-',
+          '보강 내용': session.content || '-',
+          '학생명': stu.students?.name || '알 수 없음',
+          '출결 상태': statusText,
+          '결석 사유': stu.absent_reason || '-'
+        });
+      });
+    } else {
+      // 학생이 배정되지 않은 보강 일정
+      excelData.push({
+        '날짜': dateStr,
+        '시간': timeStr,
+        '반': session.class_name || '반 미지정',
+        '담당 강사': session.teacher_name || '-',
+        '보강 내용': session.content || '-',
+        '학생명': '(학생 미배정)',
+        '출결 상태': '-',
+        '결석 사유': '-'
+      });
+    }
+  });
+
+  // 날짜, 시간 순으로 정렬
+  excelData.sort((a, b) => {
+    if (a['날짜'] !== b['날짜']) return a['날짜'].localeCompare(b['날짜']);
+    return a['시간'].localeCompare(b['시간']);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  const colWidths = [
+    { wch: 15 }, // 날짜
+    { wch: 10 }, // 시간
+    { wch: 15 }, // 반
+    { wch: 12 }, // 담당 강사
+    { wch: 30 }, // 보강 내용
+    { wch: 12 }, // 학생명
+    { wch: 10 }, // 출결 상태
+    { wch: 20 }  // 결석 사유
+  ];
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, '보강실적');
+  
+  const monthStr = `${currentYear.value}${String(currentMonth.value + 1).padStart(2, '0')}`;
+  const fileName = `보강실적_${monthStr}.xlsx`;
+  
+  XLSX.writeFile(wb, fileName);
+};
+
 const fetchMonthlySessions = async () => {
   try {
     loading.value = true;
