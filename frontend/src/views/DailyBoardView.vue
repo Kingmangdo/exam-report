@@ -62,6 +62,62 @@
         </div>
       </div>
 
+      <!-- 1.5 보강 현황 -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-green-50 px-5 py-3 border-b border-green-100 flex justify-between items-center">
+          <h3 class="font-bold text-green-800 flex items-center gap-2">
+            <span>🧑‍🏫</span> 오늘의 보강 현황
+          </h3>
+          <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+            총 {{ suppSessions.length }}건
+          </span>
+        </div>
+        <div class="p-4">
+          <div v-if="suppSessions.length === 0" class="text-center py-6 text-gray-500 text-sm">
+            오늘 일정이 잡힌 보강이 없습니다.
+          </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="session in suppSessions" :key="session.id" class="border border-green-100 rounded-lg p-3 bg-green-50/30">
+              <div class="flex justify-between items-start mb-2">
+                <div class="font-bold text-gray-800 text-sm">
+                  {{ session.class_name || '반 미지정' }}
+                  <span v-if="session.teacher_name" class="text-xs font-normal text-gray-500 ml-1">({{ session.teacher_name }}T)</span>
+                </div>
+                <div class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border">
+                  {{ new Date(session.session_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) }}
+                </div>
+              </div>
+              <div class="text-xs text-gray-600 mb-3 bg-white p-2 rounded border border-gray-100">
+                {{ session.content || '내용 없음' }}
+              </div>
+              
+              <!-- 보강 학생 출결 -->
+              <div class="space-y-2">
+                <div v-for="stu in session.supplementary_students" :key="stu.student_id" class="flex items-center justify-between bg-white p-1.5 rounded shadow-sm border border-gray-100">
+                  <span class="text-sm font-medium text-gray-700">{{ stu.students?.name || '알 수 없음' }}</span>
+                  <div class="flex gap-1">
+                    <button 
+                      @click="updateSuppAttendance(session.id, stu.student_id, 'present')"
+                      class="px-2 py-1 text-[10px] font-bold rounded transition-colors"
+                      :class="stu.attendance_status === 'present' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                    >
+                      출석
+                    </button>
+                    <button 
+                      @click="updateSuppAttendance(session.id, stu.student_id, 'absent')"
+                      class="px-2 py-1 text-[10px] font-bold rounded transition-colors"
+                      :class="stu.attendance_status === 'absent' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                    >
+                      결석
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 2. 오늘의 과제 검사 & 3. 오늘의 RT -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
@@ -146,7 +202,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { dailyBoardApi } from '../services/api';
+import { dailyBoardApi, supplementaryApi } from '../services/api';
 import * as XLSX from 'xlsx';
 
 import { getTodayFull } from '../utils/date';
@@ -175,6 +231,7 @@ const boardData = ref({
 });
 
 const dueList = ref<any[]>([]);
+const suppSessions = ref<any[]>([]); // 보강 현황 데이터
 
 // 과제와 RT 분리
 const homeworkList = computed(() => {
@@ -231,6 +288,7 @@ const rtByClass = computed(() => {
 const fetchBoardData = async () => {
   isLoading.value = true;
   try {
+    // 데일리 보드 데이터 및 과제/RT 목록 조회
     const res = await dailyBoardApi.getBoard(selectedDate.value);
     if (res.data.success) {
       const data = res.data.data;
@@ -248,11 +306,34 @@ const fetchBoardData = async () => {
         }
       });
     }
+
+    // 해당 날짜의 보강 현황 조회
+    const suppRes = await supplementaryApi.getDashboardSessions(selectedDate.value, selectedDate.value);
+    if (suppRes.data.success) {
+      suppSessions.value = suppRes.data.data || [];
+    }
   } catch (error) {
-    console.error('데일리 보드 데이터를 불러오는데 실패했습니다.', error);
+    console.error('데이터를 불러오는데 실패했습니다.', error);
     alert('데이터를 불러오는데 실패했습니다.');
   } finally {
     isLoading.value = false;
+  }
+};
+
+const updateSuppAttendance = async (sessionId: number, studentId: number, status: string) => {
+  try {
+    await supplementaryApi.updateAttendance(sessionId, studentId, { attendance_status: status });
+    // 로컬 상태 업데이트 (화면 즉시 반영)
+    const session = suppSessions.value.find(s => s.id === sessionId);
+    if (session && session.supplementary_students) {
+      const student = session.supplementary_students.find((st: any) => st.student_id === studentId);
+      if (student) {
+        student.attendance_status = status;
+      }
+    }
+  } catch (error) {
+    console.error('보강 출결 업데이트 실패:', error);
+    alert('출결 상태 변경에 실패했습니다.');
   }
 };
 
