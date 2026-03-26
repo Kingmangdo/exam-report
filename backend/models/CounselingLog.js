@@ -23,7 +23,7 @@ export class CounselingLog {
         counselor_name,
         category: category || '일반상담',
         content,
-        consultation_date: consultation_date || new Date().toISOString().split('T')[0]
+        consultation_date: consultation_date || new Date(new Date().getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0]
       })
       .select('*')
       .single();

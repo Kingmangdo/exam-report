@@ -232,38 +232,10 @@ export class Class {
 
   // 특정 날짜에 숙제 검사 예정인 로그 조회 (모든 반 대상)
   static async getHomeworkDueByDate(date) {
-    // 1) 날짜에 해당하는 요일 계산 (0=일요일)
-    const targetDate = new Date(date);
-    if (Number.isNaN(targetDate.getTime())) {
-      throw new Error('Invalid date for getHomeworkDueByDate');
-    }
-    const dayIndex = targetDate.getDay();
-    const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    const weekday = weekdayNames[dayIndex];
-
-    // 2) 모든 반에서 수업 요일이 해당 요일에 포함된 반만 필터링
-    const { data: classes, error: classError } = await supabase
-      .from('classes')
-      .select('id, name, weekdays');
-
-    if (classError) throw new Error(classError.message);
-
-    const eligibleClasses = (classes || []).filter(c => {
-      // weekdays가 없거나 비어 있으면 "요일 제한 없음"으로 간주 → 항상 포함
-      if (!c.weekdays || c.weekdays.length === 0) return true;
-      return c.weekdays.includes(weekday);
-    });
-
-    const classIds = eligibleClasses.map(c => c.id);
-    if (classIds.length === 0) {
-      return [];
-    }
-
-    // 3) 해당 반들 중에서, 해당 날짜에 숙제 마감인 로그만 조회
+    // 요일 필터링 제거: 지정된 날짜(date)가 과제 마감일(homework_deadline)인 모든 로그를 무조건 가져옵니다.
     const { data, error } = await supabase
       .from('class_learning_logs')
       .select('*, classes!inner(id, name)')
-      .in('class_id', classIds)
       .eq('homework_deadline', date)
       .not('homework', 'is', null);
     
@@ -273,7 +245,7 @@ export class Class {
 
   // 최근 학습 로그 날짜 목록 조회 (숙제 포함)
   static async getRecentLogDates(classId, days = 21) {
-    const dateLimit = new Date();
+    const dateLimit = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
     dateLimit.setDate(dateLimit.getDate() - days);
     const dateStr = dateLimit.toISOString().split('T')[0];
 

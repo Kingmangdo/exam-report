@@ -139,7 +139,8 @@ export class Statistics {
       .select('*', { count: 'exact', head: true });
     if (scoresError) throw new Error(scoresError.message);
 
-    const today = new Date().toISOString().split('T')[0].slice(2).replace(/-/g, '-');
+      const kstTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+      const today = kstTime.toISOString().split('T')[0].slice(2).replace(/-/g, '-');
     const { count: todayScores, error: todayError } = await supabase
       .from('scores')
       .select('*', { count: 'exact', head: true })

@@ -98,8 +98,13 @@ export const getAllLearningLogs = async (req, res) => {
 
 export const getHomeworkDue = async (req, res) => {
   try {
-    const { date } = req.query;
-    const today = date || new Date().toISOString().split('T')[0];
+    let today = req.query.date;
+    if (!today) {
+      // KST 기준으로 오늘 날짜 구하기
+      const now = new Date();
+      const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      today = kstTime.toISOString().split('T')[0];
+    }
     const dueList = await Class.getHomeworkDueByDate(today);
     res.json({ success: true, data: dueList });
   } catch (error) {
