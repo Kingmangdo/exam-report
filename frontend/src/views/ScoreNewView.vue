@@ -23,14 +23,18 @@
         <!-- 테스트 종류 관리 (RT, 단어) -->
         <div class="space-y-4 border-l pl-6">
           <div>
-            <div class="flex justify-between items-center mb-2">
-              <label class="text-sm font-bold text-gray-700">RT 테스트 설정 (100점 만점)</label>
-              <button @click="addTestType('rt')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100">+ 추가</button>
-            </div>
-            <div v-for="(test, idx) in rtTestTypes" :key="idx" class="flex items-center gap-2 mb-2">
-              <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
-              <button @click="removeTestType('rt', idx)" class="text-red-500 text-xs">삭제</button>
-            </div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-sm font-bold text-gray-700">RT 테스트 설정</label>
+                <button @click="addTestType('rt')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100">+ 추가</button>
+              </div>
+              <div v-for="(test, idx) in rtTestTypes" :key="idx" class="flex items-center gap-2 mb-2">
+                <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
+                <select v-model="test.type" class="px-2 py-1 text-xs border rounded bg-white" @change="updateAllScoreForms">
+                  <option value="score">100점 만점</option>
+                  <option value="pf">Pass/Fail</option>
+                </select>
+                <button @click="removeTestType('rt', idx)" class="text-red-500 text-xs">삭제</button>
+              </div>
           </div>
           <div>
             <div class="flex justify-between items-center mb-2">
@@ -63,7 +67,7 @@
               
               <!-- RT 테스트 컬럼들 -->
               <th v-for="(test, idx) in rtTestTypes" :key="'rt-h-'+idx" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                RT: {{ test.name || '미지정' }} (100점)
+                RT: {{ test.name || '미지정' }} ({{ test.type === 'pf' ? 'P/F' : '100점' }})
               </th>
 
               <!-- 단어 테스트 컬럼들 -->
@@ -93,9 +97,15 @@
                 </div>
               </td>
 
-              <!-- RT 점수 입력 (100점 만점) -->
+              <!-- RT 점수 입력 -->
               <td v-for="(test, tIdx) in rtTestTypes" :key="'rt-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
-                <input v-if="scoreForms[sIdx]?.rt_details?.[tIdx]" v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" max="100" step="0.1" placeholder="점수" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent" @input="calculateScore(sIdx)" />
+                <template v-if="scoreForms[sIdx]?.rt_details?.[tIdx]">
+                  <div v-if="test.type === 'pf'" class="flex gap-1 justify-center">
+                    <button @click="setRtPf(sIdx, tIdx, 'P')" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'P' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-400 border-gray-200 hover:border-green-500'">P</button>
+                    <button @click="setRtPf(sIdx, tIdx, 'F')" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'F' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200 hover:border-red-500'">F</button>
+                  </div>
+                  <input v-else v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" max="100" step="0.1" placeholder="점수" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent" @input="calculateScore(sIdx)" />
+                </template>
               </td>
 
               <!-- 단어 맞춘 문제 입력 -->
@@ -180,7 +190,7 @@ const selectedClass = ref<string>('');
 const examDate = ref<string>(getToday());
 const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
 
-const rtTestTypes = ref<Array<{ name: string }>>([{ name: 'RT 1' }]);
+const rtTestTypes = ref<Array<{ name: string; type: 'score' | 'pf' }>>([{ name: 'RT 1', type: 'score' }]);
 const wordTestTypes = ref<Array<{ name: string; total: number | null }>>([{ name: '단어 1', total: null }]);
 
 const allStudents = ref<Student[]>([]);
@@ -194,10 +204,10 @@ const saveSuccessMessage = ref<string>('');
 
 const assignmentMap: Record<string, number> = { 'A': 100, 'B': 85, 'C': 70, 'F': 50 };
 
-const addTestType = (type: 'rt' | 'word') => {
-  if (type === 'rt') {
-    rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}` });
-  } else {
+  const addTestType = (type: 'rt' | 'word') => {
+    if (type === 'rt') {
+      rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, type: 'score' });
+    } else {
     wordTestTypes.value.push({ name: `단어 ${wordTestTypes.value.length + 1}`, total: null });
   }
   updateAllScoreForms();
@@ -212,12 +222,12 @@ const removeTestType = (type: 'rt' | 'word', index: number) => {
   updateAllScoreForms();
 };
 
-const updateAllScoreForms = () => {
-  scoreForms.value.forEach((form, sIdx) => {
-    // RT details sync
-    while (form.rt_details.length < rtTestTypes.value.length) {
-      form.rt_details.push({ correct: 0, name: '', total: 100 });
-    }
+  const updateAllScoreForms = () => {
+    scoreForms.value.forEach((form, sIdx) => {
+      // RT details sync
+      while (form.rt_details.length < rtTestTypes.value.length) {
+        form.rt_details.push({ correct: 0, name: '', type: 'score', total: 100 });
+      }
     if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
     
     // Word details sync
@@ -245,11 +255,16 @@ const toggleAbsent = (sIdx: number) => {
   calculateScore(sIdx);
 };
 
-const setAssignmentGrade = (sIdx: number, grade: string) => {
-  scoreForms.value[sIdx].assignment_grade = grade;
-  scoreForms.value[sIdx].assignment_score = assignmentMap[grade];
-  calculateScore(sIdx);
-};
+  const setAssignmentGrade = (sIdx: number, grade: string) => {
+    scoreForms.value[sIdx].assignment_grade = grade;
+    scoreForms.value[sIdx].assignment_score = assignmentMap[grade];
+    calculateScore(sIdx);
+  };
+
+  const setRtPf = (sIdx: number, tIdx: number, val: 'P' | 'F') => {
+    scoreForms.value[sIdx].rt_details[tIdx].correct = val;
+    calculateScore(sIdx);
+  };
 
 const toggleRetest = (sIdx: number, tIdx: number) => {
   const form = scoreForms.value[sIdx];
@@ -297,7 +312,7 @@ const calculateScore = (sIdx: number) => {
   // RT 평균 점수 (100점 만점으로 직접 입력된 점수 사용)
   let rtSum = 0;
   rtTestTypes.value.forEach((test, tIdx) => {
-    const score = Number(form.rt_details[tIdx]?.correct) || 0;
+    let score = 0; const val = form.rt_details[tIdx]?.correct; if (test.type === 'pf') { if (val === 'P') score = 100; else if (val === 'F') score = 0; } else { score = Number(val) || 0; }
     rtSum += score; // correct가 이미 0-100 점수
   });
   const rtAvg = rtTestTypes.value.length > 0 ? rtSum / rtTestTypes.value.length : 0;
@@ -366,9 +381,9 @@ const onClassChange = () => {
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-  scoreForms.value = classStudents.value.map(() => ({
-    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, total: t.total })),
-    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
+    scoreForms.value = classStudents.value.map(() => ({
+      rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: t.total })),
+      word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
@@ -380,15 +395,15 @@ const onClassChange = () => {
   loadExistingScores();
 };
 
-const loadExistingScores = async () => {
-  // 테스트 종류 초기화 (기본값으로)
-  rtTestTypes.value = [{ name: 'RT 1' }];
-  wordTestTypes.value = [{ name: '단어 1', total: null }];
+  const loadExistingScores = async () => {
+    // 테스트 종류 초기화 (기본값으로)
+    rtTestTypes.value = [{ name: 'RT 1', type: 'score' }];
+    wordTestTypes.value = [{ name: '단어 1', total: null }];
 
   // 상태 초기화 (시험일자 변경 시 기본값으로)
-  scoreForms.value = classStudents.value.map(() => ({
-    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, total: 100 })),
-    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
+    scoreForms.value = classStudents.value.map(() => ({
+      rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: 100 })),
+      word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total })),
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
@@ -412,11 +427,12 @@ const loadExistingScores = async () => {
       
       // 첫 번째 성적 데이터에서 테스트 종류 복원 (있다면)
       const firstScore = data[0];
-      if (firstScore.rt_details?.length) {
-        rtTestTypes.value = firstScore.rt_details.map((d: any, i: number) => ({ 
-          name: d.name || `RT ${i+1}`
-        }));
-      }
+        if (firstScore.rt_details?.length) {
+          rtTestTypes.value = firstScore.rt_details.map((d: any, i: number) => ({ 
+            name: d.name || `RT ${i+1}`,
+            type: d.type || 'score'
+          }));
+        }
       if (firstScore.word_details?.length) {
         wordTestTypes.value = firstScore.word_details.map((d: any, i: number) => ({ 
           name: d.name || `단어 ${i+1}`, 
@@ -468,10 +484,10 @@ const loadExistingScores = async () => {
           scoreForms.value = parsed.scoreForms;
         }
       }
-      scoreForms.value.forEach((form, i) => {
-        while (form.rt_details.length < rtTestTypes.value.length) {
-          form.rt_details.push({ correct: 0, name: '', total: 100 });
-        }
+        scoreForms.value.forEach((form, i) => {
+          while (form.rt_details.length < rtTestTypes.value.length) {
+            form.rt_details.push({ correct: 0, name: '', type: 'score', total: 100 });
+          }
         if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
         while (form.word_details.length < wordTestTypes.value.length) {
           form.word_details.push({ correct: 0, retest: false, name: '', total: 0 });
@@ -530,11 +546,12 @@ const saveSingleScore = async (sIdx: number) => {
     const student = classStudents.value[sIdx];
     const form = scoreForms.value[sIdx];
 
-    const finalRtDetails = form.rt_details.map((d: any, idx: number) => ({
-      ...d,
-      name: rtTestTypes.value[idx]?.name || `RT ${idx + 1}`,
-      total: 100 // RT는 항상 100점 만점
-    }));
+        const finalRtDetails = form.rt_details.map((d: any, idx: number) => ({
+          ...d,
+          name: rtTestTypes.value[idx]?.name || `RT ${idx + 1}`,
+          type: rtTestTypes.value[idx]?.type || 'score',
+          total: 100 // RT는 항상 100점 만점
+        }));
 
     const finalWordDetails = form.word_details.map((d: any, idx: number) => ({
       ...d,
@@ -547,7 +564,7 @@ const saveSingleScore = async (sIdx: number) => {
       exam_date: examDate.value,
       class_name: selectedClass.value,
       rt_total: rtTestTypes.value.length * 100, // RT 테스트 개수 * 100점
-      rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+      rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
       word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
       word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
       rt_details: finalRtDetails,
@@ -588,6 +605,7 @@ const saveAllScores = async () => {
       const finalRtDetails = form.rt_details.map((d: any, idx: number) => ({
         ...d,
         name: rtTestTypes.value[idx]?.name || `RT ${idx + 1}`,
+        type: rtTestTypes.value[idx]?.type || 'score',
         total: 100 // RT는 항상 100점 만점
       }));
       
@@ -602,7 +620,7 @@ const saveAllScores = async () => {
         exam_date: examDate.value,
         class_name: selectedClass.value,
         rt_total: rtTestTypes.value.length * 100, // RT 테스트 개수 * 100점
-        rt_correct: form.rt_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+        rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
         word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
         word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
         rt_details: finalRtDetails,
@@ -640,14 +658,14 @@ const resetAllScores = async () => {
     console.error('임시저장 삭제 실패:', e);
   }
   
-  // 테스트 종류 초기화
-  rtTestTypes.value = [{ name: 'RT 1' }];
-  wordTestTypes.value = [{ name: '단어 1', total: null }];
+    // 테스트 종류 초기화
+    rtTestTypes.value = [{ name: 'RT 1', type: 'score' }];
+    wordTestTypes.value = [{ name: '단어 1', total: null }];
 
   // 입력 폼 및 계산 결과 초기화
-  scoreForms.value = classStudents.value.map(() => ({
-    rt_details: rtTestTypes.value.map(() => ({ correct: 0, total: 100 })),
-    word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
+    scoreForms.value = classStudents.value.map(() => ({
+      rt_details: rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100 })),
+      word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
