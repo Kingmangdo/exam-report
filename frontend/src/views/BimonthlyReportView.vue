@@ -220,18 +220,18 @@ const radarData = computed(() => {
   };
 });
 
-const radarOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    r: {
-      angleLines: { display: true, color: 'rgba(0,0,0,0.1)' },
-      suggestedMin: 0, suggestedMax: 100,
-      ticks: { stepSize: 20, font: { size: 10 }, backdropColor: 'transparent' },
-      pointLabels: { font: { size: 13, weight: 'bold' as const }, color: partColors },
-      grid: { color: 'rgba(0,0,0,0.08)' }
-    }
-  },
+  const radarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: {
+        angleLines: { display: true, color: 'rgba(0,0,0,0.1)' },
+        suggestedMin: 0, suggestedMax: 100,
+        ticks: { stepSize: 10, font: { size: 10 }, backdropColor: 'transparent' },
+        pointLabels: { font: { size: 13, weight: 'bold' as const }, color: partColors },
+        grid: { color: 'rgba(0,0,0,0.08)' }
+      }
+    },
   plugins: {
     legend: { display: false },
     tooltip: { callbacks: { label: (ctx: any) => `${ctx.label}: ${ctx.raw?.toFixed(1)}점` } }
@@ -278,18 +278,18 @@ const trendOptions = {
       right: 10
     }
   },
-  scales: {
-    y: { 
-      beginAtZero: true, 
-      max: 110, 
-      ticks: { 
-        stepSize: 20, 
-        font: { size: 11 },
-        callback: function(value: any) {
-          if (value > 100) return '';
-          return value + '%';
-        }
-      }, 
+    scales: {
+      y: { 
+        beginAtZero: true, 
+        max: 110, 
+        ticks: { 
+          stepSize: 10, 
+          font: { size: 11 },
+          callback: function(value: any) {
+            if (value > 100) return '';
+            return value + '%';
+          }
+        }, 
       grid: { 
         color: function(context: any) {
           if (context.tick && context.tick.value === 110) {

@@ -458,7 +458,10 @@ const trendChartOptions = {
   scales: {
     y: {
       beginAtZero: true,
-      max: 100
+      max: 100,
+      ticks: {
+        stepSize: 10
+      }
     }
   }
 };
