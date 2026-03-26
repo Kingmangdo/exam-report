@@ -233,10 +233,12 @@ export class Class {
   // 특정 날짜에 숙제 검사 예정인 로그 조회 (모든 반 대상)
   static async getHomeworkDueByDate(date) {
     // 요일 필터링 제거: 지정된 날짜(date)가 과제 마감일(homework_deadline)인 모든 로그를 무조건 가져옵니다.
+    // 추가: 여러 과제/RT 중 첫 번째 마감일만 homework_deadline에 저장되는 문제가 있어,
+    // homework JSON 문자열 내에 해당 날짜가 포함되어 있는지도 함께 검사합니다.
     const { data, error } = await supabase
       .from('class_learning_logs')
       .select('*, classes!inner(id, name)')
-      .eq('homework_deadline', date)
+      .or(`homework_deadline.eq.${date},homework.like.%${date}%`)
       .not('homework', 'is', null);
     
     if (error) throw new Error(error.message);
