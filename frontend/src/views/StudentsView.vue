@@ -190,10 +190,11 @@
             선택 삭제
           </button>
         </div>
-      </div>
+        </div>
 
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left">
               <input
@@ -341,8 +342,9 @@
               </button>
             </td>
           </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       <div v-if="students.length === 0" class="text-center py-8 text-gray-500">
         등록된 학생이 없습니다.

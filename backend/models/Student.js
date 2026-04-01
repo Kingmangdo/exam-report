@@ -125,7 +125,7 @@ export class Student {
     if (data.created_at !== undefined) updateData.created_at = data.created_at;
 
     // 퇴원 관련 필드 및 상태 변경
-    if (data.status !== undefined) updateData.status = data.status;
+    if (data.status !== undefined) { updateData.status = data.status; if (data.status === 'withdrawn') { updateData.class_name = null; } }
     if (data.withdraw_date !== undefined) updateData.withdraw_date = data.withdraw_date || null;
     if (data.withdraw_reason !== undefined) updateData.withdraw_reason = data.withdraw_reason || null;
     if (data.withdraw_teacher !== undefined) updateData.withdraw_teacher = data.withdraw_teacher || null;
