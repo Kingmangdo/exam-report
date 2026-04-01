@@ -752,8 +752,8 @@ const onClassChange = async () => {
 
     // 반을 선택하면 기본 담임 선생님을 그 반의 teacher_name 으로 설정
     form.value.teacher_name = cls.teacher_name || '';
-    // 보강 관리는 반 관리와 동일하게 status 필터 없이 모든 학생 조회
-    const res = await studentApi.getAll({ class_name: cls.name, status: undefined });
+    // 보강 관리는 반 관리와 동일하게 활성(active) 학생만 조회
+    const res = await studentApi.getAll({ class_name: cls.name, status: 'active' });
     if (res.data.success) {
       // 백엔드에서 이미 OR 조건으로 필터링했으므로 프론트엔드에서는 추가 필터링 불필요
       // 백엔드가 class_name에 해당 반이 포함된 모든 학생을 반환함

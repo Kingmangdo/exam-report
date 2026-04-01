@@ -951,12 +951,12 @@ const fetchClasses = async () => {
   }
 };
 
-const fetchAllStudents = async () => {
-  try {
-    const response = await studentApi.getAll();
-    if (response.data.success) {
-      allStudents.value = response.data.data || [];
-    }
+  const fetchAllStudents = async () => {
+    try {
+      const response = await studentApi.getAll({ status: 'active' });
+      if (response.data.success) {
+        allStudents.value = response.data.data || [];
+      }
   } catch (err) {
     console.error('전체 학생 로드 실패:', err);
   }

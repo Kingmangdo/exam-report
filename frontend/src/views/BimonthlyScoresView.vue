@@ -935,7 +935,7 @@ const showToast = (msg: string) => {
 };
 
 onMounted(async () => {
-  const res = await studentApi.getAll();
+  const res = await studentApi.getAll({ status: 'active' });
   if (res.data.success) allStudents.value = res.data.data;
 });
 </script>

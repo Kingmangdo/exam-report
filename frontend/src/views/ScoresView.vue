@@ -602,7 +602,7 @@ const handleSearchInput = () => {
 
 const fetchStudents = async () => {
   try {
-    const response = await studentApi.getAll();
+    const response = await studentApi.getAll({ status: 'active' });
     if (response.data.success && response.data.data) {
       students.value = response.data.data;
     }

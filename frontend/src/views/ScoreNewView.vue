@@ -690,7 +690,7 @@ const showToast = (msg: string) => {
 
 const fetchStudents = async () => {
   try {
-    const res = await studentApi.getAll();
+    const res = await studentApi.getAll({ status: 'active' });
     if (res.data.success) allStudents.value = res.data.data;
   } catch (err) {
     console.error('학생 목록 로드 실패:', err);
