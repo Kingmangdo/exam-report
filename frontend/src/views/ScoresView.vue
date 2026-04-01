@@ -90,9 +90,9 @@
       <p class="text-red-600">{{ error }}</p>
     </div>
 
-    <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+    <div v-else class="bg-white rounded-lg shadow overflow-x-auto max-h-[calc(100vh-200px)] overflow-y-auto relative">
       <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+        <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
           <tr>
             <th class="px-4 py-3 text-center">
               <input

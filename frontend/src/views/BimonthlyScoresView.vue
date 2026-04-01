@@ -64,9 +64,9 @@
       <div class="p-4 border-b bg-gray-50">
         <h3 class="text-lg font-semibold text-gray-800">조회 결과 ({{ filteredScores.length }}건)</h3>
       </div>
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto relative">
         <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+          <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
             <tr>
               <th class="px-3 py-3 text-center">
                 <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
