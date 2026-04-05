@@ -36,8 +36,8 @@ export const getDashboardSessions = async (req, res) => {
 // 보강 일정 생성
 export const createSession = async (req, res) => {
   try {
-    const { class_id, session_date, content, teacher_name, student_ids } = req.body;
-    const session = await Supplementary.createSession({ class_id, session_date, content, teacher_name });
+    const { class_id, session_date, content, teacher_name, student_ids, end_time, duration_minutes } = req.body;
+    const session = await Supplementary.createSession({ class_id, session_date, content, teacher_name, end_time, duration_minutes });
     
     if (student_ids && student_ids.length > 0) {
       await Supplementary.addStudents(session.id, student_ids);
@@ -53,8 +53,8 @@ export const createSession = async (req, res) => {
 export const updateSession = async (req, res) => {
   try {
     const { id } = req.params;
-    const { session_date, content, teacher_name, student_ids } = req.body;
-    const session = await Supplementary.updateSession(id, { session_date, content, teacher_name });
+    const { session_date, content, teacher_name, student_ids, end_time, duration_minutes } = req.body;
+    const session = await Supplementary.updateSession(id, { session_date, content, teacher_name, end_time, duration_minutes });
 
     // 학생 목록 업데이트 (기존 삭제 후 재등록 방식이 간단함)
     // 하지만 출석 상태 보존을 위해 추가/삭제 로직을 분리하는 것이 좋음.

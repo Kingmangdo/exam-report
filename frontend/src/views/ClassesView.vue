@@ -687,6 +687,8 @@ const showStudentSearchModal = ref(false);
 const supplementaryForm = ref({
   date: getTodayFull(),
   time: '14:00',
+  endTime: '16:00',
+  noEndTime: false,
   content: ''
 });
 const selectedSupplementaryStudents = ref<any[]>([]);
@@ -871,9 +873,9 @@ const selectLogDate = (date: string) => {
 const formatDateWithDay = (dateStr: string) => {
   if (!dateStr) return '';
   const days = ['일', '월', '화', '수', '목', '금', '토'];
-  // dateStr이 '26-01-31' 형식이면 '2026-01-31'로 변환
   const fullDateStr = dateStr.startsWith('20') ? dateStr : `20${dateStr}`;
-  const date = new Date(fullDateStr);
+  const [year, month, day] = fullDateStr.split('-');
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
   const dayName = days[date.getDay()];
   return `${dateStr} (${dayName})`;
 };
@@ -1346,9 +1348,31 @@ const saveSupplementary = async () => {
   
   try {
     const dateTime = `${supplementaryForm.value.date}T${supplementaryForm.value.time}:00+09:00`;
+    let endDateTime = null;
+    let durationMinutes = 240; // 기본 4시간
+
+    if (!supplementaryForm.value.noEndTime && supplementaryForm.value.endTime) {
+      endDateTime = `${supplementaryForm.value.date}T${supplementaryForm.value.endTime}:00+09:00`;
+      const start = new Date(dateTime);
+      const end = new Date(endDateTime);
+      if (end < start) {
+        end.setDate(end.getDate() + 1); // 다음날로 넘어가는 경우
+        const kstTime = new Date(end.getTime() + (9 * 60 * 60 * 1000));
+        const y = kstTime.getUTCFullYear();
+        const m = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(kstTime.getUTCDate()).padStart(2, '0');
+        const h = String(kstTime.getUTCHours()).padStart(2, '0');
+        const min = String(kstTime.getUTCMinutes()).padStart(2, '0');
+        endDateTime = `${y}-${m}-${d}T${h}:${min}:00+09:00`;
+      }
+      durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+    }
+
     const res = await supplementaryApi.createSession({
       class_id: selectedClass.value.id,
       session_date: dateTime,
+      end_time: endDateTime,
+      duration_minutes: durationMinutes,
       content: supplementaryForm.value.content,
       student_ids: selectedSupplementaryStudents.value.map(s => s.id)
     });
@@ -1375,11 +1399,12 @@ const deleteSupplementary = async (id: number) => {
 
 const formatTime = (dateStr: string) => {
   const d = new Date(dateStr);
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const h = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+  const m = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(kstTime.getUTCDate()).padStart(2, '0');
+  const h = String(kstTime.getUTCHours()).padStart(2, '0');
+  const mi = String(kstTime.getUTCMinutes()).padStart(2, '0');
+  const day = ['일', '월', '화', '수', '목', '금', '토'][kstTime.getUTCDay()];
   return `${m}/${dd}(${day}) ${h}:${mi}`;
 };
 

@@ -60,10 +60,10 @@ export class Supplementary {
 
   // 보강 일정 생성
   static async createSession(sessionData) {
-    const { class_id, session_date, content, teacher_name } = sessionData;
+    const { class_id, session_date, content, teacher_name, end_time, duration_minutes } = sessionData;
     const { data, error } = await supabase
       .from('supplementary_sessions')
-      .insert({ class_id, session_date, content, teacher_name })
+      .insert({ class_id, session_date, content, teacher_name, end_time, duration_minutes })
       .select('*')
       .single();
 
@@ -73,10 +73,16 @@ export class Supplementary {
 
   // 보강 일정 수정
   static async updateSession(id, sessionData) {
-    const { session_date, content, teacher_name } = sessionData;
+    const { session_date, content, teacher_name, end_time, duration_minutes } = sessionData;
     const updateData = { session_date, content };
     if (teacher_name !== undefined) {
       updateData.teacher_name = teacher_name || null;
+    }
+    if (end_time !== undefined) {
+      updateData.end_time = end_time;
+    }
+    if (duration_minutes !== undefined) {
+      updateData.duration_minutes = duration_minutes;
     }
 
     const { data, error } = await supabase

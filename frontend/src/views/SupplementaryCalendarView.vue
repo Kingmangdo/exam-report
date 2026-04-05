@@ -19,6 +19,34 @@
         </div>
       </div>
 
+      <!-- 원장님용 보강 통계 대시보드 -->
+      <div v-if="isAdmin && !loading" class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 shadow-sm">
+          <h4 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+            👨‍🏫 이번 달 선생님별 보강 시간
+          </h4>
+          <div class="flex flex-wrap gap-2">
+            <div v-for="stat in dashboardStats.teachers" :key="stat.name" class="bg-white px-3 py-1.5 rounded border border-blue-200 text-xs shadow-sm flex items-center gap-2">
+              <span class="font-medium text-gray-700">{{ stat.name }}</span>
+              <span class="font-bold text-blue-600">{{ stat.hours }}시간</span>
+            </div>
+            <div v-if="dashboardStats.teachers.length === 0" class="text-xs text-gray-500">데이터 없음</div>
+          </div>
+        </div>
+        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 shadow-sm">
+          <h4 class="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-2">
+            🏫 이번 달 반별 보강 시간
+          </h4>
+          <div class="flex flex-wrap gap-2">
+            <div v-for="stat in dashboardStats.classes" :key="stat.name" class="bg-white px-3 py-1.5 rounded border border-indigo-200 text-xs shadow-sm flex items-center gap-2">
+              <span class="font-medium text-gray-700">{{ stat.name }}</span>
+              <span class="font-bold text-indigo-600">{{ stat.hours }}시간</span>
+            </div>
+            <div v-if="dashboardStats.classes.length === 0" class="text-xs text-gray-500">데이터 없음</div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="loading" class="py-8 text-center text-gray-400 text-sm">
         보강 일정 불러오는 중...
       </div>
@@ -135,7 +163,7 @@
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1">시간</label>
+              <label class="block text-xs font-medium text-gray-600 mb-1">시작 시간</label>
               <div class="flex gap-2">
                 <select
                   v-model="timeHour"
@@ -148,6 +176,34 @@
                 <select
                   v-model="timeMinute"
                   class="w-1/2 px-3 py-2 border rounded-lg text-sm"
+                >
+                  <option value="00">00분</option>
+                  <option value="30">30분</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">
+                종료 시간
+                <label class="inline-flex items-center ml-2 font-normal text-gray-500 cursor-pointer">
+                  <input type="checkbox" v-model="form.noEndTime" class="w-3 h-3 mr-1 rounded border-gray-300 text-primary focus:ring-primary" />
+                  예정 시간 없음
+                </label>
+              </label>
+              <div class="flex gap-2" :class="{ 'opacity-50 pointer-events-none': form.noEndTime }">
+                <select
+                  v-model="endTimeHour"
+                  class="w-1/2 px-3 py-2 border rounded-lg text-sm"
+                  :disabled="form.noEndTime"
+                >
+                  <option v-for="h in 24" :key="'e'+h" :value="String(h - 1).padStart(2, '0')">
+                    {{ String(h - 1).padStart(2, '0') }}시
+                  </option>
+                </select>
+                <select
+                  v-model="endTimeMinute"
+                  class="w-1/2 px-3 py-2 border rounded-lg text-sm"
+                  :disabled="form.noEndTime"
                 >
                   <option value="00">00분</option>
                   <option value="30">30분</option>
@@ -409,6 +465,33 @@ const isAdmin = user?.role === 'admin';
 const loading = ref(false);
 const monthlySessions = ref<any[]>([]);
 
+// 대시보드 통계 (원장님용)
+const dashboardStats = computed(() => {
+  const teacherStats: Record<string, number> = {};
+  const classStats: Record<string, number> = {};
+
+  monthlySessions.value.forEach(session => {
+    const tName = session.teacher_name || '미지정';
+    const cName = session.class_name || '미지정';
+    const duration = session.duration_minutes || 0;
+
+    teacherStats[tName] = (teacherStats[tName] || 0) + duration;
+    classStats[cName] = (classStats[cName] || 0) + duration;
+  });
+
+  // 분을 시간으로 변환 (소수점 1자리)
+  const formatHours = (mins: number) => (mins / 60).toFixed(1);
+
+  return {
+    teachers: Object.entries(teacherStats)
+      .map(([name, mins]) => ({ name, hours: formatHours(mins) }))
+      .sort((a, b) => Number(b.hours) - Number(a.hours)),
+    classes: Object.entries(classStats)
+      .map(([name, mins]) => ({ name, hours: formatHours(mins) }))
+      .sort((a, b) => Number(b.hours) - Number(a.hours))
+  };
+});
+
 // 달력 기준 년/월
 const today = new Date();
 const currentYear = ref(today.getFullYear());
@@ -634,8 +717,9 @@ const goToday = () => {
 
 const formatTimeShort = (dateStr: string) => {
   const d = new Date(dateStr);
-  const h = String(d.getHours()).padStart(2, '0');
-  const m = String(d.getMinutes()).padStart(2, '0');
+  const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+  const h = String(kstTime.getUTCHours()).padStart(2, '0');
+  const m = String(kstTime.getUTCMinutes()).padStart(2, '0');
   return `${h}:${m}`;
 };
 
@@ -671,12 +755,16 @@ const form = ref<{
   class_id: number | '';
   date: string;
   time: string;
+  endTime: string;
+  noEndTime: boolean;
   content: string;
   teacher_name: string;
 }>({
   class_id: '',
   date: '',
   time: '14:00',
+  endTime: '16:00',
+  noEndTime: false,
   content: '',
   teacher_name: ''
 });
@@ -684,6 +772,8 @@ const form = ref<{
 // 시간 선택 (30분 단위 전용)
 const timeHour = ref('14');
 const timeMinute = ref<'00' | '30'>('00');
+const endTimeHour = ref('16');
+const endTimeMinute = ref<'00' | '30'>('00');
 
 const savingSession = ref(false);
 
@@ -974,6 +1064,16 @@ watch(
   { immediate: true }
 );
 
+watch(
+  [endTimeHour, endTimeMinute],
+  () => {
+    const h = endTimeHour.value.padStart(2, '0');
+    const m = endTimeMinute.value;
+    form.value.endTime = `${h}:${m}`;
+  },
+  { immediate: true }
+);
+
 const saveSession = async () => {
   if (!form.value.class_id) {
     alert('반을 선택해주세요.');
@@ -991,9 +1091,31 @@ const saveSession = async () => {
   try {
     savingSession.value = true;
     const dateTime = `${form.value.date}T${form.value.time}:00+09:00`;
+    let endDateTime = null;
+    let durationMinutes = 240; // 기본 4시간
+
+    if (!form.value.noEndTime && form.value.endTime) {
+      endDateTime = `${form.value.date}T${form.value.endTime}:00+09:00`;
+      const start = new Date(dateTime);
+      const end = new Date(endDateTime);
+      if (end < start) {
+        end.setDate(end.getDate() + 1); // 다음날로 넘어가는 경우
+        const kstTime = new Date(end.getTime() + (9 * 60 * 60 * 1000));
+        const y = kstTime.getUTCFullYear();
+        const m = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+        const d = String(kstTime.getUTCDate()).padStart(2, '0');
+        const h = String(kstTime.getUTCHours()).padStart(2, '0');
+        const min = String(kstTime.getUTCMinutes()).padStart(2, '0');
+        endDateTime = `${y}-${m}-${d}T${h}:${min}:00+09:00`;
+      }
+      durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+    }
+
     const res = await supplementaryApi.createSession({
       class_id: form.value.class_id,
       session_date: dateTime,
+      end_time: endDateTime,
+      duration_minutes: durationMinutes,
       content: form.value.content.trim(),
       teacher_name: form.value.teacher_name || null,
       student_ids: selectedStudentIds.value
