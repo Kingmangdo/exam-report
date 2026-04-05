@@ -146,11 +146,12 @@ const fetchSupplementaryDashboard = async () => {
 
 const formatTime = (dateStr: string) => {
   const d = new Date(dateStr);
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate() + 0).padStart(2, '0');
-  const h = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+  const m = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(kstTime.getUTCDate()).padStart(2, '0');
+  const h = String(kstTime.getUTCHours()).padStart(2, '0');
+  const mi = String(kstTime.getUTCMinutes()).padStart(2, '0');
+  const day = ['일', '월', '화', '수', '목', '금', '토'][kstTime.getUTCDay()];
   return `${m}/${dd}(${day}) ${h}:${mi}`;
 };
 

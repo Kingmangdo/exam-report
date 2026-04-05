@@ -1451,13 +1451,21 @@ const organizeWeeks = (sessions: any[], startDate: Date) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
     
-    // 범위 문자열
-    const range = `${weekStart.getMonth()+1}/${weekStart.getDate()} ~ ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
+    // 범위 문자열 (KST 기준)
+    const kstStart = new Date(weekStart.getTime() + (9 * 60 * 60 * 1000));
+    const kstEnd = new Date(weekEnd.getTime() + (9 * 60 * 60 * 1000));
+    const range = `${kstStart.getUTCMonth()+1}/${kstStart.getUTCDate()} ~ ${kstEnd.getUTCMonth()+1}/${kstEnd.getUTCDate()}`;
     
-    // 해당 주차 세션 필터링
+    // 해당 주차 세션 필터링 (KST 기준으로 날짜 비교)
     const weekSessions = sessions.filter((s: any) => {
       const d = new Date(s.session_date);
-      return d >= weekStart && d <= weekEnd;
+      const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+      const kstDate = new Date(kstTime.getUTCFullYear(), kstTime.getUTCMonth(), kstTime.getUTCDate());
+      
+      const kstWeekStart = new Date(kstStart.getUTCFullYear(), kstStart.getUTCMonth(), kstStart.getUTCDate());
+      const kstWeekEnd = new Date(kstEnd.getUTCFullYear(), kstEnd.getUTCMonth(), kstEnd.getUTCDate());
+      
+      return kstDate >= kstWeekStart && kstDate <= kstWeekEnd;
     });
     
     weeks.push({

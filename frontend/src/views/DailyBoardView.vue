@@ -84,7 +84,8 @@
                   <span v-if="session.teacher_name" class="text-xs font-normal text-gray-500 ml-1">({{ session.teacher_name }}T)</span>
                 </div>
                 <div class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border">
-                  {{ new Date(session.session_date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) }}
+                  {{ formatKstTime(session.session_date) }}
+                  <span v-if="session.end_time" class="text-gray-400">~ {{ formatKstTime(session.end_time) }}</span>
                 </div>
               </div>
               <div class="text-xs text-gray-600 mb-3 bg-white p-2 rounded border border-gray-100">
@@ -206,6 +207,15 @@ import { dailyBoardApi, supplementaryApi } from '../services/api';
 import * as XLSX from 'xlsx';
 
 import { getTodayFull } from '../utils/date';
+
+const formatKstTime = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+  const h = String(kstTime.getUTCHours()).padStart(2, '0');
+  const m = String(kstTime.getUTCMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
 
 const route = useRoute();
 const userJson = localStorage.getItem('user');

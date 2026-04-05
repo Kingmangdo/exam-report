@@ -510,6 +510,16 @@ const formatDateKey = (date: Date) => {
   return `${year}-${mm}-${dd}`;
 };
 
+const getKstDateStr = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const kstTime = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+  const y = kstTime.getUTCFullYear();
+  const m = String(kstTime.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(kstTime.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 // 대한민국 주요 양력 공휴일 (해당 연도 기준)
 // * 설/추석 등 음력 공휴일은 필요 시 연도별로 직접 추가하는 방식으로 확장 가능
 const holidaySet = computed(() => {
@@ -576,7 +586,7 @@ const buildDay = (date: Date, inCurrentMonth: boolean) => {
   const isHoliday = weekday === 0 || holidaySet.value.has(key); // 일요일 or 지정 공휴일
 
   const sessions = monthlySessions.value.filter((s: any) =>
-    (s.session_date || '').startsWith(key)
+    getKstDateStr(s.session_date) === key
   );
 
   return {
@@ -603,9 +613,8 @@ const downloadMonthlyExcel = () => {
 
   // 각 세션별로 학생마다 한 줄씩 데이터 생성
   monthlySessions.value.forEach(session => {
-    const sessionDate = new Date(session.session_date);
-    const dateStr = sessionDate.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    const timeStr = sessionDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateStr = getKstDateStr(session.session_date);
+    const timeStr = formatTimeShort(session.session_date);
 
     if (session.supplementary_students && session.supplementary_students.length > 0) {
       session.supplementary_students.forEach((stu: any) => {
@@ -907,7 +916,7 @@ const saveAttendance = async () => {
     if (selectedDate.value) {
       const key = selectedDate.value;
       const sessionsForDate = monthlySessions.value.filter((s: any) =>
-        (s.session_date || '').startsWith(key)
+        getKstDateStr(s.session_date) === key
       );
       selectedDaySessions.value = sessionsForDate;
 
@@ -988,7 +997,7 @@ const deleteSelectedSession = async () => {
     if (selectedDate.value) {
       const key = selectedDate.value;
       const sessionsForDate = monthlySessions.value.filter((s: any) =>
-        (s.session_date || '').startsWith(key)
+        getKstDateStr(s.session_date) === key
       );
       selectedDaySessions.value = sessionsForDate;
 
