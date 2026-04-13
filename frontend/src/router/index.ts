@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/SupplementaryCalendarView.vue')
       },
       {
+        path: 'attendance',
+        name: 'attendance',
+        component: () => import('../views/AttendanceView.vue')
+      },
+      {
         path: 'scores/new',
         name: 'score-new',
         component: () => import('../views/ScoreNewView.vue')

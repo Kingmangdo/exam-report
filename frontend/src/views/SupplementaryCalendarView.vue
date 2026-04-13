@@ -146,10 +146,10 @@
       v-if="showModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     >
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">
-          {{ selectedDateLabel }} 보강 등록
-        </h3>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">
+            {{ isEditMode ? '보강 일정 수정' : selectedDateLabel + ' 보강 등록' }}
+          </h3>
 
         <div class="space-y-4 text-sm">
           <div>
@@ -341,22 +341,30 @@
               v-if="selectedAttendanceSession"
               class="border rounded-lg bg-gray-50 p-2 max-h-64 overflow-y-auto"
             >
-              <!-- 선택된 기존 보강 기본 정보 -->
-              <div class="mb-2 text-[11px] text-gray-700 bg-white rounded px-2 py-1 border border-gray-200">
-                <div class="font-semibold text-gray-900">
-                  {{ formatTimeShort(selectedAttendanceSession.session_date) }}
-                  · {{ selectedAttendanceSession.class_name || '반' }}
+                <!-- 선택된 기존 보강 기본 정보 -->
+                <div class="mb-2 text-[11px] text-gray-700 bg-white rounded px-2 py-1 border border-gray-200">
+                  <div class="flex justify-between items-start">
+                    <div class="font-semibold text-gray-900">
+                      {{ formatTimeShort(selectedAttendanceSession.session_date) }}
+                      · {{ selectedAttendanceSession.class_name || '반' }}
+                    </div>
+                    <button 
+                      @click="openEditModal"
+                      class="text-[10px] text-blue-600 font-bold hover:underline"
+                    >
+                      수정
+                    </button>
+                  </div>
+                  <div class="mt-0.5 text-gray-600">
+                    {{ selectedAttendanceSession.content || '보강 내용 없음' }}
+                    <span
+                      v-if="selectedAttendanceSession.teacher_name"
+                      class="ml-1 text-gray-400"
+                    >
+                      / 담임: {{ selectedAttendanceSession.teacher_name }}
+                    </span>
+                  </div>
                 </div>
-                <div class="mt-0.5 text-gray-600">
-                  {{ selectedAttendanceSession.content || '보강 내용 없음' }}
-                  <span
-                    v-if="selectedAttendanceSession.teacher_name"
-                    class="ml-1 text-gray-400"
-                  >
-                    / 담임: {{ selectedAttendanceSession.teacher_name }}
-                  </span>
-                </div>
-              </div>
 
               <div
                 v-if="
@@ -734,6 +742,8 @@ const formatTimeShort = (dateStr: string) => {
 
 // ========== 날짜 선택 / 보강 등록 모달 ==========
 const showModal = ref(false);
+const isEditMode = ref(false);
+const editingSessionId = ref<number | null>(null);
 const selectedDate = ref('');
 
 const classes = ref<any[]>([]);
@@ -827,6 +837,54 @@ const openDayModal = (day: any) => {
 
 const closeModal = () => {
   showModal.value = false;
+  isEditMode.value = false;
+  editingSessionId.value = null;
+};
+
+const openEditModal = () => {
+  if (!selectedAttendanceSession.value) return;
+  const session = selectedAttendanceSession.value;
+  
+  isEditMode.value = true;
+  editingSessionId.value = session.id;
+  
+  const kstDate = getKstDateStr(session.session_date);
+  const kstTime = formatTimeShort(session.session_date);
+  
+  let endTimeStr = '16:00';
+  let noEndTime = true;
+  if (session.end_time) {
+    const d = new Date(session.end_time);
+    const kstEnd = new Date(d.getTime() + (9 * 60 * 60 * 1000));
+    const eh = String(kstEnd.getUTCHours()).padStart(2, '0');
+    const em = String(kstEnd.getUTCMinutes()).padStart(2, '0');
+    endTimeStr = `${eh}:${em}`;
+    noEndTime = false;
+  }
+
+  form.value = {
+    class_id: session.class_id,
+    date: kstDate,
+    time: kstTime,
+    endTime: endTimeStr,
+    noEndTime: noEndTime,
+    content: session.content || '',
+    teacher_name: session.teacher_name || ''
+  };
+  
+  // 시간 선택용 ref 업데이트
+  const [h, m] = kstTime.split(':');
+  timeHour.value = h;
+  timeMinute.value = m as '00' | '30';
+  
+  const [eh, em] = endTimeStr.split(':');
+  endTimeHour.value = eh;
+  endTimeMinute.value = em as '00' | '30';
+  
+  // 학생 선택 초기화
+  selectedStudentIds.value = (session.supplementary_students || []).map((s: any) => s.student_id);
+  
+  showModal.value = true;
 };
 
 const fetchClasses = async () => {
@@ -1120,21 +1178,31 @@ const saveSession = async () => {
       durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
     }
 
-    const res = await supplementaryApi.createSession({
-      class_id: form.value.class_id,
-      session_date: dateTime,
-      end_time: endDateTime,
-      duration_minutes: durationMinutes,
-      content: form.value.content.trim(),
-      teacher_name: form.value.teacher_name || null,
-      student_ids: selectedStudentIds.value
-    });
+    const res = isEditMode.value && editingSessionId.value
+      ? await supplementaryApi.updateSession(editingSessionId.value, {
+          class_id: form.value.class_id,
+          session_date: dateTime,
+          end_time: endDateTime,
+          duration_minutes: durationMinutes,
+          content: form.value.content.trim(),
+          teacher_name: form.value.teacher_name || null,
+          student_ids: selectedStudentIds.value
+        })
+      : await supplementaryApi.createSession({
+          class_id: form.value.class_id,
+          session_date: dateTime,
+          end_time: endDateTime,
+          duration_minutes: durationMinutes,
+          content: form.value.content.trim(),
+          teacher_name: form.value.teacher_name || null,
+          student_ids: selectedStudentIds.value
+        });
     if (res.data.success) {
-      alert('보강 일정이 등록되었습니다.');
+      alert(isEditMode.value ? '보강 일정이 수정되었습니다.' : '보강 일정이 등록되었습니다.');
       await fetchMonthlySessions();
       closeModal();
     } else {
-      alert(res.data.message || '보강 등록에 실패했습니다.');
+      alert(res.data.message || (isEditMode.value ? '보강 수정에 실패했습니다.' : '보강 등록에 실패했습니다.'));
     }
   } catch (err: any) {
     alert(err.response?.data?.message || '보강 등록 중 오류가 발생했습니다.');

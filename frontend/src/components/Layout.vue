@@ -67,18 +67,45 @@
       </div>
       <RouterView />
     </main>
+
+    <!-- 오늘의 예약 알림 팝업 (원장님 전용) -->
+    <div v-if="showReservationPopup && todayReservations.length > 0" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+      <div class="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90vw] overflow-hidden">
+        <div class="bg-primary px-6 py-4 text-white">
+          <h3 class="font-bold text-lg flex items-center gap-2">📅 오늘의 예약 안내</h3>
+          <p class="text-blue-200 text-sm mt-1">오늘 {{ todayReservations.length }}건의 예약이 있습니다.</p>
+        </div>
+        <div class="p-6 max-h-[300px] overflow-y-auto space-y-3">
+          <div v-for="(rsv, idx) in todayReservations" :key="idx" class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
+              {{ rsv.time || '📋' }}
+            </div>
+            <div class="flex-1">
+              <div class="font-bold text-sm text-gray-800">{{ rsv.student_name || rsv.name || '이름 없음' }}</div>
+              <div class="text-xs text-gray-500">{{ rsv.purpose || rsv.type || '상담' }} · {{ rsv.parent_phone || '' }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50">
+          <button @click="showReservationPopup = false" class="w-full py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition">확인</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { reservationApi } from '../services/api';
 
 const router = useRouter();
 const route = useRoute();
 const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
 const activeDropdown = ref('');
+const showReservationPopup = ref(false);
+const todayReservations = ref<any[]>([]);
 
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
@@ -111,6 +138,7 @@ const navItems = ref([
       { name: '성취평가', path: '/scores/bimonthly' }
     ]
   },
+  { name: '출결 관리', path: '/attendance', adminOnly: false },
   { name: '예약 관리', path: '/reservations', adminOnly: true },
   { name: '설정', path: '/settings', adminOnly: true }
 ]);
@@ -142,6 +170,29 @@ const handleLogout = () => {
     router.push('/login');
   }
 };
+
+const checkTodayReservations = async () => {
+  if (!user || user.role !== 'admin') return;
+  try {
+    const res = await reservationApi.getAll({ status: 'pending' });
+    if (res.data.success) {
+      const kstNow = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+      const todayStr = kstNow.toISOString().split('T')[0];
+      const todays = (res.data.data || []).filter((r: any) => {
+        const rDate = r.reservation_date || r.visit_date || '';
+        return rDate.startsWith(todayStr);
+      });
+      if (todays.length > 0) {
+        todayReservations.value = todays;
+        showReservationPopup.value = true;
+      }
+    }
+  } catch (e) { console.error(e); }
+};
+
+onMounted(() => {
+  checkTodayReservations();
+});
 </script>
 
 <style scoped>

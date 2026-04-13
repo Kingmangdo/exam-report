@@ -438,6 +438,28 @@ export const reservationApi = {
   }
 };
 
+// ?? ?? API
+export const attendanceApi = {
+  getByClass: (classId: number, date: string) => {
+    return api.get<ApiResponse<any[]>>(`/attendance/class/${classId}`, { params: { date } });
+  },
+  getByDate: (date: string) => {
+    return api.get<ApiResponse<any[]>>(`/attendance/by-date/${date}`);
+  },
+  getStudentMonthly: (studentId: number, month: string) => {
+    return api.get<ApiResponse<any[]>>(`/attendance/student/${studentId}`, { params: { month } });
+  },
+  getMonthlySummary: (month: string) => {
+    return api.get<ApiResponse<any[]>>(`/attendance/summary/${month}`);
+  },
+  getConsecutiveAbsent: (days?: number) => {
+    return api.get<ApiResponse<any[]>>('/attendance/consecutive-absent', { params: { days } });
+  },
+  update: (data: { class_id: number; student_id: number; attendance_date: string; status: string }) => {
+    return api.post<ApiResponse<any>>('/attendance', data);
+  }
+};
+
 export default api;
 export const dailyBoardApi = {
   getBoard: (date: string) => api.get<ApiResponse<any>>(`/daily-board/${date}`),
