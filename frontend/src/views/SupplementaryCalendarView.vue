@@ -492,6 +492,7 @@ const dashboardStats = computed(() => {
 
   return {
     teachers: Object.entries(teacherStats)
+      .filter(([name]) => ['첼시원장', '댄T', '마이크T'].includes(name))
       .map(([name, mins]) => ({ name, hours: formatHours(mins) }))
       .sort((a, b) => Number(b.hours) - Number(a.hours)),
     classes: Object.entries(classStats)
@@ -753,13 +754,7 @@ const selectedStudentIds = ref<number[]>([]);
 // 담임 선생님 목록 (기본 리스트 + 모든 반에서 teacher_name 모아서 사용)
 const teacherOptions = computed(() => {
   const baseTeachers = ['첼시원장', '댄T', '마이크T'];
-  const names = new Set<string>(baseTeachers);
-  classes.value.forEach((c: any) => {
-    if (c.teacher_name) {
-      names.add(c.teacher_name);
-    }
-  });
-  return Array.from(names);
+  return baseTeachers;
 });
 
 // 출결 관리용: 선택된 날짜의 세션들 + 현재 출결 관리 중인 세션
