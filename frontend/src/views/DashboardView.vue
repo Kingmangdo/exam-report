@@ -51,24 +51,35 @@
           오늘 수업이 있는 반이 없습니다.
         </div>
         <div v-else class="divide-y divide-gray-100">
-          <div v-for="cls in classOverview" :key="cls.id" class="px-5 py-3 flex items-center gap-4 hover:bg-gray-50">
+          <div v-for="cls in classOverview" :key="cls.id" class="px-5 py-3 flex flex-col md:flex-row md:items-center gap-4 hover:bg-gray-50">
             <div class="w-[180px] font-bold text-sm text-gray-800 truncate">{{ cls.name }}</div>
             <div class="flex-1 flex items-center gap-3">
               <!-- 출결 바 -->
-              <div class="flex items-center gap-2 w-[200px]">
+              <div class="flex items-center gap-2 w-[180px]">
                 <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden flex">
                   <div class="h-full bg-green-500 transition-all" :style="{ width: cls.presentPercent + '%' }"></div>
-                  <div class="h-full bg-yellow-500 transition-all" :style="{ width: cls.latePercent + '%' }"></div>
                   <div class="h-full bg-red-500 transition-all" :style="{ width: cls.absentPercent + '%' }"></div>
                 </div>
-                <span class="text-xs font-bold text-gray-600 w-[70px] text-right">{{ cls.present }}/{{ cls.total }}</span>
+                <span class="text-xs font-bold text-gray-600 w-[60px] text-right">{{ cls.present + cls.late }}/{{ cls.total }}</span>
               </div>
-              <div v-if="cls.absent > 0" class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">결석 {{ cls.absent }}</div>
-              <div v-if="cls.late > 0" class="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">지각 {{ cls.late }}</div>
+              
+              <!-- 미등원/결석 명단 -->
+              <div class="flex-1 flex flex-wrap gap-2 items-center">
+                <div v-if="cls.missingNames.length > 0" class="flex items-center gap-1">
+                  <span class="text-[10px] text-gray-400 font-medium">미등원:</span>
+                  <span class="text-xs text-gray-500">{{ cls.missingNames.join(', ') }}</span>
+                </div>
+                <div v-if="cls.absentNames.length > 0" class="flex items-center gap-1 ml-2">
+                  <span class="text-[10px] text-red-400 font-medium">결석:</span>
+                  <span class="text-xs text-red-500 font-bold">{{ cls.absentNames.join(', ') }}</span>
+                </div>
+                <div v-if="cls.missingNames.length === 0 && cls.absentNames.length === 0" class="text-xs text-green-600 font-medium">
+                  전원 등원 완료
+                </div>
+              </div>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-500">
               <span v-if="cls.rtCount > 0" class="bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-full">RT {{ cls.rtCount }}건</span>
-              <span v-if="cls.hwCount > 0" class="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full">과제 {{ cls.hwCount }}건</span>
             </div>
           </div>
         </div>
@@ -105,6 +116,7 @@ const error = ref<string | null>(null);
 
 const todayAttendance = ref<any[]>([]);
 const allClasses = ref<any[]>([]);
+const allStudents = ref<any[]>([]);
 const homeworkDue = ref<any[]>([]);
 const rtDue = ref<any[]>([]);
 const consecutiveAbsent = ref<any[]>([]);
@@ -142,16 +154,25 @@ const classOverview = computed(() => {
   });
 
   return todayClasses.map(cls => {
+    // 해당 반의 전체 학생 목록
+    const classStudents = allStudents.value.filter(s => 
+      s.class_name && s.class_name.split(',').map((cn: string) => cn.trim()).includes(cls.name)
+    );
+    const total = classStudents.length || 0;
+
     const att = attByClass[cls.id] || [];
     const present = att.filter(a => a.status === '등원' || a.status === '하원').length;
     const absent = att.filter(a => a.status === '결석').length;
     const late = att.filter(a => a.status === '지각').length;
-    const total = present + absent + late || 1;
+    
+    // 미등원 학생 (출결 기록이 아예 없는 학생)
+    const checkedStudentIds = att.map(a => a.student_id);
+    const missingStudents = classStudents.filter(s => !checkedStudentIds.includes(s.id));
+    const missingNames = missingStudents.map(s => s.name);
+    
+    // 결석 학생 이름
+    const absentNames = att.filter(a => a.status === '결석').map(a => a.students?.name || '알 수 없음');
 
-    const hwCount = homeworkDue.value.filter(h => {
-      const cn = h.classes?.name || h.class_name;
-      return cn === cls.name;
-    }).length;
     const rtCount = rtDue.value.filter(r => {
       const cn = r.classes?.name || r.class_name;
       return cn === cls.name;
@@ -161,10 +182,12 @@ const classOverview = computed(() => {
       id: cls.id,
       name: cls.name,
       present, absent, late, total,
-      presentPercent: Math.round(present / total * 100),
-      absentPercent: Math.round(absent / total * 100),
-      latePercent: Math.round(late / total * 100),
-      rtCount, hwCount
+      presentPercent: total > 0 ? Math.round((present + late) / total * 100) : 0,
+      absentPercent: total > 0 ? Math.round(absent / total * 100) : 0,
+      latePercent: 0, // 바에서는 출석(초록) + 지각(노랑) + 결석(빨강)으로 표시하거나 단순화
+      missingNames,
+      absentNames,
+      rtCount
     };
   });
 });
@@ -186,17 +209,19 @@ onMounted(async () => {
     error.value = null;
     const today = getKstToday();
 
-    const [statRes, attRes, clsRes, absRes] = await Promise.all([
+    const [statRes, attRes, clsRes, absRes, stuRes] = await Promise.all([
       statisticsApi.getOverall(),
       attendanceApi.getByDate(today),
       classApi.getAll(),
-      attendanceApi.getConsecutiveAbsent(3)
+      attendanceApi.getConsecutiveAbsent(3),
+      studentApi.getAll({ status: 'active' })
     ]);
 
     if (statRes.data.success) statistics.value = statRes.data.data;
     todayAttendance.value = attRes.data.success ? attRes.data.data : [];
     allClasses.value = clsRes.data.success ? clsRes.data.data : [];
     consecutiveAbsent.value = absRes.data.success ? absRes.data.data : [];
+    allStudents.value = stuRes.data.success ? (stuRes.data.data || []) : [];
 
     try {
       const hwRes = await classApi.getHomeworkDue(today);
