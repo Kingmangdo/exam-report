@@ -6,6 +6,9 @@ const router = express.Router();
 // 월간 출결 요약 (캘린더용)
 router.get('/summary/:month', attendanceController.getMonthlySummary);
 
+// 특정 날짜 전체 출결 조회 (최적화 버전)
+router.get('/by-date-optimized/:date', attendanceController.getAttendanceByDateOptimized);
+
 // 특정 날짜 전체 출결 조회
 router.get('/by-date/:date', attendanceController.getAttendanceByDate);
 

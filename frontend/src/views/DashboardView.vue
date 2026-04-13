@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { statisticsApi, attendanceApi, classApi, studentApi } from '../services/api';
+import { statisticsApi, attendanceApi, classApi, studentApi, dailyBoardApi } from '../services/api';
 import type { Statistics } from '../types';
 
 const statistics = ref<Statistics | null>(null);
@@ -120,6 +120,7 @@ const allStudents = ref<any[]>([]);
 const homeworkDue = ref<any[]>([]);
 const rtDue = ref<any[]>([]);
 const consecutiveAbsent = ref<any[]>([]);
+const globalMemo = ref('');
 
 const getKstToday = () => {
   const d = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
@@ -194,6 +195,12 @@ const classOverview = computed(() => {
 
 const alertItems = computed(() => {
   const items: any[] = [];
+  
+  // 학원 전체 공지/특이사항 추가 (데일리 보드 메모)
+  if (globalMemo.value) {
+    items.push({ name: '📢 학원 공지', message: globalMemo.value });
+  }
+
   consecutiveAbsent.value.forEach(s => {
     items.push({ name: s.name, message: `${s.consecutive_days}일 연속 결석 (학부모 연락 필요)` });
   });
@@ -209,12 +216,13 @@ onMounted(async () => {
     error.value = null;
     const today = getKstToday();
 
-    const [statRes, attRes, clsRes, absRes, stuRes] = await Promise.all([
+    const [statRes, attRes, clsRes, absRes, stuRes, boardRes] = await Promise.all([
       statisticsApi.getOverall(),
       attendanceApi.getByDate(today),
       classApi.getAll(),
       attendanceApi.getConsecutiveAbsent(3),
-      studentApi.getAll({ status: 'active' })
+      studentApi.getAll({ status: 'active' }),
+      dailyBoardApi.getBoard(today)
     ]);
 
     if (statRes.data.success) statistics.value = statRes.data.data;
@@ -222,6 +230,10 @@ onMounted(async () => {
     allClasses.value = clsRes.data.success ? clsRes.data.data : [];
     consecutiveAbsent.value = absRes.data.success ? absRes.data.data : [];
     allStudents.value = stuRes.data.success ? (stuRes.data.data || []) : [];
+    
+    if (boardRes.data.success && boardRes.data.data) {
+      globalMemo.value = boardRes.data.data.global_memo || '';
+    }
 
     try {
       const hwRes = await classApi.getHomeworkDue(today);

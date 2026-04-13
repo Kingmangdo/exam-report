@@ -446,6 +446,9 @@ export const attendanceApi = {
   getByDate: (date: string) => {
     return api.get<ApiResponse<any[]>>(`/attendance/by-date/${date}`);
   },
+  getByDateOptimized: (date: string) => {
+    return api.get<ApiResponse<any>>(`/attendance/by-date-optimized/${date}`);
+  },
   getStudentMonthly: (studentId: number, month: string) => {
     return api.get<ApiResponse<any[]>>(`/attendance/student/${studentId}`, { params: { month } });
   },

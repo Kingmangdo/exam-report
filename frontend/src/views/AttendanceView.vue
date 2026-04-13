@@ -225,7 +225,10 @@
       </div>
 
       <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div class="overflow-x-auto">
+        <div v-if="isAdminLoading" class="py-12 text-center text-gray-500">
+          데이터를 불러오는 중입니다...
+        </div>
+        <div v-else class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 sticky top-0">
               <tr>
@@ -544,6 +547,7 @@ const adminDate = ref(getKstToday());
 const adminClassFilter = ref('');
 const adminSearch = ref('');
 const adminStudentList = ref<any[]>([]);
+const isAdminLoading = ref(false);
 
 const todayClasses = computed(() => {
   if (!adminDate.value) return allClasses.value;
@@ -580,42 +584,66 @@ const fetchAdminAttendance = async () => {
   if (!adminDate.value) return;
 
   try {
-    const [attRes] = await Promise.all([
-      attendanceApi.getByDate(adminDate.value)
-    ]);
+    isAdminLoading.value = true;
+    const res = await attendanceApi.getByDateOptimized(adminDate.value);
+    
+    if (!res.data.success) {
+      adminStudentList.value = [];
+      return;
+    }
+
+    const { attendance, students, classes } = res.data.data;
+    
+    // 출결 맵 생성
     const attMap: Record<string, any> = {};
-    if (attRes.data.success) {
-      (attRes.data.data || []).forEach((a: any) => {
-        attMap[`${a.class_id}-${a.student_id}`] = a;
-      });
-    }
+    attendance.forEach((a: any) => {
+      attMap[`${a.class_id}-${a.student_id}`] = a;
+    });
 
-    const classesToShow = todayClasses.value;
+    // 오늘 수업이 있는 반 필터링
+    const d = new Date(adminDate.value + 'T00:00:00');
+    const dayOfWeek = d.getDay();
+    const dayMap: Record<number, string[]> = {
+      0: ['일'], 1: ['월'], 2: ['화'], 3: ['수'], 4: ['목'], 5: ['금'], 6: ['토']
+    };
+    const todayChars = dayMap[dayOfWeek] || [];
+    
+    const classesToShow = classes.filter((cls: any) => {
+      if (!cls.weekdays) return true;
+      return todayChars.some(ch => cls.weekdays.includes(ch));
+    });
+
     const list: any[] = [];
+    classesToShow.forEach((cls: any) => {
+      // 해당 반 학생 필터링
+      const classStudents = students.filter((s: any) => {
+        if (!s.class_name) return false;
+        return s.class_name.split(',').map((cn: string) => cn.trim()).includes(cls.name);
+      });
 
-    for (const cls of classesToShow) {
-      try {
-        const stuRes = await classApi.getStudents(cls.name);
-        const students = stuRes.data.success ? (stuRes.data.data || []).filter((s: any) => s.status !== 'withdrawn') : [];
-        students.forEach((stu: any) => {
-          const key = `${cls.id}-${stu.id}`;
-          const att = attMap[key];
-          list.push({
-            classId: cls.id,
-            className: cls.name,
-            studentId: stu.id,
-            studentName: stu.name,
-            school: stu.school,
-            status: att?.status || '',
-            arrival_time: att?.arrival_time || '',
-            departure_time: att?.departure_time || ''
-          });
+      classStudents.forEach((stu: any) => {
+        const key = `${cls.id}-${stu.id}`;
+        const att = attMap[key];
+        list.push({
+          classId: cls.id,
+          className: cls.name,
+          studentId: stu.id,
+          studentName: stu.name,
+          school: stu.school,
+          status: att?.status || '',
+          arrival_time: att?.arrival_time || '',
+          departure_time: att?.departure_time || ''
         });
-      } catch (e) { console.error(e); }
-    }
+      });
+    });
 
     adminStudentList.value = list;
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error(e); 
+    adminStudentList.value = [];
+  } finally {
+    isAdminLoading.value = false;
+  }
 };
 
 const adminUpdateAttendance = async (item: any, status: string) => {

@@ -95,3 +95,39 @@ export const getConsecutiveAbsent = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 특정 날짜 전체 출결 조회 (최적화 버전)
+export const getAttendanceByDateOptimized = async (req, res) => {
+  try {
+    const { date } = req.params;
+    
+    // 1. 해당 날짜의 출결 데이터 가져오기
+    const attendanceData = await Attendance.getByDate(date);
+    
+    // 2. 전체 활성 학생 데이터 가져오기 (메모리 매칭용)
+    const { data: students, error: studentError } = await supabase
+      .from('students')
+      .select('id, name, school, grade, class_name')
+      .eq('status', 'active');
+      
+    if (studentError) throw new Error(studentError.message);
+
+    // 3. 전체 반 정보 가져오기
+    const { data: classes, error: classError } = await supabase
+      .from('classes')
+      .select('id, name, weekdays');
+      
+    if (classError) throw new Error(classError.message);
+
+    res.json({ 
+      success: true, 
+      data: {
+        attendance: attendanceData,
+        students: students,
+        classes: classes
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
