@@ -301,11 +301,19 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { attendanceApi, classApi, studentApi } from '../services/api';
 import Chart from 'chart.js/auto';
 
-const tabs = [
-  { id: 'status', label: '출결 현황' },
-  { id: 'inquiry', label: '출결 조회' },
-  { id: 'admin', label: '관리자 출결' }
-];
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+
+const tabs = computed(() => {
+  const baseTabs = [
+    { id: 'status', label: '출결 현황' },
+    { id: 'inquiry', label: '출결 조회' }
+  ];
+  if (user?.role === 'admin') {
+    baseTabs.push({ id: 'admin', label: '관리자 출결' });
+  }
+  return baseTabs;
+});
 const activeTab = ref('status');
 
 const allClasses = ref<any[]>([]);
