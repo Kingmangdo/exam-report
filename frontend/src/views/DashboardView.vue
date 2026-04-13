@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { statisticsApi, attendanceApi, classApi } from '../services/api';
+import { statisticsApi, attendanceApi, classApi, studentApi } from '../services/api';
 import type { Statistics } from '../types';
 
 const statistics = ref<Statistics | null>(null);
