@@ -1,4 +1,5 @@
 import { Attendance } from '../models/Attendance.js';
+import { supabase } from '../models/supabase.js';
 
 const getKstTimeStr = () => {
   const kstTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
