@@ -144,11 +144,14 @@ export const sendCounselingNotification = async (req, res) => {
     
     // 대상 배열에 따라 선택적으로 번호 수집
     const receivers = [];
-    if (targets.includes('parent') && student.parent_phone) {
-      receivers.push({ phone: student.parent_phone, type: 'parent' });
+    if (targets.includes('parent')) {
+      if (student.parent_phone) receivers.push({ phone: student.parent_phone, type: 'parent' });
+      // UI상 '학부모 연락처 2'가 phone 필드에 저장됨
+      if (student.phone) receivers.push({ phone: student.phone, type: 'parent' });
     }
-    if (targets.includes('student') && student.phone) {
-      receivers.push({ phone: student.phone, type: 'student' });
+    if (targets.includes('student')) {
+      // UI상 '학생 연락처'가 student_no 필드에 저장됨
+      if (student.student_no) receivers.push({ phone: student.student_no, type: 'student' });
     }
     
     // 중복 제거 (전화번호 기준)
