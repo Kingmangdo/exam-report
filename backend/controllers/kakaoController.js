@@ -174,9 +174,9 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
       
       const aligoData = {
         receiver_1: cleanPhone,
-        subject_1: '상담 안내',
+        
         message_1: message,
-        emtitle_1: '상담 안내',
+        
         tpl_code: 'UG_9086',
         button_1: {
           "button": [{
