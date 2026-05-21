@@ -130,24 +130,39 @@ ${reportUrl}
 // ========== 상담 안내 (UG_9086) 알림톡 발송 ==========
 export const sendCounselingNotification = async (req, res) => {
   try {
-    const { student_id, class_name, date, content } = req.body;
+    const { student_id, class_name, date, content, targets = ['parent', 'student'] } = req.body;
 
     if (!student_id || !date || !content) {
       return res.status(400).json({ success: false, message: '학생 ID, 일자, 내용은 필수입니다.' });
     }
 
+    if (!Array.isArray(targets) || targets.length === 0) {
+      return res.status(400).json({ success: false, message: '발송 대상(학부모/학생)을 선택해주세요.' });
+    }
+
     const student = await Student.getById(student_id);
     
-    // 학부모 번호와 학생 번호를 모두 수집하여 각각 발송 (AND 조건의 역할)
+    // 대상 배열에 따라 선택적으로 번호 수집
     const receivers = [];
-    if (student.parent_phone) receivers.push(student.parent_phone);
-    if (student.phone) receivers.push(student.phone);
+    if (targets.includes('parent') && student.parent_phone) {
+      receivers.push({ phone: student.parent_phone, type: 'parent' });
+    }
+    if (targets.includes('student') && student.phone) {
+      receivers.push({ phone: student.phone, type: 'student' });
+    }
     
-    // 중복 제거 (만약 두 번호가 완벽히 일치한다면 1번만 발송)
-    const uniqueReceivers = [...new Set(receivers)];
+    // 중복 제거 (전화번호 기준)
+    const uniqueMap = new Map();
+    receivers.forEach(r => {
+      const cleanPhone = r.phone.replace(/-/g, '');
+      if (!uniqueMap.has(cleanPhone)) {
+        uniqueMap.set(cleanPhone, { ...r, cleanPhone });
+      }
+    });
+    const uniqueReceivers = Array.from(uniqueMap.values());
 
     if (uniqueReceivers.length === 0) {
-      return res.status(404).json({ success: false, message: '학생 또는 학부모 연락처를 찾을 수 없습니다.' });
+      return res.status(404).json({ success: false, message: '선택한 대상의 연락처를 찾을 수 없습니다.' });
     }
 
     // 빈칸 방어 로직: 클래스가 없으면 '-' 처리
@@ -168,15 +183,10 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
     let lastMessage = '';
     const allResults = [];
 
-    for (const phone of uniqueReceivers) {
-      // 알리고 발송 시 하이픈 제거
-      const cleanPhone = phone.replace(/-/g, '');
-      
+    for (const r of uniqueReceivers) {
       const aligoData = {
-        receiver_1: cleanPhone,
-        
+        receiver_1: r.cleanPhone,
         message_1: message,
-        
         tpl_code: 'UG_9086',
         button_1: {
           "button": [{
@@ -190,7 +200,7 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
         const result = await sendAligoAlimtalk(aligoData);
 
         console.log('================================================');
-        console.log(`COUNSELING ALIGO API RESPONSE FOR ${cleanPhone}:`, JSON.stringify(result, null, 2));
+        console.log(`COUNSELING ALIGO API RESPONSE FOR ${r.cleanPhone} (${r.type}):`, JSON.stringify(result, null, 2));
         console.log('================================================');
 
         let currentSuccess = false;
@@ -201,14 +211,32 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
         }
 
         if (currentSuccess) {
-          isSuccess = true; // 하나라도 성공하면 전체 성공으로 간주
+          isSuccess = true;
         } else {
           lastMessage = result?.message || '발송 실패';
         }
-        allResults.push(result);
+        allResults.push({ ...result, receiver_type: r.type });
+
+        // 발송 이력 저장
+        await supabase.from('counseling_kakao_send_history').insert({
+          student_id: student.id,
+          receiver_type: r.type,
+          receiver_phone: r.cleanPhone,
+          send_status: currentSuccess ? 'success' : 'fail',
+          error_message: currentSuccess ? null : (result?.message || '발송 실패')
+        });
+
       } catch (err) {
-        console.error(`Counseling Alimtalk Error for ${cleanPhone}:`, err);
+        console.error(`Counseling Alimtalk Error for ${r.cleanPhone}:`, err);
         lastMessage = err.message;
+        
+        await supabase.from('counseling_kakao_send_history').insert({
+          student_id: student.id,
+          receiver_type: r.type,
+          receiver_phone: r.cleanPhone,
+          send_status: 'fail',
+          error_message: err.message
+        });
       }
     }
 
@@ -220,6 +248,23 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
   } catch (error) {
     console.error('상담 알림톡 발송 에러:', error);
     res.status(500).json({ success: false, message: `알림톡 발송 중 오류가 발생했습니다: ${error.message}` });
+  }
+};
+
+// ========== 상담 안내 발송 상태 조회 ==========
+export const getCounselingSendStatus = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('counseling_kakao_send_history')
+      .select('*, students(name, class_name)')
+      .order('send_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw new Error(error.message);
+
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
