@@ -154,15 +154,12 @@ export const sendCounselingNotification = async (req, res) => {
     
     // 알리고 템플릿과 100% 일치해야 하는 메시지 본문
     const message = `[독강영어전문학원 상담 안내]
-
 학부모님, 안녕하십니까.
 ${student.name} 학생의 상담 내용을 안내해 드립니다.
-
 ■ 클래스 : ${displayClass}
 ■ 이름 : ${student.name}
 ■ 일자 : ${date}
 ■ 내용 : ${content}
-
 궁금하신 사항은 학원으로 문의해 주시기 바랍니다.
 감사합니다.`;
 
@@ -172,8 +169,9 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
 
     // 알리고 API는 receiver_1, receiver_2, ... 형식으로 여러 명에게 보낼 수 있음
     uniqueReceivers.forEach((phone, index) => {
-      aligoData[`receiver_${index + 1}`] = phone;
-      // 알리고 다중 발송 시 각 수신자별로 메시지, 제목 등을 각각 매핑해 주어야 합니다.
+      // 알리고 발송 시 하이픈 제거
+      const cleanPhone = phone.replace(/-/g, '');
+      aligoData[`receiver_${index + 1}`] = cleanPhone;
       aligoData[`subject_${index + 1}`] = '상담 안내';
       aligoData[`message_${index + 1}`] = message;
       aligoData[`emtitle_${index + 1}`] = '상담 안내';

@@ -144,6 +144,12 @@
               <div class="text-3xl font-black text-red-600">{{ results.fail }}</div>
             </div>
           </div>
+          
+          <div v-if="results.fail > 0 && results.errors.length > 0" class="mt-4 p-3 bg-red-50 border border-red-200 rounded text-left overflow-y-auto max-h-32 text-xs text-red-600">
+            <div class="font-bold mb-1">오류 상세:</div>
+            <div v-for="(err, idx) in results.errors" :key="idx" class="mb-1 truncate">{{ err }}</div>
+          </div>
+
           <p class="text-sm text-gray-500 mt-4">
             실패한 경우 학부모 연락처가 정확히 등록되어 있는지 확인해 주세요.
           </p>
@@ -181,7 +187,7 @@ const formData = ref({
 const isSending = ref(false);
 const sentCount = ref(0);
 const showResultModal = ref(false);
-const results = ref({ success: 0, fail: 0 });
+const results = ref({ success: 0, fail: 0, errors: [] as string[] });
 
 const fetchStudents = async () => {
   try {
@@ -246,7 +252,7 @@ const sendMessages = async () => {
 
   isSending.value = true;
   sentCount.value = 0;
-  results.value = { success: 0, fail: 0 };
+  results.value = { success: 0, fail: 0, errors: [] };
 
   for (const student of selectedStudents.value) {
     try {
@@ -267,10 +273,14 @@ const sendMessages = async () => {
         results.value.success++;
       } else {
         results.value.fail++;
+        if (res.data.message) {
+          results.value.errors.push(`${student.name}: ${res.data.message}`);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       results.value.fail++;
+      results.value.errors.push(`${student.name}: ${err.response?.data?.message || err.message}`);
     }
     sentCount.value++;
   }
