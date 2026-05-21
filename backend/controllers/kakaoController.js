@@ -137,12 +137,13 @@ export const sendCounselingNotification = async (req, res) => {
     }
 
     const student = await Student.getById(student_id);
-    // 학부모 번호 또는 학생 번호 수집
+    
+    // 학부모 번호와 학생 번호를 모두 수집하여 각각 발송 (AND 조건의 역할)
     const receivers = [];
     if (student.parent_phone) receivers.push(student.parent_phone);
     if (student.phone) receivers.push(student.phone);
     
-    // 중복 제거
+    // 중복 제거 (만약 두 번호가 완벽히 일치한다면 1번만 발송)
     const uniqueReceivers = [...new Set(receivers)];
 
     if (uniqueReceivers.length === 0) {
