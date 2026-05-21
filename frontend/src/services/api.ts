@@ -381,6 +381,9 @@ export const kakaoApi = {
     return api.get<ApiResponse<any[]>>('/kakao/bimonthly-send-status', { params: { class_name: className, exam_date: examDate } });
   },
   // ??ì?½ ??ë?´ ??ë¦¼??
+  sendCounselingNotification: (data: { student_id: number; class_name: string; date: string; content: string }) => {
+    return api.post<ApiResponse<any>>('/kakao/send-counseling', data);
+  },
   sendReservationNotification: (reservationId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-reservation', { reservation_id: reservationId });
   },

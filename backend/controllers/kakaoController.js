@@ -127,6 +127,85 @@ ${reportUrl}
   }
 };
 
+// ========== 상담 안내 (UG_9086) 알림톡 발송 ==========
+export const sendCounselingNotification = async (req, res) => {
+  try {
+    const { student_id, class_name, date, content } = req.body;
+
+    if (!student_id || !date || !content) {
+      return res.status(400).json({ success: false, message: '학생 ID, 일자, 내용은 필수입니다.' });
+    }
+
+    const student = await Student.getById(student_id);
+    // 학부모 번호 또는 학생 번호 수집
+    const receivers = [];
+    if (student.parent_phone) receivers.push(student.parent_phone);
+    if (student.phone) receivers.push(student.phone);
+    
+    // 중복 제거
+    const uniqueReceivers = [...new Set(receivers)];
+
+    if (uniqueReceivers.length === 0) {
+      return res.status(404).json({ success: false, message: '학생 또는 학부모 연락처를 찾을 수 없습니다.' });
+    }
+
+    // 빈칸 방어 로직: 클래스가 없으면 '-' 처리
+    const displayClass = class_name ? class_name : '-';
+    
+    // 알리고 템플릿과 100% 일치해야 하는 메시지 본문
+    const message = `[독강영어전문학원 상담 안내]
+
+학부모님, 안녕하십니까.
+${student.name} 학생의 상담 내용을 안내해 드립니다.
+
+■ 클래스 : ${displayClass}
+■ 이름 : ${student.name}
+■ 일자 : ${date}
+■ 내용 : ${content}
+
+궁금하신 사항은 학원으로 문의해 주시기 바랍니다.
+감사합니다.`;
+
+    const aligoData = {
+      tpl_code: 'UG_9086'
+    };
+
+    // 알리고 API는 receiver_1, receiver_2, ... 형식으로 여러 명에게 보낼 수 있음
+    uniqueReceivers.forEach((phone, index) => {
+      aligoData[`receiver_${index + 1}`] = phone;
+      // 알리고 다중 발송 시 각 수신자별로 메시지, 제목 등을 각각 매핑해 주어야 합니다.
+      aligoData[`subject_${index + 1}`] = '상담 안내';
+      aligoData[`message_${index + 1}`] = message;
+      aligoData[`emtitle_${index + 1}`] = '상담 안내';
+    });
+
+    const result = await sendAligoAlimtalk(aligoData);
+
+    console.log('================================================');
+    console.log('COUNSELING ALIGO API RESPONSE:', JSON.stringify(result, null, 2));
+    console.log('================================================');
+
+    let isSuccess = false;
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+    }
+
+    // 발송 이력 저장 (향후 counseling_kakao_send_history 생성 필요 시 활용, 현재는 로그만)
+    // await supabase.from('counseling_kakao_send_history').insert({...})
+
+    return res.json({
+      success: isSuccess,
+      message: result.message,
+      data: result
+    });
+  } catch (error) {
+    console.error('상담 알림톡 발송 에러:', error);
+    res.status(500).json({ success: false, message: `알림톡 발송 중 오류가 발생했습니다: ${error.message}` });
+  }
+};
+
 // ========== 보강 수업 알림톡 발송 ==========
 export const sendSupplementaryNotification = async (req, res) => {
   try {
