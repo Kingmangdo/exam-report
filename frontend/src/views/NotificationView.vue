@@ -187,7 +187,7 @@ const formData = ref({
 const isSending = ref(false);
 const sentCount = ref(0);
 const showResultModal = ref(false);
-const results = ref({ success: 0, fail: 0, errors: [] as string[] });
+const results = ref({ success: 0, fail: 0, errors: [] as string[], details: [] as string[] });
 
 const fetchStudents = async () => {
   try {
@@ -269,12 +269,32 @@ const sendMessages = async () => {
       };
 
       const res = await kakaoApi.sendCounselingNotification(payload);
-      if (res.data.success) {
-        results.value.success++;
+      
+      // 서버에서 돌아온 응답(data 배열)을 분석하여 건수별로 카운팅
+      if (res.data.data && Array.isArray(res.data.data)) {
+        res.data.data.forEach((item: any) => {
+          let currentSuccess = false;
+          if (item) {
+            if (item.result_code == 1 || String(item.result_code) === '1') currentSuccess = true;
+            else if (item.code == 0 || String(item.code) === '0') currentSuccess = true;
+            else if (item.message && (item.message.includes('성공') || item.message.toLowerCase().includes('success'))) currentSuccess = true;
+          }
+          if (currentSuccess) {
+            results.value.success++;
+          } else {
+            results.value.fail++;
+            results.value.errors.push(`${student.name}: ${item?.message || '발송 실패'}`);
+          }
+        });
       } else {
-        results.value.fail++;
-        if (res.data.message) {
-          results.value.errors.push(`${student.name}: ${res.data.message}`);
+        // 하위 호환성
+        if (res.data.success) {
+          results.value.success++;
+        } else {
+          results.value.fail++;
+          if (res.data.message) {
+            results.value.errors.push(`${student.name}: ${res.data.message}`);
+          }
         }
       }
     } catch (err: any) {
