@@ -8,6 +8,7 @@ import {
   verifyBimonthlyReportAccess,
   getBimonthlySendStatus,
   sendCounselingNotification,
+  getCounselingSendStatus,
   sendReservationNotification,
   getReservationSendStatus,
   sendSupplementaryNotification
@@ -38,6 +39,9 @@ router.get('/bimonthly-send-status', getBimonthlySendStatus);
 
 // POST /api/kakao/send-counseling - 상담 안내 알림톡 발송
 router.post('/send-counseling', sendCounselingNotification);
+
+// GET /api/kakao/counseling-send-status - 상담 안내 발송 상태 조회
+router.get('/counseling-send-status', getCounselingSendStatus);
 
 // POST /api/kakao/send-reservation - 예약 안내 알림톡 발송
 router.post('/send-reservation', sendReservationNotification);

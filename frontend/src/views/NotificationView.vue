@@ -53,11 +53,28 @@
 
       <!-- 우측: 템플릿 및 내용 입력 -->
       <div class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[700px]">
-        <div class="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
-          <h3 class="font-bold text-gray-800">메시지 작성</h3>
+        <div class="bg-gray-50 px-5 border-b flex justify-between items-center">
+          <div class="flex gap-4">
+            <button 
+              @click="activeTab = 'compose'" 
+              class="py-3 px-2 font-bold text-sm border-b-2 transition"
+              :class="activeTab === 'compose' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            >
+              메시지 작성
+            </button>
+            <button 
+              @click="activeTab = 'history'; fetchHistory()" 
+              class="py-3 px-2 font-bold text-sm border-b-2 transition"
+              :class="activeTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            >
+              발송 이력
+            </button>
+          </div>
         </div>
 
-        <div class="p-6 flex-1 overflow-y-auto">
+        <!-- 탭 내용: 메시지 작성 -->
+        <div v-show="activeTab === 'compose'" class="flex-1 overflow-y-auto flex flex-col">
+          <div class="p-6 flex-1 overflow-y-auto">
           <!-- 템플릿 선택 -->
           <div class="mb-6">
             <label class="block text-sm font-bold text-gray-700 mb-2">템플릿 선택</label>
@@ -66,6 +83,22 @@
               <option value="future_notice" disabled>학원 공지사항 (추후 심사 예정)</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">* 현재 '상담 안내' 템플릿만 승인되어 발송 가능합니다.</p>
+          </div>
+
+          <!-- 발송 대상 선택 -->
+          <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <label class="block text-sm font-bold text-gray-700 mb-3">발송 대상 선택 <span class="text-xs font-normal text-gray-500">(선택한 학생 기준)</span></label>
+            <div class="flex gap-6">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="formData.sendToParent" class="w-5 h-5 text-primary focus:ring-primary rounded border-gray-300">
+                <span class="text-sm font-bold text-gray-700">학부모에게 발송</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="formData.sendToStudent" class="w-5 h-5 text-primary focus:ring-primary rounded border-gray-300">
+                <span class="text-sm font-bold text-gray-700">학생에게 발송</span>
+              </label>
+            </div>
+            <p v-if="!formData.sendToParent && !formData.sendToStudent" class="text-xs text-red-500 mt-2 font-bold">발송 대상을 하나 이상 선택해주세요.</p>
           </div>
 
           <!-- 발송 내용 입력 -->
@@ -109,19 +142,52 @@
           </div>
         </div>
 
-        <!-- 하단 전송 버튼 -->
-        <div class="bg-gray-50 px-6 py-4 border-t flex items-center justify-between">
-          <div class="text-sm text-gray-600">
-            총 <span class="font-bold text-primary">{{ selectedStudents.length }}</span>명에게 발송합니다.
+          <!-- 하단 전송 버튼 -->
+          <div class="bg-gray-50 px-6 py-4 border-t flex items-center justify-between mt-auto">
+            <div class="text-sm text-gray-600">
+              총 <span class="font-bold text-primary">{{ selectedStudents.length }}</span>명에게 발송합니다.
+            </div>
+            <button 
+              @click="sendMessages" 
+              :disabled="isSending || selectedStudents.length === 0 || !formData.content || (!formData.sendToParent && !formData.sendToStudent)"
+              class="px-8 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-blue-800 transition disabled:opacity-50 shadow-md flex items-center gap-2"
+            >
+              <span v-if="isSending">발송 중... ({{ sentCount }}/{{ selectedStudents.length }})</span>
+              <span v-else>🚀 선택한 학생에게 발송</span>
+            </button>
           </div>
-          <button 
-            @click="sendMessages" 
-            :disabled="isSending || selectedStudents.length === 0 || !formData.content"
-            class="px-8 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-blue-800 transition disabled:opacity-50 shadow-md flex items-center gap-2"
-          >
-            <span v-if="isSending">발송 중... ({{ sentCount }}/{{ selectedStudents.length }})</span>
-            <span v-else>🚀 선택한 학생에게 발송</span>
-          </button>
+        </div>
+
+        <!-- 탭 내용: 발송 이력 -->
+        <div v-show="activeTab === 'history'" class="flex-1 overflow-y-auto flex flex-col p-4 bg-gray-50">
+          <div v-if="isLoadingHistory" class="text-center py-10 text-gray-500">
+            이력을 불러오는 중...
+          </div>
+          <div v-else-if="historyList.length === 0" class="text-center py-10 text-gray-400">
+            발송 이력이 없습니다.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="item in historyList" :key="item.id" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-gray-800">{{ item.students?.name || '알 수 없음' }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full" :class="item.receiver_type === 'parent' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'">
+                    {{ item.receiver_type === 'parent' ? '학부모' : '학생' }}
+                  </span>
+                  <span class="text-xs text-gray-500">{{ item.receiver_phone }}</span>
+                </div>
+                <span class="text-xs font-bold px-2 py-1 rounded" :class="item.send_status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                  {{ item.send_status === 'success' ? '성공' : '실패' }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 mb-1">
+                {{ new Date(item.send_at).toLocaleString() }}
+              </div>
+              <div v-if="item.error_message" class="text-xs text-red-500 mt-2 p-2 bg-red-50 rounded">
+                {{ item.error_message }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -179,9 +245,15 @@ const searchQuery = ref('');
 const selectedStudents = ref<any[]>([]);
 
 const selectedTemplate = ref('UG_9086');
+const activeTab = ref('compose');
+const historyList = ref<any[]>([]);
+const isLoadingHistory = ref(false);
+
 const formData = ref({
   date: getToday(),
-  content: ''
+  content: '',
+  sendToParent: true,
+  sendToStudent: false
 });
 
 const isSending = ref(false);
@@ -261,11 +333,16 @@ const sendMessages = async () => {
         className = student.class_name.split(',')[0].trim();
       }
 
+      const targets = [];
+      if (formData.value.sendToParent) targets.push('parent');
+      if (formData.value.sendToStudent) targets.push('student');
+
       const payload = {
         student_id: student.id,
         class_name: className,
         date: formData.value.date,
-        content: formData.value.content
+        content: formData.value.content,
+        targets: targets
       };
 
       const res = await kakaoApi.sendCounselingNotification(payload);
@@ -307,6 +384,21 @@ const sendMessages = async () => {
 
   isSending.value = false;
   showResultModal.value = true;
+};
+
+const fetchHistory = async () => {
+  if (activeTab.value !== 'history') return;
+  isLoadingHistory.value = true;
+  try {
+    const res = await kakaoApi.getCounselingSendStatus();
+    if (res.data.success) {
+      historyList.value = res.data.data;
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isLoadingHistory.value = false;
+  }
 };
 
 onMounted(() => {
