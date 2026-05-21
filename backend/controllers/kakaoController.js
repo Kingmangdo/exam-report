@@ -163,40 +163,52 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
 궁금하신 사항은 학원으로 문의해 주시기 바랍니다.
 감사합니다.`;
 
-    const aligoData = {
-      tpl_code: 'UG_9086'
-    };
+    let isSuccess = false;
+    let lastMessage = '';
+    const allResults = [];
 
-    // 알리고 API는 receiver_1, receiver_2, ... 형식으로 여러 명에게 보낼 수 있음
-    uniqueReceivers.forEach((phone, index) => {
+    for (const phone of uniqueReceivers) {
       // 알리고 발송 시 하이픈 제거
       const cleanPhone = phone.replace(/-/g, '');
-      aligoData[`receiver_${index + 1}`] = cleanPhone;
-      aligoData[`subject_${index + 1}`] = '상담 안내';
-      aligoData[`message_${index + 1}`] = message;
-      aligoData[`emtitle_${index + 1}`] = '상담 안내';
-    });
+      
+      const aligoData = {
+        receiver_1: cleanPhone,
+        subject_1: '상담 안내',
+        message_1: message,
+        emtitle_1: '상담 안내',
+        tpl_code: 'UG_9086'
+      };
 
-    const result = await sendAligoAlimtalk(aligoData);
+      try {
+        const result = await sendAligoAlimtalk(aligoData);
 
-    console.log('================================================');
-    console.log('COUNSELING ALIGO API RESPONSE:', JSON.stringify(result, null, 2));
-    console.log('================================================');
+        console.log('================================================');
+        console.log(`COUNSELING ALIGO API RESPONSE FOR ${cleanPhone}:`, JSON.stringify(result, null, 2));
+        console.log('================================================');
 
-    let isSuccess = false;
-    if (result) {
-      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
-      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
-      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+        let currentSuccess = false;
+        if (result) {
+          if (result.result_code == 1 || String(result.result_code) === '1') currentSuccess = true;
+          else if (result.code == 0 || String(result.code) === '0') currentSuccess = true;
+          else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) currentSuccess = true;
+        }
+
+        if (currentSuccess) {
+          isSuccess = true; // 하나라도 성공하면 전체 성공으로 간주
+        } else {
+          lastMessage = result?.message || '발송 실패';
+        }
+        allResults.push(result);
+      } catch (err) {
+        console.error(`Counseling Alimtalk Error for ${cleanPhone}:`, err);
+        lastMessage = err.message;
+      }
     }
-
-    // 발송 이력 저장 (향후 counseling_kakao_send_history 생성 필요 시 활용, 현재는 로그만)
-    // await supabase.from('counseling_kakao_send_history').insert({...})
 
     return res.json({
       success: isSuccess,
-      message: result.message,
-      data: result
+      message: isSuccess ? '발송 성공' : lastMessage,
+      data: allResults
     });
   } catch (error) {
     console.error('상담 알림톡 발송 에러:', error);
