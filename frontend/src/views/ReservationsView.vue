@@ -202,8 +202,9 @@
                 <input v-model="part.name" type="text" class="flex-1 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-primary outline-none font-medium" placeholder="영역명 입력" />
                 <div class="flex items-center gap-2">
                   <span class="text-xs text-gray-500">점수:</span>
-                  <input v-model.number="part.score" type="number" min="0" max="100" class="w-20 px-2 py-2 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" />
-                  <span class="text-xs text-gray-400">/100</span>
+                  <input v-model.number="part.score" type="number" min="0" class="w-16 px-2 py-2 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" />
+                  <span class="text-xs text-gray-400">/</span>
+                  <input v-model.number="part.max_score" type="number" min="1" class="w-16 px-2 py-2 text-sm border rounded-lg text-center focus:ring-1 focus:ring-primary outline-none" placeholder="만점" />
                 </div>
               </div>
               <div>
@@ -225,7 +226,7 @@
               <div>
                 <div class="text-xs text-blue-600 font-bold mb-1">총점</div>
                 <div class="text-2xl font-black text-blue-900">{{ levelTestTotalScore }}</div>
-                <div class="text-xs text-blue-400">/ {{ levelTestForm.parts.filter((p: any) => p.name).length * 100 }}</div>
+                <div class="text-xs text-blue-400">/ {{ levelTestForm.parts.filter((p: any) => p.name).reduce((sum, p) => sum + (p.max_score || 100), 0) }}</div>
               </div>
               <div>
                 <div class="text-xs text-green-600 font-bold mb-1">평균</div>
@@ -311,10 +312,10 @@
                     <span class="w-3 h-3 rounded-full inline-block" :style="{ backgroundColor: partColors[idx] }"></span>
                     {{ part.name }}
                   </span>
-                  <span class="text-sm font-black" :style="{ color: partColors[idx] }">{{ part.score }}/100</span>
+                  <span class="text-sm font-black" :style="{ color: partColors[idx] }">{{ part.score }}/{{ part.max_score || 100 }}</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div class="h-2 rounded-full transition-all" :style="{ width: part.score + '%', backgroundColor: partColors[idx] }"></div>
+                  <div class="h-2 rounded-full transition-all" :style="{ width: ((part.score / (part.max_score || 100)) * 100) + '%', backgroundColor: partColors[idx] }"></div>
                 </div>
                 <p v-if="part.comment" class="text-xs text-gray-500 italic">{{ part.comment }}</p>
               </div>
@@ -433,7 +434,8 @@ const levelTestAvgScore = computed(() => {
   const validParts = levelTestForm.value.parts.filter((p: any) => p.name);
   if (validParts.length === 0) return '0.0';
   const total = validParts.reduce((sum: number, p: any) => sum + (p.score || 0), 0);
-  return (total / validParts.length).toFixed(1);
+  const totalMax = validParts.reduce((sum: number, p: any) => sum + (p.max_score || 100), 0);
+  return totalMax > 0 ? ((total / totalMax) * 100).toFixed(1) : '0.0';
 });
 
 const filteredReservations = computed(() => {
@@ -567,11 +569,11 @@ const openLevelTestModal = async (r: any) => {
   levelTestForm.value = {
     test_date: getTodayFull(),
     parts: [
-      { name: '', score: 0, comment: '' },
-      { name: '', score: 0, comment: '' },
-      { name: '', score: 0, comment: '' },
-      { name: '', score: 0, comment: '' },
-      { name: '', score: 0, comment: '' }
+      { name: '', score: 0, max_score: 100, comment: '' },
+      { name: '', score: 0, max_score: 100, comment: '' },
+      { name: '', score: 0, max_score: 100, comment: '' },
+      { name: '', score: 0, max_score: 100, comment: '' },
+      { name: '', score: 0, max_score: 100, comment: '' }
     ],
     overall_comment: ''
   };
@@ -587,6 +589,7 @@ const openLevelTestModal = async (r: any) => {
         levelTestForm.value.parts = data.parts.map((p: any) => ({
           name: p.name || '',
           score: p.score || 0,
+          max_score: p.max_score || 100,
           comment: p.comment || ''
         }));
       }
@@ -604,7 +607,8 @@ const saveLevelTest = async () => {
   try {
     const validParts = levelTestForm.value.parts.filter((p: any) => p.name);
     const totalScore = validParts.reduce((sum: number, p: any) => sum + (p.score || 0), 0);
-    const avgScore = validParts.length > 0 ? totalScore / validParts.length : 0;
+    const totalMax = validParts.reduce((sum: number, p: any) => sum + (p.max_score || 100), 0);
+    const avgScore = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
 
     const res = await reservationApi.saveLevelTest({
       reservation_id: selectedReservation.value.id,
@@ -682,7 +686,10 @@ const drawRadarChart = async () => {
 
   const validParts = reportData.value.score.parts.filter((p: any) => p.name);
   const labels = validParts.map((p: any) => p.name);
-  const scores = validParts.map((p: any) => p.score);
+  const scores = validParts.map((p: any) => {
+    const max = p.max_score || 100;
+    return max > 0 ? (p.score / max) * 100 : 0;
+  });
 
   radarChartInstance = new Chart(radarChartCanvas.value, {
     type: 'radar',

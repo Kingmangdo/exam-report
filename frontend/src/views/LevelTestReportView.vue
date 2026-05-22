@@ -71,10 +71,10 @@
                     <span class="w-3 h-3 rounded-full inline-block" :style="{ backgroundColor: partColors[idx] }"></span>
                     {{ part.name }}
                   </span>
-                  <span class="text-sm font-black" :style="{ color: partColors[idx] }">{{ part.score }}/100</span>
+                  <span class="text-sm font-black" :style="{ color: partColors[idx] }">{{ part.score }}/{{ part.max_score || 100 }}</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div class="h-2 rounded-full transition-all" :style="{ width: part.score + '%', backgroundColor: partColors[idx] }"></div>
+                  <div class="h-2 rounded-full transition-all" :style="{ width: ((part.score / (part.max_score || 100)) * 100) + '%', backgroundColor: partColors[idx] }"></div>
                 </div>
                 <p v-if="part.comment" class="text-xs text-gray-500 italic">{{ part.comment }}</p>
               </div>
@@ -212,7 +212,10 @@ const drawRadarChart = async () => {
 
   const parts = validParts.value;
   const labels = parts.map((p: any) => p.name);
-  const scores = parts.map((p: any) => p.score);
+  const scores = parts.map((p: any) => {
+    const max = p.max_score || 100;
+    return max > 0 ? (p.score / max) * 100 : 0;
+  });
 
   radarChartInstance = new Chart(radarChartCanvas.value, {
     type: 'radar',
