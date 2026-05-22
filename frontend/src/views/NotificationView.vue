@@ -183,6 +183,20 @@
               <div class="text-xs text-gray-500 mb-1">
                 {{ new Date(item.send_at).toLocaleString() }}
               </div>
+              
+              <!-- 메시지 내용 (첫 줄만 보이거나 전체 보기) -->
+              <div v-if="item.message_content" class="mt-3 bg-gray-50 rounded-lg p-3 border border-gray-100 cursor-pointer hover:bg-gray-100 transition" @click="toggleExpand(item.id)">
+                <div v-if="!expandedHistory.has(item.id)" class="text-sm text-gray-700 truncate font-medium">
+                  {{ item.message_content.split('\n').find((l: string) => l.trim()) || item.message_content }}
+                </div>
+                <div v-else class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {{ item.message_content }}
+                </div>
+                <div class="text-center text-[10px] text-gray-400 mt-2 font-bold">
+                  {{ expandedHistory.has(item.id) ? '▲ 접기' : '▼ 전체 내용 보기' }}
+                </div>
+              </div>
+
               <div v-if="item.error_message" class="text-xs text-red-500 mt-2 p-2 bg-red-50 rounded">
                 {{ item.error_message }}
               </div>
@@ -248,6 +262,17 @@ const selectedTemplate = ref('UG_9086');
 const activeTab = ref('compose');
 const historyList = ref<any[]>([]);
 const isLoadingHistory = ref(false);
+const expandedHistory = ref(new Set<number>());
+
+const toggleExpand = (id: number) => {
+  const newSet = new Set(expandedHistory.value);
+  if (newSet.has(id)) {
+    newSet.delete(id);
+  } else {
+    newSet.add(id);
+  }
+  expandedHistory.value = newSet;
+};
 
 const formData = ref({
   date: getToday(),

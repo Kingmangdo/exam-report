@@ -226,7 +226,8 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
           receiver_type: r.type,
           receiver_phone: r.cleanPhone,
           send_status: currentSuccess ? 'success' : 'fail',
-          error_message: currentSuccess ? null : (result?.message || '발송 실패')
+          error_message: currentSuccess ? null : (result?.message || '발송 실패'),
+          message_content: message // 알림톡 발송 내용 저장
         });
 
       } catch (err) {
@@ -238,7 +239,8 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
           receiver_type: r.type,
           receiver_phone: r.cleanPhone,
           send_status: 'fail',
-          error_message: err.message
+          error_message: err.message,
+          message_content: message // 실패 시에도 내용 저장
         });
       }
     }
