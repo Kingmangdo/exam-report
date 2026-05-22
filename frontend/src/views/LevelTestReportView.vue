@@ -83,15 +83,9 @@
 
           <!-- 총점/평균 -->
           <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
-            <div class="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div class="text-xs text-blue-600 font-bold mb-1">총점</div>
-                <div class="text-2xl font-black text-blue-900">{{ reportData.score.total_score }}</div>
-              </div>
-              <div>
-                <div class="text-xs text-green-600 font-bold mb-1">평균</div>
-                <div class="text-2xl font-black text-green-700">{{ reportData.score.average_score }}</div>
-              </div>
+            <div class="text-center">
+              <div class="text-xs text-blue-600 font-bold mb-1">총점</div>
+              <div class="text-2xl font-black text-blue-900">{{ reportData.score.total_score }}</div>
             </div>
           </div>
 
