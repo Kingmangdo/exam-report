@@ -3,14 +3,26 @@
     <!-- 상단 네비게이션 -->
     <nav class="bg-primary text-white shadow-lg">
       <div class="container mx-auto px-4">
-        <div class="flex items-center justify-between h-20">
+        <div class="flex items-center justify-between h-16 md:h-20">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="flex items-center space-x-4 hover:text-gray-200 transition">
-              <img src="/logo.png" alt="독강영어 로고" class="h-16 w-16 object-contain rounded-full bg-white p-1 shadow-sm" />
-              <span class="text-2xl font-bold">독강영어 학습관리 시스템</span>
+            <router-link to="/" class="flex items-center space-x-2 md:space-x-4 hover:text-gray-200 transition">
+              <img src="/logo.png" alt="독강영어 로고" class="h-10 w-10 md:h-16 md:w-16 object-contain rounded-full bg-white p-1 shadow-sm" />
+              <span class="text-lg md:text-2xl font-bold truncate">독강영어 학습관리</span>
             </router-link>
           </div>
-          <div class="flex items-center space-x-4">
+          
+          <!-- 모바일 메뉴 햄버거 버튼 -->
+          <div class="md:hidden">
+            <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="text-white focus:outline-none p-2">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path v-if="!isMobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- PC 메뉴 -->
+          <div class="hidden md:flex items-center space-x-2 lg:space-x-4">
             <template v-for="item in filteredNavItems" :key="item.path">
               <!-- 드롭다운 메뉴 -->
               <div v-if="item.children" class="relative" @mouseenter="openDropdown(item.path)" @mouseleave="closeDropdown(item.path)">
@@ -50,6 +62,42 @@
             <button
               @click="handleLogout"
               class="px-3 py-2 rounded hover:bg-red-700 transition text-sm bg-red-600 ml-4"
+            >
+              로그아웃
+            </button>
+          </div>
+        </div>
+
+        <!-- 모바일 메뉴 드롭다운 -->
+        <div v-show="isMobileMenuOpen" class="md:hidden pb-4">
+          <div class="flex flex-col space-y-2 mt-2 bg-primary-dark rounded-lg p-2">
+            <template v-for="item in filteredNavItems" :key="'mobile-'+item.path">
+              <div v-if="item.children" class="flex flex-col">
+                <div class="px-3 py-2 text-sm font-bold text-gray-300">{{ item.name }}</div>
+                <router-link
+                  v-for="child in item.children"
+                  :key="'mobile-'+child.path"
+                  :to="child.path"
+                  class="pl-6 pr-3 py-2 rounded hover:bg-blue-800 transition text-sm text-white"
+                  active-class="bg-blue-800"
+                  @click="isMobileMenuOpen = false"
+                >
+                  - {{ child.name }}
+                </router-link>
+              </div>
+              <router-link
+                v-else
+                :to="item.path"
+                class="px-3 py-2 rounded hover:bg-blue-800 transition text-sm text-white"
+                active-class="bg-blue-800"
+                @click="isMobileMenuOpen = false"
+              >
+                {{ item.name }}
+              </router-link>
+            </template>
+            <button
+              @click="handleLogout"
+              class="px-3 py-2 mt-2 rounded transition text-sm bg-red-600 hover:bg-red-700 text-white text-left"
             >
               로그아웃
             </button>
@@ -104,6 +152,7 @@ const route = useRoute();
 const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
 const activeDropdown = ref('');
+const isMobileMenuOpen = ref(false);
 const showReservationPopup = ref(false);
 const todayReservations = ref<any[]>([]);
 

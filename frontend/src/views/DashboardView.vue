@@ -14,30 +14,30 @@
       <!-- 오늘의 종합 현황 카드 -->
       <div>
         <h3 class="text-sm font-bold text-gray-500 mb-3">오늘의 종합 현황</h3>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">전체 학생</h4>
-            <p class="text-2xl font-bold text-primary">{{ statistics?.total_students || 0 }}<span class="text-sm text-gray-400 ml-1">명</span></p>
+            <p class="text-xl md:text-2xl font-bold text-primary">{{ statistics?.total_students || 0 }}<span class="text-xs md:text-sm text-gray-400 ml-1">명</span></p>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">출석</h4>
-            <p class="text-2xl font-bold text-green-600">{{ todayAttSummary.present }}<span class="text-sm text-gray-400 ml-1">명</span></p>
+            <p class="text-xl md:text-2xl font-bold text-green-600">{{ todayAttSummary.present }}<span class="text-xs md:text-sm text-gray-400 ml-1">명</span></p>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">결석</h4>
-            <p class="text-2xl font-bold text-red-600">{{ todayAttSummary.absent }}<span class="text-sm text-gray-400 ml-1">명</span></p>
+            <p class="text-xl md:text-2xl font-bold text-red-600">{{ todayAttSummary.absent }}<span class="text-xs md:text-sm text-gray-400 ml-1">명</span></p>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">지각</h4>
-            <p class="text-2xl font-bold text-yellow-600">{{ todayAttSummary.late }}<span class="text-sm text-gray-400 ml-1">명</span></p>
+            <p class="text-xl md:text-2xl font-bold text-yellow-600">{{ todayAttSummary.late }}<span class="text-xs md:text-sm text-gray-400 ml-1">명</span></p>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">오늘 성적 입력</h4>
-            <p class="text-2xl font-bold text-blue-600">{{ statistics?.today_scores || 0 }}<span class="text-sm text-gray-400 ml-1">건</span></p>
+            <p class="text-xl md:text-2xl font-bold text-blue-600">{{ statistics?.today_scores || 0 }}<span class="text-xs md:text-sm text-gray-400 ml-1">건</span></p>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border p-5">
+          <div class="bg-white rounded-xl shadow-sm border p-4 md:p-5">
             <h4 class="text-xs font-medium text-gray-500 mb-1">오늘 성적 발송</h4>
-            <p class="text-2xl font-bold text-purple-600">{{ statistics?.today_sends || 0 }}<span class="text-sm text-gray-400 ml-1">건</span></p>
+            <p class="text-xl md:text-2xl font-bold text-purple-600">{{ statistics?.today_sends || 0 }}<span class="text-xs md:text-sm text-gray-400 ml-1">건</span></p>
           </div>
         </div>
       </div>

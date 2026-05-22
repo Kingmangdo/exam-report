@@ -9,7 +9,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- 좌측: 대상자 선택 -->
-      <div class="lg:col-span-1 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[700px]">
+      <div class="lg:col-span-1 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[500px] lg:h-[700px]">
         <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
           <h3 class="font-bold text-gray-800">수신자 선택 ({{ selectedStudents.length }}명)</h3>
         </div>
@@ -52,7 +52,7 @@
       </div>
 
       <!-- 우측: 템플릿 및 내용 입력 -->
-      <div class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[700px]">
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[600px] lg:h-[700px]">
         <div class="bg-gray-50 px-5 border-b flex justify-between items-center">
           <div class="flex gap-4">
             <button 

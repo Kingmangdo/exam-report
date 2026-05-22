@@ -1,22 +1,22 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <h2 class="text-2xl font-bold text-gray-800">학생 관리</h2>
-      <div class="flex space-x-3">
+      <div class="flex flex-wrap gap-2 md:space-x-3">
         <button
           @click="downloadStudentList"
-          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          class="px-3 py-2 md:px-4 md:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm md:text-base flex-1 md:flex-none"
         >
-          📊 학생명단 Excel 다운로드
+          📊 Excel 다운로드
         </button>
         <button
           @click="downloadTemplate"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          class="px-3 py-2 md:px-4 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm md:text-base flex-1 md:flex-none"
         >
-          📥 Excel 양식 다운로드
+          📥 양식 다운로드
         </button>
         <label
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer"
+          class="px-3 py-2 md:px-4 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer text-sm md:text-base flex-1 md:flex-none text-center"
         >
           📤 Excel 업로드
           <input
@@ -28,7 +28,7 @@
         </label>
         <button
           @click="openModal('create')"
-          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+          class="px-3 py-2 md:px-4 md:py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm md:text-base flex-1 md:flex-none"
         >
           + 학생 등록
         </button>
@@ -37,7 +37,7 @@
 
     <!-- 검색 및 필터 -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
         <div class="text-sm font-medium text-gray-600">
           <span class="mr-4">
             전체 학생 수: <span class="text-primary font-bold">{{ totalStudentCount }}</span>명 |
@@ -45,7 +45,7 @@
           </span>
         </div>
         <!-- 재원생 / 퇴원생 토글 -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-2 w-full md:w-auto">
           <button
             class="px-3 py-1 rounded-full text-sm font-medium border"
             :class="currentStatus === 'active' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-300'"
