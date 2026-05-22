@@ -259,11 +259,27 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
 // ========== 상담 안내 발송 상태 조회 ==========
 export const getCounselingSendStatus = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { startDate, endDate } = req.query;
+
+    let query = supabase
       .from('counseling_kakao_send_history')
       .select('*, students(name, class_name)')
-      .order('send_at', { ascending: false })
-      .limit(200);
+      .order('send_at', { ascending: false });
+
+    if (startDate) {
+      // 시작일의 00:00:00부터
+      query = query.gte('send_at', `${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      // 종료일의 23:59:59까지
+      query = query.lte('send_at', `${endDate}T23:59:59.999Z`);
+    }
+    if (!startDate && !endDate) {
+      // 날짜 지정이 없으면 최근 200건
+      query = query.limit(200);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw new Error(error.message);
 

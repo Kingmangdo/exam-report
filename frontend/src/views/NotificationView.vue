@@ -160,11 +160,29 @@
 
         <!-- 탭 내용: 발송 이력 -->
         <div v-show="activeTab === 'history'" class="flex-1 overflow-y-auto flex flex-col p-4 bg-gray-50">
+          
+          <!-- 날짜 필터 -->
+          <div class="mb-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-col sm:flex-row items-center gap-2 justify-between">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <input type="date" v-model="historyFilter.startDate" class="px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-primary outline-none flex-1 sm:flex-none" />
+              <span class="text-gray-500">~</span>
+              <input type="date" v-model="historyFilter.endDate" class="px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-primary outline-none flex-1 sm:flex-none" />
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+              <button @click="fetchHistory" class="flex-1 sm:flex-none px-4 py-1.5 bg-primary text-white text-sm font-bold rounded hover:bg-blue-800 transition">
+                조회
+              </button>
+              <button @click="resetHistoryFilter" class="flex-1 sm:flex-none px-4 py-1.5 bg-gray-200 text-gray-700 text-sm font-bold rounded hover:bg-gray-300 transition">
+                초기화
+              </button>
+            </div>
+          </div>
+
           <div v-if="isLoadingHistory" class="text-center py-10 text-gray-500">
             이력을 불러오는 중...
           </div>
           <div v-else-if="historyList.length === 0" class="text-center py-10 text-gray-400">
-            발송 이력이 없습니다.
+            조회된 발송 이력이 없습니다.
           </div>
           <div v-else class="space-y-3">
             <div v-for="item in historyList" :key="item.id" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -263,6 +281,16 @@ const activeTab = ref('compose');
 const historyList = ref<any[]>([]);
 const isLoadingHistory = ref(false);
 const expandedHistory = ref(new Set<number>());
+const historyFilter = ref({
+  startDate: '',
+  endDate: ''
+});
+
+const resetHistoryFilter = () => {
+  historyFilter.value.startDate = '';
+  historyFilter.value.endDate = '';
+  fetchHistory();
+};
 
 const toggleExpand = (id: number) => {
   const newSet = new Set(expandedHistory.value);
@@ -415,7 +443,11 @@ const fetchHistory = async () => {
   if (activeTab.value !== 'history') return;
   isLoadingHistory.value = true;
   try {
-    const res = await kakaoApi.getCounselingSendStatus();
+    const params: any = {};
+    if (historyFilter.value.startDate) params.startDate = historyFilter.value.startDate;
+    if (historyFilter.value.endDate) params.endDate = historyFilter.value.endDate;
+
+    const res = await kakaoApi.getCounselingSendStatus(params);
     if (res.data.success) {
       historyList.value = res.data.data;
     }

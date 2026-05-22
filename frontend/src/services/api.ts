@@ -384,8 +384,8 @@ export const kakaoApi = {
   sendCounselingNotification: (data: { student_id: number; class_name: string; date: string; content: string; targets: string[] }) => {
     return api.post<ApiResponse<any>>('/kakao/send-counseling', data);
   },
-  getCounselingSendStatus: () => {
-    return api.get<ApiResponse<any[]>>('/kakao/counseling-send-status');
+  getCounselingSendStatus: (params?: { startDate?: string; endDate?: string }) => {
+    return api.get<ApiResponse<any[]>>('/kakao/counseling-send-status', { params });
   },
   sendReservationNotification: (reservationId: number) => {
     return api.post<ApiResponse<any>>('/kakao/send-reservation', { reservation_id: reservationId });
