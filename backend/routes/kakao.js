@@ -11,10 +11,14 @@ import {
   getCounselingSendStatus,
   sendReservationNotification,
   getReservationSendStatus,
-  sendSupplementaryNotification
+  sendSupplementaryNotification,
+  sendAttendanceNotification
 } from '../controllers/kakaoController.js';
 
 const router = express.Router();
+
+// POST /api/kakao/send-attendance - 출결 알림톡 발송
+router.post('/send-attendance', sendAttendanceNotification);
 
 // POST /api/kakao/send-report - Daily Report 알림톡 발송
 router.post('/send-report', sendScoreReport);

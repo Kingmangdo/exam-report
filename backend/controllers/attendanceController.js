@@ -1,5 +1,6 @@
 import { Attendance } from '../models/Attendance.js';
 import { supabase } from '../models/supabase.js';
+import axios from 'axios';
 
 const getKstTimeStr = () => {
   const kstTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
@@ -79,6 +80,19 @@ export const updateAttendance = async (req, res) => {
     const data = await Attendance.upsertAttendance({
       class_id, student_id, attendance_date, status, arrival_time, departure_time
     });
+
+    // 등/하원일 경우 알림톡 발송 API 내부 호출 (비동기로 던짐 - 실패해도 DB 저장은 방해안함)
+    if (status === '등원' || status === '하원') {
+      const PORT = process.env.PORT || 8080;
+      // axios로 로컬 라우트에 요청을 날려 알림톡을 발송하게 함
+      axios.post(`http://localhost:${PORT}/api/kakao/send-attendance`, {
+        student_id: student_id,
+        type: status,
+        time: timeStr
+      }).catch(err => {
+        console.error(`출결 자동 알림톡 발송 실패 (${status}):`, err.message);
+      });
+    }
 
     res.json({ success: true, data });
   } catch (error) {

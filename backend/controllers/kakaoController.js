@@ -256,6 +256,79 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
   }
 };
 
+// ========== 등/하원 알림톡 발송 ==========
+export const sendAttendanceNotification = async (req, res) => {
+  try {
+    const { student_id, type, time } = req.body;
+
+    if (!student_id || !type || !time) {
+      return res.status(400).json({ success: false, message: '필수 파라미터(학생 ID, 타입, 시간)가 누락되었습니다.' });
+    }
+
+    if (type !== '등원' && type !== '하원') {
+      return res.status(400).json({ success: false, message: '유효하지 않은 출결 타입입니다.' });
+    }
+
+    const student = await Student.getById(student_id);
+    if (!student || !student.parent_phone) {
+      return res.status(404).json({ success: false, message: '학생 또는 학부모 연락처를 찾을 수 없습니다.' });
+    }
+
+    const cleanPhone = student.parent_phone.replace(/-/g, '');
+    let message = '';
+    let tpl_code = '';
+
+    if (type === '등원') {
+      tpl_code = 'UI_1698';
+      message = `[독강영어학원] 등원 알림
+
+안녕하세요, ${student.name} 학부모님
+${student.name}이(가) ${time}에
+안전하게 등원했습니다. 🙂`;
+    } else {
+      tpl_code = 'UI_1699';
+      message = `[독강영어학원] 하원 알림
+
+안녕하세요, ${student.name} 학부모님
+${student.name}이(가) ${time}에
+하원했습니다. 🙂
+
+오늘도 수고했어요, 감사합니다`;
+    }
+
+    const aligoData = {
+      receiver_1: cleanPhone,
+      message_1: message,
+      tpl_code: tpl_code
+    };
+
+    const result = await sendAligoAlimtalk(aligoData);
+
+    console.log('================================================');
+    console.log(`ATTENDANCE ALIGO API RESPONSE FOR ${cleanPhone}:`, JSON.stringify(result, null, 2));
+    console.log('================================================');
+
+    let isSuccess = false;
+    let lastMessage = '';
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') isSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') isSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) isSuccess = true;
+      lastMessage = result.message || '알리고 발송 실패';
+    }
+
+    return res.json({
+      success: isSuccess,
+      message: isSuccess ? '발송 성공' : lastMessage,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('출결 알림톡 발송 에러:', error);
+    res.status(500).json({ success: false, message: `알림톡 발송 중 오류가 발생했습니다: ${error.message}` });
+  }
+};
+
 // ========== 상담 안내 발송 상태 조회 ==========
 export const getCounselingSendStatus = async (req, res) => {
   try {
