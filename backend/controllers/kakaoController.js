@@ -293,7 +293,7 @@ ${student.name}이(가) ${time}에
 ${student.name}이(가) ${time}에
 하원했습니다. 🙂
 
-오늘도 수고했어요, 감사합니다`;
+오늘도 수고했어요, 감사합니다.`;
     }
 
     const aligoData = {
