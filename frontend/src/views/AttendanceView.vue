@@ -662,8 +662,8 @@ const adminUpdateAttendance = async (item: any, status: string) => {
     return;
   }
 
-  // 등원/하원 클릭 시 알림톡 발송 여부 팝업 확인
-  if (status === '등원' || status === '하원') {
+  // 등원/하원/지각 클릭 시 알림톡 발송 여부 팝업 확인
+  if (status === '등원' || status === '하원' || status === '지각') {
     const isConfirm = confirm(`[${item.studentName}] 학생을 ${status} 처리하시겠습니까?\n(확인 시 학부모님께 ${status} 알림톡이 발송됩니다.)`);
     if (!isConfirm) return; // 취소 누르면 초기화 (아무 작업 안 함)
   }
@@ -688,7 +688,7 @@ const adminUpdateAttendance = async (item: any, status: string) => {
       }
       
       // TODO: 백엔드에 알림톡 연동 시 여기에 추가 알림 띄우거나 할 수 있음
-      if (status === '등원' || status === '하원') {
+      if (status === '등원' || status === '하원' || status === '지각') {
         alert(`${status} 처리 및 알림톡 발송 요청이 완료되었습니다.`);
       }
     }

@@ -265,7 +265,7 @@ export const sendAttendanceNotification = async (req, res) => {
       return res.status(400).json({ success: false, message: '필수 파라미터(학생 ID, 타입, 시간)가 누락되었습니다.' });
     }
 
-    if (type !== '등원' && type !== '하원') {
+    if (type !== '등원' && type !== '하원' && type !== '지각') {
       return res.status(400).json({ success: false, message: '유효하지 않은 출결 타입입니다.' });
     }
 
@@ -285,7 +285,7 @@ export const sendAttendanceNotification = async (req, res) => {
 안녕하세요, ${student.name} 학부모님
 ${student.name}이(가) ${time}에
 안전하게 등원했습니다. 🙂`;
-    } else {
+    } else if (type === '하원') {
       tpl_code = 'UI_1699';
       message = `[독강영어학원] 하원 알림
 
@@ -294,6 +294,18 @@ ${student.name}이(가) ${time}에
 하원했습니다. 🙂
 
 오늘도 수고했어요, 감사합니다.`;
+    } else if (type === '지각') {
+      tpl_code = 'UI_2941';
+      message = `[독강영어학원] 지각 알림
+
+안녕하세요, ${student.name} 학부모님
+${student.name}이(가) ${time}에
+지각으로 등원했습니다.
+
+학생이 제시간에 올 수 있도록
+지도 부탁드립니다.
+
+감사합니다.`;
     }
 
     const aligoData = {
