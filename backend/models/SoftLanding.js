@@ -9,16 +9,17 @@ export class SoftLanding {
     const dateString = targetDate.toISOString().split('T')[0];
 
     // students 테이블과 soft_landing_settings 조인
+    // 테스트 환경이거나 최근 등록일 필터링이 잘 안 될 경우를 대비해 쿼리 재확인
     let { data, error } = await supabase
       .from('students')
       .select(`
         *,
-        classes!inner(name),
+        classes!left(name),
         soft_landing_settings(excluded, excluded_reason, excluded_at, initial_level),
         soft_landing_checkpoints(id, phase, status, scheduled_date, completed_date, consult_method, ratings, english_score, parent_report_sent, high_school_readiness)
       `)
       .eq('status', 'active')
-      .gte('created_at', dateString);
+      .gte('created_at', `${dateString}T00:00:00.000Z`);
 
     if (error) throw new Error(error.message);
     
