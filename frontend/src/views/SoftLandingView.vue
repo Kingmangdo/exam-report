@@ -585,19 +585,33 @@ const confirmExclusion = async () => {
 };
 
 // 학부모 리포트 (알림톡 텍스트) 생성
-const openReportModal = () => {
+const openReportModal = async () => {
+  if (!selectedStudent.value) return;
+
   const phaseName = activePhase.value === 1 ? '2주차' : activePhase.value === 2 ? '6주차' : '10주차';
   const name = selectedStudent.value.name;
-  const memo = currentCheckpoint.value.parent_memo || '(이곳에 상담 내용을 적어주세요)';
   
-  let scoreMsg = '';
-  if (activePhase.value > 1 && initialLevel.value && currentCheckpoint.value.english_score) {
-    scoreMsg = `▶ 영어 점수/레벨 변화\n입학 당시 [${initialLevel.value}] ➡️ 현재 [${currentCheckpoint.value.english_score}]\n\n`;
-  }
+  try {
+    const phoneLast4 = selectedStudent.value.parent_phone ? selectedStudent.value.parent_phone.slice(-4) : '0000';
+    // 서버에 리포트 링크 생성 요청
+    const res = await softLandingApi.generateReportLink(
+      selectedStudent.value.id,
+      activePhase.value,
+      name,
+      phoneLast4
+    );
 
-  reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 벌써 학원에 온지 ${phaseName}가 되었습니다.\n학원에 잘 적응하고 있는지 안내해 드립니다.\n\n▶ 학생 적응 및 수업 태도\n${memo}\n\n${scoreMsg}앞으로도 ${name} 학생이 더 즐겁게 공부하고 목표를 이룰 수 있도록 꼼꼼히 지도하겠습니다.\n\n- 담당 강사 드림 -`;
-  
-  showReportModal.value = true;
+    if (res.data.success) {
+      const linkUrl = window.location.origin + res.data.data.url;
+      reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 학원에 등원한 지 ${phaseName}가 되었습니다.\n학생의 학원 적응도와 종합적인 안내 리포트를 준비했습니다.\n\n아래 링크를 눌러 꼼꼼하게 작성된 우리 아이의 소프트랜딩 성적표를 확인해 보세요!\n\n▶ 리포트 확인하기\n${linkUrl}\n\n앞으로도 ${name} 학생이 목표를 이룰 수 있도록 최선을 다해 지도하겠습니다.\n감사합니다.`;
+      showReportModal.value = true;
+    } else {
+      alert('리포트 링크 생성에 실패했습니다.');
+    }
+  } catch (error) {
+    console.error('리포트 링크 생성 실패', error);
+    alert('오류가 발생했습니다.');
+  }
 };
 
 const copyReport = () => {

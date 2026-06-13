@@ -1,6 +1,68 @@
+import crypto from 'crypto';
 import { supabase } from './supabase.js';
 
 export class SoftLanding {
+  static generateToken() {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  // 리포트 접근 링크 생성
+  static async createAccessLink(studentId, phase, studentName, phoneLast4) {
+    const token = this.generateToken();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // 기존 토큰 삭제
+    await supabase
+      .from('soft_landing_report_access')
+      .delete()
+      .eq('student_id', studentId)
+      .eq('phase', phase);
+
+    // 새 토큰 생성
+    const { error } = await supabase
+      .from('soft_landing_report_access')
+      .insert({
+        access_token: token,
+        student_id: studentId,
+        phase: phase,
+        student_name: studentName,
+        phone_last4: phoneLast4,
+        expires_at: expiresAt.toISOString()
+      });
+      
+    if (error) throw new Error(error.message);
+    return token;
+  }
+
+  // 접근 인증 확인
+  static async verifyAccess(token, studentName, phoneLast4) {
+    const { data: access, error } = await supabase
+      .from('soft_landing_report_access')
+      .select('*')
+      .eq('access_token', token)
+      .single();
+
+    if (error || !access) {
+      return { valid: false, message: '유효하지 않은 링크입니다.' };
+    }
+
+    if (new Date() > new Date(access.expires_at)) {
+      return { valid: false, message: '링크가 만료되었습니다. (발송 후 7일)' };
+    }
+
+    if (access.student_name !== studentName || access.phone_last4 !== phoneLast4) {
+      return { valid: false, message: '학생 이름 또는 연락처가 일치하지 않습니다.' };
+    }
+
+    await supabase
+      .from('soft_landing_report_access')
+      .update({ accessed_at: new Date().toISOString() })
+      .eq('access_token', token);
+
+    return { valid: true, access };
+  }
+
   // 소프트랜딩 대상 학생 조회 (중등부만, 제외되지 않은 최근 12주 이내 등록 학생 등)
   static async getTargetStudents() {
     // 서버 시간 기준으로 84일 전 날짜 계산

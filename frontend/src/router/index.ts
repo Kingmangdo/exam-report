@@ -103,6 +103,12 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true }
   },
   {
+    path: '/report/soft-landing/:token',
+    name: 'soft-landing-report',
+    component: () => import('../views/SoftLandingReportView.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/report/level-test/:token',
     name: 'level-test-report',
     component: () => import('../views/LevelTestReportView.vue'),

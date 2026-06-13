@@ -483,5 +483,11 @@ export const softLandingApi = {
   updateInitialLevel: (studentId: number, initialLevel: string) =>
     api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/initial-level`, { initialLevel }),
   upsertCheckpoint: (studentId: number, phase: number, data: any) =>
-    api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/checkpoints/${phase}`, data)
+    api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/checkpoints/${phase}`, data),
+  generateReportLink: (studentId: number, phase: number, studentName: string, phoneLast4: string) =>
+    api.post<ApiResponse<{ token: string; url: string }>>('/soft-landing/report/link', { student_id: studentId, phase, student_name: studentName, phone_last4: phoneLast4 }),
+  verifyReportAccess: (token: string, studentName: string, phoneLast4: string) =>
+    api.post<ApiResponse<any>>(`/soft-landing/report/verify/${token}`, { student_name: studentName, phone_last4: phoneLast4 }),
+  getReportData: (token: string, studentName: string, phoneLast4: string) =>
+    api.get<ApiResponse<any>>(`/soft-landing/report/data/${token}`, { params: { student_name: studentName, phone_last4: phoneLast4 } })
 };
