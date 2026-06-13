@@ -189,7 +189,7 @@ const navItems = ref([
     ]
   },
   { name: '출결 관리', path: '/attendance', adminOnly: false },
-  { name: '알림톡 발송', path: '/notification', adminOnly: false },
+  { name: '알림톡 발송', path: '/notification', adminOnly: true },
   { name: '예약 관리', path: '/reservations', adminOnly: true },
   { name: '설정', path: '/settings', adminOnly: true }
 ]);
