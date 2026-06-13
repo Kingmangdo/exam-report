@@ -47,6 +47,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/AttendanceView.vue')
       },
       {
+        path: 'soft-landing',
+        name: 'soft-landing',
+        component: () => import('../views/SoftLandingView.vue')
+      },
+      {
         path: 'notification',
         name: 'notification',
         component: () => import('../views/NotificationView.vue')

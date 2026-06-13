@@ -475,3 +475,13 @@ export const dailyBoardApi = {
   getBoardsByMonth: (month: string) => api.get<ApiResponse<any[]>>(`/daily-board/month/${month}`),
   saveBoard: (date: string, data: any) => api.post<ApiResponse<any>>(`/daily-board/${date}`, data)
 };
+
+export const softLandingApi = {
+  getStudents: () => api.get<ApiResponse<any[]>>('/soft-landing/students'),
+  updateExclusion: (studentId: number, excluded: boolean, excludedReason?: string) => 
+    api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/exclusion`, { excluded, excludedReason }),
+  updateInitialLevel: (studentId: number, initialLevel: string) =>
+    api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/initial-level`, { initialLevel }),
+  upsertCheckpoint: (studentId: number, phase: number, data: any) =>
+    api.put<ApiResponse<any>>(`/soft-landing/students/${studentId}/checkpoints/${phase}`, data)
+};
