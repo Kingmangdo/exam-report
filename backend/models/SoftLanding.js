@@ -15,7 +15,7 @@ export class SoftLanding {
       .select(`
         *,
         soft_landing_settings(excluded, excluded_reason, excluded_at, initial_level),
-        soft_landing_checkpoints(id, phase, status, scheduled_date, completed_date, consult_method, ratings, english_score, parent_report_sent, high_school_readiness)
+        soft_landing_checkpoints(id, phase, status, scheduled_date, completed_date, consult_method, ratings, english_score, teacher_memo, focus_memo, parent_memo, parent_report_sent, high_school_readiness)
       `)
       .eq('status', 'active')
       .gte('created_at', `${dateString}T00:00:00.000Z`);
