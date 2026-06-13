@@ -317,6 +317,15 @@
         
         <div class="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end gap-2">
           <button @click="showReportModal = false" class="px-4 py-2 border bg-white rounded text-gray-600 hover:bg-gray-100 text-sm font-bold">닫기</button>
+          <a 
+            v-if="reportUrl" 
+            :href="reportUrl" 
+            target="_blank" 
+            class="px-4 py-2 border border-purple-300 text-purple-700 bg-purple-50 rounded hover:bg-purple-100 text-sm font-bold transition flex items-center gap-1"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            성적표 미리보기
+          </a>
           <button @click="copyReport" class="px-4 py-2 border border-primary text-primary bg-blue-50 rounded hover:bg-blue-100 text-sm font-bold transition">내용 복사</button>
           <button @click="sendAlimtalk" class="px-4 py-2 bg-[#FEE500] text-gray-900 rounded font-bold hover:bg-[#F4DC00] transition text-sm flex items-center gap-1">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-5.52 0-10 3.52-10 7.84 0 2.76 1.76 5.17 4.54 6.57-.4 1.48-1.5 5.3-.06 5.14 1.18-.14 4.58-3.08 6.44-4.32.36.03.72.05 1.08.05 5.52 0 10-3.52 10-7.84C24 6.52 19.52 3 12 3z"/></svg>
@@ -350,6 +359,7 @@ const excludeReasonCustom = ref('');
 
 const showReportModal = ref(false);
 const reportContent = ref('');
+const reportUrl = ref('');
 
 // 중등 여부 판별 유틸
 const isMiddleSchool = (grade: string) => {
@@ -603,6 +613,7 @@ const openReportModal = async () => {
 
     if (res.data.success) {
       const linkUrl = window.location.origin + res.data.data.url;
+      reportUrl.value = linkUrl;
       reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 학원에 등원한 지 ${phaseName}가 되었습니다.\n학생의 학원 적응도와 종합적인 안내 리포트를 준비했습니다.\n\n아래 링크를 눌러 꼼꼼하게 작성된 우리 아이의 소프트랜딩 성적표를 확인해 보세요!\n\n▶ 리포트 확인하기\n${linkUrl}\n\n앞으로도 ${name} 학생이 목표를 이룰 수 있도록 최선을 다해 지도하겠습니다.\n감사합니다.`;
       showReportModal.value = true;
     } else {
