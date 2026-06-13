@@ -613,7 +613,7 @@ const openReportModal = async () => {
 
     if (res.data.success) {
       const linkUrl = window.location.origin + res.data.data.url;
-      reportUrl.value = linkUrl;
+      reportUrl.value = linkUrl + '?preview=true';
       reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 학원에 등원한 지 ${phaseName}가 되었습니다.\n학생의 학원 적응도와 종합적인 안내 리포트를 준비했습니다.\n\n아래 링크를 눌러 꼼꼼하게 작성된 우리 아이의 소프트랜딩 성적표를 확인해 보세요!\n\n▶ 리포트 확인하기\n${linkUrl}\n\n앞으로도 ${name} 학생이 목표를 이룰 수 있도록 최선을 다해 지도하겠습니다.\n감사합니다.`;
       showReportModal.value = true;
     } else {
