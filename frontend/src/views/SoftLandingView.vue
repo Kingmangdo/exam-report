@@ -423,7 +423,7 @@ const fetchStudents = async () => {
           name: s.name,
           school: s.school,
           grade: s.grade,
-          class_name: s.classes?.name || '',
+          class_name: s.class_name || '',
           created_at: s.created_at,
           isExcluded: settings.excluded || false,
           excludedReason: settings.excluded_reason,

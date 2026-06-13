@@ -14,7 +14,6 @@ export class SoftLanding {
       .from('students')
       .select(`
         *,
-        classes!left(name),
         soft_landing_settings(excluded, excluded_reason, excluded_at, initial_level),
         soft_landing_checkpoints(id, phase, status, scheduled_date, completed_date, consult_method, ratings, english_score, parent_report_sent, high_school_readiness)
       `)
