@@ -123,8 +123,8 @@
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
             <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex justify-center items-center">
-              <div class="w-full max-w-md flex justify-center h-80 relative">
-                <canvas ref="radarChartRef"></canvas>
+              <div class="w-full max-w-[320px] aspect-square relative mx-auto">
+                <canvas ref="radarChartRef" width="320" height="320"></canvas>
               </div>
             </div>
           </section>
