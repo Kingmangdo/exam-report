@@ -242,6 +242,13 @@
                       저장하기
                     </button>
                     <button 
+                      @click="previewReport" 
+                      class="px-4 py-2 border border-purple-300 text-purple-700 bg-purple-50 rounded font-bold hover:bg-purple-100 transition text-sm flex items-center gap-1"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                      안내 리포트 미리보기
+                    </button>
+                    <button 
                       @click="openReportModal" 
                       class="px-4 py-2 bg-yellow-400 text-yellow-900 rounded font-bold hover:bg-yellow-500 transition text-sm flex items-center gap-1"
                     >
@@ -317,15 +324,6 @@
         
         <div class="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end gap-2">
           <button @click="showReportModal = false" class="px-4 py-2 border bg-white rounded text-gray-600 hover:bg-gray-100 text-sm font-bold">닫기</button>
-          <a 
-            v-if="reportUrl" 
-            :href="reportUrl" 
-            target="_blank" 
-            class="px-4 py-2 border border-purple-300 text-purple-700 bg-purple-50 rounded hover:bg-purple-100 text-sm font-bold transition flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-            성적표 미리보기
-          </a>
           <button @click="copyReport" class="px-4 py-2 border border-primary text-primary bg-blue-50 rounded hover:bg-blue-100 text-sm font-bold transition">내용 복사</button>
           <button @click="sendAlimtalk" class="px-4 py-2 bg-[#FEE500] text-gray-900 rounded font-bold hover:bg-[#F4DC00] transition text-sm flex items-center gap-1">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-5.52 0-10 3.52-10 7.84 0 2.76 1.76 5.17 4.54 6.57-.4 1.48-1.5 5.3-.06 5.14 1.18-.14 4.58-3.08 6.44-4.32.36.03.72.05 1.08.05 5.52 0 10-3.52 10-7.84C24 6.52 19.52 3 12 3z"/></svg>
@@ -595,6 +593,33 @@ const confirmExclusion = async () => {
 };
 
 // 학부모 리포트 (알림톡 텍스트) 생성
+const previewReport = async () => {
+  if (!selectedStudent.value) return;
+
+  const name = selectedStudent.value.name;
+  
+  try {
+    const phoneLast4 = selectedStudent.value.parent_phone ? selectedStudent.value.parent_phone.slice(-4) : '0000';
+    // 서버에 리포트 링크 생성 요청
+    const res = await softLandingApi.generateReportLink(
+      selectedStudent.value.id,
+      activePhase.value,
+      name,
+      phoneLast4
+    );
+
+    if (res.data.success) {
+      const linkUrl = window.location.origin + res.data.data.url;
+      window.open(linkUrl + '?preview=true', '_blank');
+    } else {
+      alert('리포트 링크 생성에 실패했습니다.');
+    }
+  } catch (error) {
+    console.error('리포트 링크 생성 실패', error);
+    alert('오류가 발생했습니다.');
+  }
+};
+
 const openReportModal = async () => {
   if (!selectedStudent.value) return;
 
