@@ -122,27 +122,9 @@
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
-              <div class="w-full md:w-1/2 flex justify-center h-56 relative">
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex justify-center items-center">
+              <div class="w-full max-w-md flex justify-center h-80 relative">
                 <canvas ref="radarChartRef"></canvas>
-              </div>
-              
-              <div class="w-full md:w-1/2 space-y-4">
-                <div v-for="item in criteriaList" :key="item.key" class="space-y-1">
-                  <div class="flex justify-between text-sm">
-                    <span class="font-bold text-gray-700">{{ item.label }}</span>
-                    <span class="font-bold" :class="getRatingColor(reportData.checkpoint.ratings[item.key])">
-                      {{ reportData.checkpoint.ratings[item.key] || 0 }}점
-                    </span>
-                  </div>
-                  <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      class="h-full rounded-full transition-all duration-1000"
-                      :class="getRatingBgColor(reportData.checkpoint.ratings[item.key])"
-                      :style="{ width: `${((reportData.checkpoint.ratings[item.key] || 0) / 5) * 100}%` }"
-                    ></div>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -176,6 +158,9 @@ import { ref, computed, nextTick, shallowRef, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { softLandingApi } from '../services/api';
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+Chart.register(ChartDataLabels);
 
 const route = useRoute();
 const token = route.params.token as string;
@@ -323,6 +308,7 @@ const renderRadarChart = () => {
         pointHoverBackgroundColor: '#fff',
         pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 2,
+        pointRadius: 4,
       }]
     },
     options: {
@@ -333,19 +319,30 @@ const renderRadarChart = () => {
           angleLines: { color: 'rgba(0,0,0,0.1)' },
           grid: { color: 'rgba(0,0,0,0.1)' },
           pointLabels: {
-            font: { family: "'Pretendard', sans-serif", size: 12, weight: 'bold' },
+            font: { family: "'Pretendard', sans-serif", size: 13, weight: 'bold' },
             color: '#4B5563'
           },
           ticks: {
-            display: false,
+            display: true,
             stepSize: 1,
             max: 5,
-            min: 0
+            min: 0,
+            color: '#9CA3AF',
+            backdropColor: 'transparent',
+            font: { size: 10 }
           }
         }
       },
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: '#1e3a8a',
+          font: { weight: 'bold', size: 14 },
+          align: 'end',
+          anchor: 'end',
+          formatter: (value) => value + '점'
+        }
       }
     }
   });
