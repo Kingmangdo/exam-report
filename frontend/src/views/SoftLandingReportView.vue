@@ -118,13 +118,13 @@
           </section>
 
           <!-- 항목별 평가 (방사형 차트) -->
-          <section v-if="reportData?.checkpoint?.ratings">
+          <section v-if="reportData?.checkpoint?.ratings && Object.keys(reportData.checkpoint.ratings).length > 0">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
             <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex justify-center items-center">
-              <div class="w-full max-w-[320px] aspect-square relative mx-auto">
-                <canvas ref="radarChartRef" width="320" height="320"></canvas>
+              <div class="w-full max-w-[320px] aspect-square relative mx-auto" style="height: 320px; width: 100%;">
+                <canvas ref="radarChartRef"></canvas>
               </div>
             </div>
           </section>
@@ -298,6 +298,11 @@ const renderRadarChart = () => {
 
   const labels = criteriaList.value.map(c => c.label);
   const data = criteriaList.value.map(c => reportData.value.checkpoint.ratings[c.key] || 0);
+
+  // 데이터가 모두 0이면 차트를 그리지 않음 (빈 박스 방지)
+  if (data.every(val => val === 0)) {
+    return;
+  }
 
   radarChart.value = new Chart(radarChartRef.value, {
     type: 'radar',
