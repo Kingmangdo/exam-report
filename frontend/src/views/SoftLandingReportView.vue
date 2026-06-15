@@ -172,7 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, shallowRef } from 'vue';
+import { ref, computed, nextTick, shallowRef, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { softLandingApi } from '../services/api';
 import Chart from 'chart.js/auto';
