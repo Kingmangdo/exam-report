@@ -122,14 +122,14 @@ export const getReportData = async (req, res) => {
     }
     
     // 1. 학생 기본 정보와 soft_landing_settings (초기 레벨)
-    const { data: students } = await SoftLanding.getTargetStudents();
-    const student = students.find(s => s.id === student_id);
+    const students = await SoftLanding.getTargetStudents();
+    const student = (students || []).find(s => s.id === student_id);
 
     if (!student) {
       return res.status(404).json({ success: false, message: '학생 정보를 찾을 수 없습니다.' });
     }
 
-    const checkpoint = student.soft_landing_checkpoints.find(c => Number(c.phase) === Number(phase));
+    const checkpoint = (student.soft_landing_checkpoints || []).find(c => Number(c.phase) === Number(phase));
 
     res.json({ 
       success: true, 
