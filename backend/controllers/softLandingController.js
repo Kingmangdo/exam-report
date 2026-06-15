@@ -99,14 +99,27 @@ export const verifyReportAccess = async (req, res) => {
 export const getReportData = async (req, res) => {
   try {
     const { token } = req.params;
-    const { student_name, phone_last4 } = req.query;
+    const { student_name, phone_last4, preview } = req.query;
 
-    const result = await SoftLanding.verifyAccess(token, student_name, phone_last4);
-    if (!result.valid) {
-      return res.status(401).json({ success: false, message: result.message });
+    let student_id, phase;
+
+    if (preview === 'true') {
+      // 미리보기 모드: 인증 없이 토큰만으로 접근
+      const access = await SoftLanding.getAccessByToken(token);
+      if (!access) {
+        return res.status(401).json({ success: false, message: '유효하지 않은 링크입니다.' });
+      }
+      student_id = access.student_id;
+      phase = access.phase;
+    } else {
+      // 일반 모드: 인증 정보 확인
+      const result = await SoftLanding.verifyAccess(token, student_name, phone_last4);
+      if (!result.valid) {
+        return res.status(401).json({ success: false, message: result.message });
+      }
+      student_id = result.access.student_id;
+      phase = result.access.phase;
     }
-
-    const { student_id, phase } = result.access;
     
     // 1. 학생 기본 정보와 soft_landing_settings (초기 레벨)
     const { data: students } = await SoftLanding.getTargetStudents();
@@ -116,7 +129,7 @@ export const getReportData = async (req, res) => {
       return res.status(404).json({ success: false, message: '학생 정보를 찾을 수 없습니다.' });
     }
 
-    const checkpoint = student.soft_landing_checkpoints.find(c => c.phase === phase);
+    const checkpoint = student.soft_landing_checkpoints.find(c => Number(c.phase) === Number(phase));
 
     res.json({ 
       success: true, 
@@ -125,10 +138,10 @@ export const getReportData = async (req, res) => {
           name: student.name,
           grade: student.grade,
           school: student.school,
-          initialLevel: student.soft_landing_settings?.initial_level
+          initialLevel: student.soft_landing_settings?.initial_level || ''
         },
         phase,
-        checkpoint
+        checkpoint: checkpoint || { ratings: {} }
       } 
     });
   } catch (error) {

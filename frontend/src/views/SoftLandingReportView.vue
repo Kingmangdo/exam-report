@@ -70,11 +70,11 @@
         <div class="px-8 py-6 border-b border-gray-100 flex flex-wrap justify-between items-center bg-white">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-primary font-bold text-2xl shadow-inner border border-blue-100">
-              {{ reportData.student.name.charAt(0) }}
+              {{ reportData.student?.name?.charAt(0) || '?' }}
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800">{{ reportData.student.name }} <span class="text-base font-normal text-gray-500">학생</span></h2>
-              <p class="text-sm text-gray-500 mt-0.5">{{ reportData.student.school }} {{ reportData.student.grade }}</p>
+              <h2 class="text-xl font-bold text-gray-800">{{ reportData.student?.name || '학생' }} <span class="text-base font-normal text-gray-500">학생</span></h2>
+              <p class="text-sm text-gray-500 mt-0.5">{{ reportData.student?.school }} {{ reportData.student?.grade }}</p>
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@
         <div class="p-8 space-y-10 bg-white">
           
           <!-- 학부모 상담 메모 (종합 코멘트) -->
-          <section v-if="reportData.checkpoint.parent_memo">
+          <section v-if="reportData?.checkpoint?.parent_memo">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">💬</span> 담당 선생님의 코멘트
             </h3>
@@ -93,7 +93,7 @@
           </section>
 
           <!-- 성적 트래킹 (6주차, 10주차) -->
-          <section v-if="reportData.phase > 1 && reportData.student.initialLevel && reportData.checkpoint.english_score">
+          <section v-if="reportData.phase > 1 && reportData.student?.initialLevel && reportData?.checkpoint?.english_score">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">📈</span> 영어 점수/레벨 변화
             </h3>
@@ -117,7 +117,7 @@
           </section>
 
           <!-- 항목별 평가 (방사형 차트) -->
-          <section>
+          <section v-if="reportData?.checkpoint?.ratings">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
@@ -288,7 +288,7 @@ const renderRadarChart = () => {
     radarChart.value.destroy();
   }
   
-  if (!radarChartRef.value || !reportData.value) return;
+  if (!radarChartRef.value || !reportData.value || !reportData.value.checkpoint || !reportData.value.checkpoint.ratings) return;
 
   const labels = criteriaList.value.map(c => c.label);
   const data = criteriaList.value.map(c => reportData.value.checkpoint.ratings[c.key] || 0);

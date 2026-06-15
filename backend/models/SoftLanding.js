@@ -63,6 +63,21 @@ export class SoftLanding {
     return { valid: true, access };
   }
 
+  // 토큰으로 접근 정보 조회 (미리보기 용도)
+  static async getAccessByToken(token) {
+    const { data, error } = await supabase
+      .from('soft_landing_report_access')
+      .select('*')
+      .eq('access_token', token)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw new Error(error.message);
+    }
+    return data || null;
+  }
+
   // 소프트랜딩 대상 학생 조회 (중등부만, 제외되지 않은 최근 12주 이내 등록 학생 등)
   static async getTargetStudents() {
     // 서버 시간 기준으로 84일 전 날짜 계산
