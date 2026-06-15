@@ -250,7 +250,16 @@ const handleAuth = async () => {
 const fetchReportData = async () => {
   try {
     isLoading.value = true;
-    const res = await softLandingApi.getReportData(token, authForm.value.studentName, authForm.value.phoneLast4);
+    // URL 쿼리에 preview=true가 있는지 확인 (Vue Router의 query가 늦게 로딩될 수 있으므로 location.search도 확인)
+    const isPreview = route.query.preview === 'true' || new URLSearchParams(window.location.search).get('preview') === 'true';
+    
+    // 미리보기 모드일 경우 이름과 전화번호 대신 token만으로 조회
+    const res = await softLandingApi.getReportData(
+      token, 
+      isPreview ? '' : authForm.value.studentName, 
+      isPreview ? '' : authForm.value.phoneLast4,
+      isPreview
+    );
     
     if (res.data.success) {
       reportData.value = res.data.data;
@@ -265,6 +274,14 @@ const fetchReportData = async () => {
     isLoading.value = false;
   }
 };
+
+onMounted(() => {
+  const isPreview = route.query.preview === 'true' || new URLSearchParams(window.location.search).get('preview') === 'true';
+  if (isPreview) {
+    isAuthenticated.value = true;
+    fetchReportData();
+  }
+});
 
 const renderRadarChart = () => {
   if (radarChart.value) {
