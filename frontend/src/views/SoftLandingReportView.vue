@@ -160,6 +160,8 @@ import { softLandingApi } from '../services/api';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
+Chart.register(ChartDataLabels);
+
 const route = useRoute();
 const token = route.params.token as string;
 
