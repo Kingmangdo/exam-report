@@ -160,8 +160,6 @@ import { softLandingApi } from '../services/api';
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-Chart.register(ChartDataLabels);
-
 const route = useRoute();
 const token = route.params.token as string;
 
@@ -263,9 +261,8 @@ const fetchReportData = async () => {
     
     if (res.data.success) {
       reportData.value = res.data.data;
-      nextTick(() => {
-        renderRadarChart();
-      });
+      await nextTick();
+      renderRadarChart();
     }
   } catch (error: any) {
     console.error('리포트 조회 실패:', error);
@@ -289,13 +286,22 @@ const renderRadarChart = () => {
     radarChart.value.destroy();
   }
   
-  if (!radarChartRef.value || !reportData.value || !reportData.value.checkpoint || !reportData.value.checkpoint.ratings) return;
+  if (!radarChartRef.value) {
+    console.error("Radar chart canvas not found.");
+    return;
+  }
+  
+  if (!reportData.value || !reportData.value.checkpoint || !reportData.value.checkpoint.ratings) {
+    console.error("Ratings data is missing.");
+    return;
+  }
 
   const labels = criteriaList.value.map(c => c.label);
   const data = criteriaList.value.map(c => reportData.value.checkpoint.ratings[c.key] || 0);
 
   radarChart.value = new Chart(radarChartRef.value, {
     type: 'radar',
+    plugins: [ChartDataLabels],
     data: {
       labels: labels,
       datasets: [{
