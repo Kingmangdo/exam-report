@@ -55,6 +55,7 @@
 
     <!-- 리포트 화면 -->
     <div v-else-if="reportData" class="flex-1 w-full max-w-2xl mx-auto md:py-8 print:py-0">
+
       <div class="bg-white md:rounded-2xl md:shadow-xl overflow-hidden print:shadow-none min-h-screen md:min-h-0 border-t-4 border-primary">
         
         <!-- 헤더 -->
@@ -151,6 +152,20 @@
             <p class="mt-1 font-bold text-gray-500">독강영어학원</p>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- 에러/예외 화면 -->
+    <div v-else class="flex-1 flex flex-col items-center justify-center p-4">
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-red-100 text-center max-w-md w-full">
+        <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">리포트를 불러올 수 없습니다</h3>
+        <p class="text-gray-500 mb-6">{{ authError || '데이터를 불러오는 중 문제가 발생했거나, 유효하지 않은 링크입니다.' }}</p>
+        <button @click="isAuthenticated = false; authError = ''" class="px-6 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition">
+          돌아가기
+        </button>
       </div>
     </div>
   </div>
@@ -267,9 +282,10 @@ const fetchReportData = async () => {
         renderRadarChart();
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('리포트 조회 실패:', error);
-    alert('리포트 데이터를 불러오는데 실패했습니다.');
+    authError.value = error.response?.data?.message || '리포트 데이터를 불러오는데 실패했습니다.';
+    isAuthenticated.value = false;
   } finally {
     isLoading.value = false;
   }
