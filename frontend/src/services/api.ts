@@ -65,7 +65,7 @@ export const authApi = {
 
 // ??�?� �?�?API
 export const studentApi = {
-  getAll: (filters?: { class_name?: string; grade?: string; search?: string; status?: string }) => {
+  getAll: (filters?: { class_name?: string; grade?: string; search?: string; phone?: string; status?: string }) => {
     return api.get<ApiResponse<Student[]>>('/students', { params: filters });
   },
   getById: (id: number) => {

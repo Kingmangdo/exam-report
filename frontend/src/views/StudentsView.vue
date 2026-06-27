@@ -62,11 +62,18 @@
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <input
           v-model="filters.search"
           type="text"
           placeholder="학생 이름 검색"
+          class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          @input="handleSearchInput"
+        />
+        <input
+          v-model="filters.phone"
+          type="text"
+          placeholder="전화번호 검색 (예: 1234)"
           class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           @input="handleSearchInput"
         />
@@ -713,6 +720,7 @@ const modalMode = ref<'create' | 'edit'>('create');
 const form = ref<Partial<Student & { classes: string[] }>>({ classes: [] });
 const filters = ref({
   search: '',
+  phone: '',
   class_name: '',
   grade: ''
 });
@@ -898,6 +906,7 @@ const fetchStudents = async () => {
     
     const activeFilters: any = {};
     if (filters.value.search) activeFilters.search = filters.value.search;
+    if (filters.value.phone) activeFilters.phone = filters.value.phone;
     if (filters.value.class_name) activeFilters.class_name = filters.value.class_name;
     if (filters.value.grade) activeFilters.grade = filters.value.grade;
     activeFilters.status = currentStatus.value;
@@ -907,7 +916,7 @@ const fetchStudents = async () => {
       students.value = response.data.data;
       
       // 필터가 없을 때의 전체 학생 수 업데이트
-      if (!filters.value.search && !filters.value.class_name && !filters.value.grade) {
+      if (!filters.value.search && !filters.value.phone && !filters.value.class_name && !filters.value.grade) {
         totalStudentCount.value = response.data.data.length;
       } else if (totalStudentCount.value === 0) {
         // 처음 로딩 시 필터가 있더라도 전체 수를 알기 위해 별도 호출하거나 초기값 설정
@@ -1193,7 +1202,7 @@ const deleteSelectedStudents = async () => {
 };
 
 const resetFilters = () => {
-  filters.value = { search: '', class_name: '', grade: '' };
+  filters.value = { search: '', phone: '', class_name: '', grade: '' };
   fetchStudents();
 };
 

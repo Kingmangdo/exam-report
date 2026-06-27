@@ -42,6 +42,12 @@ export class Student {
       const searchTerm = `%${filters.search}%`;
       query = query.ilike('name', searchTerm);
     }
+    
+    if (filters.phone) {
+      const phoneTerm = `%${filters.phone}%`;
+      // OR 조건으로 학생 전화번호 또는 학부모 전화번호에서 검색
+      query = query.or(`phone.ilike.${phoneTerm},parent_phone.ilike.${phoneTerm}`);
+    }
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
