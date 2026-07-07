@@ -7,7 +7,8 @@ export const getAllReservations = async (req, res) => {
   try {
     const filters = {
       status: req.query.status || null,
-      search: req.query.search || null
+      search: req.query.search || null,
+      start_date: req.query.start_date || null
     };
     const data = await Reservation.getAll(filters);
     res.json({ success: true, data });

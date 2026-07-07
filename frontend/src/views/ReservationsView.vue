@@ -16,6 +16,13 @@
           </select>
         </div>
         <div>
+          <label class="block text-sm text-gray-500 mb-1">기간 조회</label>
+          <select v-model="filterPeriod" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
+            <option value="recent">최근 3주</option>
+            <option value="all">전체 내역</option>
+          </select>
+        </div>
+        <div>
           <label class="block text-sm text-gray-500 mb-1">이름 검색</label>
           <input v-model="searchName" type="text" placeholder="이름 입력" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
@@ -348,6 +355,7 @@ const partColors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6'];
 
 const reservations = ref<any[]>([]);
 const filterStatus = ref('');
+const filterPeriod = ref('recent');
 const searchName = ref('');
 const showFormModal = ref(false);
 const showLevelTestModal = ref(false);
@@ -449,6 +457,14 @@ const fetchReservations = async () => {
   try {
     const params: any = {};
     if (filterStatus.value) params.status = filterStatus.value;
+    
+    if (filterPeriod.value === 'recent') {
+      const today = new Date();
+      // 3주 전 (21일 전) 날짜
+      const threeWeeksAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 21);
+      params.start_date = threeWeeksAgo.toISOString().split('T')[0];
+    }
+    
     const res = await reservationApi.getAll(params);
     if (res.data.success) {
       reservations.value = res.data.data || [];

@@ -14,6 +14,10 @@ export class Reservation {
     if (filters.search) {
       query = query.ilike('name', `%${filters.search}%`);
     }
+    if (filters.start_date) {
+      // filters.start_date is typically 'YYYY-MM-DD'
+      query = query.gte('visit_date', `${filters.start_date}T00:00:00.000Z`);
+    }
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
