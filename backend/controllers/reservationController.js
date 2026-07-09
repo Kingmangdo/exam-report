@@ -76,6 +76,13 @@ export const enrollStudent = async (req, res) => {
     // 예약 상태를 '입학'으로 변경
     await Reservation.update(id, { ...reservation, status: '입학' });
 
+    // class_names가 전달된 경우 학생의 반을 업데이트
+    const { class_names } = req.body;
+    if (class_names && class_names.trim() !== '') {
+      await Student.update(student.id, { class_name: class_names });
+      student.class_name = class_names;
+    }
+
     res.json({
       success: true,
       message: `${reservation.name} 학생이 등록되었습니다.`,

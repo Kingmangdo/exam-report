@@ -417,8 +417,8 @@ export const reservationApi = {
     return api.delete<ApiResponse<void>>(`/reservations/${id}`);
   },
   // ??�?? �?리
-  enroll: (id: number) => {
-    return api.post<ApiResponse<any>>(`/reservations/${id}/enroll`);
+  enroll: (id: number, classNames?: string) => {
+    return api.post<ApiResponse<any>>(`/reservations/${id}/enroll`, { class_names: classNames });
   },
   // ??벨??�?�??
   getLevelTest: (reservationId: number) => {

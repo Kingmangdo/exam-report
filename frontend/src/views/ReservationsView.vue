@@ -340,6 +340,64 @@
       </div>
     </div>
 
+    <!-- ========== 입학시 반 배정 모달 ========== -->
+    <div v-if="showEnrollClassModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+          <h3 class="text-xl font-bold">입학 처리 및 반 배정</h3>
+          <button @click="showEnrollClassModal = false" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-600 mb-4">
+            <span class="font-bold text-primary">{{ selectedReservation?.name }}</span> 학생을 입학 처리하고 학생 관리에 등록합니다. 배정할 반을 선택하세요.
+          </p>
+          
+          <div class="space-y-3 mb-6 max-h-60 overflow-y-auto border p-3 rounded bg-gray-50">
+            <div v-for="className in allAvailableClasses" :key="className" class="flex items-center">
+              <input
+                :id="`class-${className}`"
+                type="checkbox"
+                :value="className"
+                v-model="targetClasses"
+                class="mr-2"
+              />
+              <label :for="`class-${className}`" class="text-sm text-gray-700">
+                {{ className }}
+              </label>
+            </div>
+            <div class="flex items-center mt-2 border-t pt-2">
+              <input
+                id="class-new"
+                type="checkbox"
+                v-model="showNewClassInput"
+                class="mr-2"
+              />
+              <label for="class-new" class="text-sm text-gray-700 font-bold text-blue-600">새 반 직접 추가하기</label>
+            </div>
+            <div v-if="showNewClassInput" class="flex mt-2">
+              <input
+                v-model="newClassName"
+                type="text"
+                placeholder="예: 중1-특목반"
+                class="flex-1 px-3 py-1.5 border rounded-l-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <button @click="addNewClass" class="px-3 py-1.5 bg-blue-600 text-white rounded-r-lg text-sm hover:bg-blue-700">
+                추가
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-lg">
+          <button @click="showEnrollClassModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold">
+            취소
+          </button>
+          <button @click="confirmEnrollStudent" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold shadow-sm">
+            입학 처리 완료
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 토스트 -->
     <div v-if="toastMsg" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-[70] font-bold">
       {{ toastMsg }}
@@ -349,7 +407,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { reservationApi, kakaoApi } from '../services/api';
+import { reservationApi, kakaoApi, classApi } from '../services/api';
 
 const partColors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6'];
 
@@ -553,11 +611,71 @@ const deleteReservation = async (id: number) => {
 
 // ========== 입학 처리 ==========
 const enrollStudent = async (r: any) => {
-  if (!confirm(`${r.name} 학생을 입학 처리하시겠습니까?\n학생 관리에 자동 등록됩니다.`)) return;
+  // 모달을 열어 반 배정 가능하도록 처리
+  selectedReservation.value = r;
+  targetClasses.value = [];
+  showNewClassInput.value = false;
+  newClassName.value = '';
+  showEnrollClassModal.value = true;
+};
+
+// 예약 입학 모달
+const showEnrollClassModal = ref(false);
+const allAvailableClasses = ref<string[]>([]);
+const targetClasses = ref<string[]>([]);
+const showNewClassInput = ref(false);
+const newClassName = ref('');
+
+// 반 목록 불러오기 (학생 등록과 동일한 방식)
+const loadClasses = async () => {
   try {
-    const res = await reservationApi.enroll(r.id);
+    const res = await classApi.getAll();
+    if (res.data.success) {
+      allAvailableClasses.value = res.data.data.map((c: any) => c.name);
+    }
+  } catch (err) {
+    console.error('반 목록 로드 실패', err);
+  }
+};
+onMounted(() => {
+  loadClasses();
+});
+
+const addNewClass = () => {
+  if (newClassName.value.trim()) {
+    const className = newClassName.value.trim();
+    if (!allAvailableClasses.value.includes(className)) {
+      allAvailableClasses.value.push(className);
+      allAvailableClasses.value.sort();
+    }
+    if (!targetClasses.value.includes(className)) {
+      targetClasses.value.push(className);
+    }
+    newClassName.value = '';
+    showNewClassInput.value = false;
+  }
+};
+
+const confirmEnrollStudent = async () => {
+  if (!selectedReservation.value) return;
+  const r = selectedReservation.value;
+
+  let finalClasses = [...targetClasses.value];
+  if (newClassName.value.trim()) {
+    finalClasses.push(newClassName.value.trim());
+  }
+
+  const confirmMsg = finalClasses.length > 0 
+    ? `${r.name} 학생을 [${finalClasses.join(', ')}] 반으로 배정하여 입학 처리하시겠습니까?`
+    : `${r.name} 학생을 반 배정 없이 입학 처리하시겠습니까?`;
+
+  if (!confirm(confirmMsg + `\n학생 관리에 자동 등록됩니다.`)) return;
+
+  try {
+    const res = await reservationApi.enroll(r.id, finalClasses.join(','));
     if (res.data.success) {
       showToast(res.data.message || `${r.name} 학생이 등록되었습니다.`);
+      showEnrollClassModal.value = false;
       fetchReservations();
     }
   } catch (err: any) {

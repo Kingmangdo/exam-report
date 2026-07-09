@@ -6,7 +6,7 @@ export class Reservation {
     let query = supabase
       .from('reservations')
       .select('*')
-      .order('visit_date', { ascending: true });
+      .order('visit_date', { ascending: false }); // 가장 최근(미래) 예약이 위로 오도록 내림차순 정렬
 
     if (filters.status) {
       query = query.eq('status', filters.status);
