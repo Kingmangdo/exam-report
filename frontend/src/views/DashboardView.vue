@@ -253,7 +253,18 @@ const getKstToday = () => {
 
 const formatDateShort = (dateStr: string) => {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
+  
+  // yy-mm-dd 형식일 경우 yyyy-mm-dd로 변환 (Date 객체 파싱 오류 방지)
+  let parsedDateStr = dateStr;
+  if (/^\d{2}-\d{2}-\d{2}$/.test(dateStr)) {
+    parsedDateStr = `20${dateStr}`;
+  }
+  
+  const d = new Date(parsedDateStr);
+  
+  // 유효하지 않은 날짜인 경우 원본 텍스트 반환
+  if (isNaN(d.getTime())) return dateStr;
+  
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const dayName = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
