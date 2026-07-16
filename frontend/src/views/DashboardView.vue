@@ -106,11 +106,13 @@
                 <div>
                   <div class="flex items-center gap-2 mb-1">
                     <span class="font-bold text-gray-900">{{ warning.student_id ? warning.student_name : '반 전체 알림' }}</span>
-                    <span class="text-xs text-gray-500 border px-1.5 rounded bg-white">{{ warning.class_name }}</span>
-                    <span class="text-xs text-gray-400">{{ warning.exam_date }}</span>
-                  </div>
-                  <p class="text-sm font-medium text-red-700">{{ warning.message }}</p>
+                  <span class="text-xs text-gray-500 border px-1.5 rounded bg-white">{{ warning.class_name }}</span>
+                  <span class="text-xs text-gray-400">{{ warning.exam_date }}</span>
                 </div>
+                <p class="text-sm font-medium text-red-700">
+                  {{ warning.student_id ? warning.message : `[반 전체] ${warning.message}` }}
+                </p>
+              </div>
               </div>
               <button 
                 @click="acknowledgeWarning(warning.id)" 

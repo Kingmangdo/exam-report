@@ -630,11 +630,17 @@ const saveSingleScore = async (sIdx: number) => {
           if (warnRes.data.success && warnRes.data.data) {
             const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
             if (newWarnings.length > 0) {
-              const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => {
-                if (w.student_name) return `⚠️ [학생경고] ${w.student_name} - ${w.message}`;
-                return `🚨 [반전체경고] ${w.message}`;
-              })));
-              warningMessages.value = uniqueMessages as string[];
+              // 중복 텍스트 완벽하게 걸러내기
+              const uniqueSet = new Set<string>();
+              newWarnings.forEach((w: any) => {
+                if (w.student_name) {
+                  uniqueSet.add(`⚠️ [학생경고] ${w.student_name} - ${w.message}`);
+                } else {
+                  // 반전체경고 문구 포맷팅
+                  uniqueSet.add(`🚨 [반전체경고] ${w.class_name} ${w.message}`);
+                }
+              });
+              warningMessages.value = Array.from(uniqueSet);
               showWarningModal.value = true;
             } else {
               showToast(`${student.name} 성적이 저장되었습니다.`);
@@ -710,12 +716,17 @@ const saveAllScores = async () => {
         if (warnRes.data.success && warnRes.data.data) {
           const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
           if (newWarnings.length > 0) {
-            // 중복된 메시지 제거 (예: 반 전체 경고가 여러 개일 경우 가장 최신 1개만 표시)
-            const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => {
-              if (w.student_name) return `⚠️ [학생경고] ${w.student_name} - ${w.message}`;
-              return `🚨 [반전체경고] ${w.message}`;
-            })));
-            warningMessages.value = uniqueMessages as string[];
+            // 중복 텍스트 완벽하게 걸러내기
+            const uniqueSet = new Set<string>();
+            newWarnings.forEach((w: any) => {
+              if (w.student_name) {
+                uniqueSet.add(`⚠️ [학생경고] ${w.student_name} - ${w.message}`);
+              } else {
+                // 반전체경고 문구 포맷팅
+                uniqueSet.add(`🚨 [반전체경고] ${w.class_name} ${w.message}`);
+              }
+            });
+            warningMessages.value = Array.from(uniqueSet);
             showWarningModal.value = true;
           } else {
             showToast('모든 성적이 저장되었습니다.');
