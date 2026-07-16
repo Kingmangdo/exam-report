@@ -111,7 +111,7 @@
         <div class="p-3 bg-gray-50 border-b flex justify-between items-center">
           <h3 class="text-base font-bold text-gray-800">학생 목록</h3>
           <button
-            v-if="isAdmin"
+            v-if="!isStaff"
             @click="openStudentAssignModal"
             class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
           >
@@ -548,6 +548,11 @@ import { classApi, studentApi, counselingApi, supplementaryApi } from '../servic
 import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
 
+const userJson = localStorage.getItem('user');
+const user = userJson ? JSON.parse(userJson) : null;
+const isAdmin = computed(() => user && user.role === 'admin');
+const isStaff = computed(() => user && user.username?.startsWith('staff'));
+
 // 학습관리에서는 YYYY-MM-DD 형식 사용 (DB, input[type=date] 모두 이 형식)
 const getTodayFull = () => {
   const d = new Date();
@@ -778,10 +783,7 @@ const sortedClassStudents = computed(() => {
   });
 });
 
-// 권한 확인
-const user = JSON.parse(localStorage.getItem('user') || '{}');
-const isAdmin = computed(() => user.role === 'admin');
-const isCommon = computed(() => user.username?.startsWith('staff'));
+// 권한 관련 코드는 스크립트 상단에 정의된 것을 사용하므로 중복 선언 제거
 
 // 수업 요일 옵션 (월~일)
 const weekdayOptions = ['월', '화', '수', '목', '금', '토', '일'];
