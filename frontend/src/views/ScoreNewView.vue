@@ -30,8 +30,8 @@
               <div v-for="(test, idx) in rtTestTypes" :key="idx" class="flex items-center gap-2 mb-2">
                 <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
                 <select v-model="test.type" class="px-2 py-1 text-xs border rounded bg-white" @change="updateAllScoreForms">
+                  <option value="pf">Clear / Clinic</option>
                   <option value="score">100점 만점</option>
-                  <option value="pf">Pass/Fail</option>
                 </select>
                 <button @click="removeTestType('rt', idx)" class="text-red-500 text-xs">삭제</button>
               </div>
@@ -67,7 +67,7 @@
               
               <!-- RT 테스트 컬럼들 -->
               <th v-for="(test, idx) in rtTestTypes" :key="'rt-h-'+idx" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                RT: {{ test.name || '미지정' }} ({{ test.type === 'pf' ? 'P/F' : '100점' }})
+                RT: {{ test.name || '미지정' }} ({{ test.type === 'pf' ? 'Clear/Clinic' : '100점' }})
               </th>
 
               <!-- 단어 테스트 컬럼들 -->
@@ -101,8 +101,8 @@
               <td v-for="(test, tIdx) in rtTestTypes" :key="'rt-i-'+sIdx+'-'+tIdx" class="px-2 py-3 text-center">
                 <template v-if="scoreForms[sIdx]?.rt_details?.[tIdx]">
                   <div v-if="test.type === 'pf'" class="flex gap-1 justify-center">
-                    <button @click="setRtPf(sIdx, tIdx, 'P')" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'P' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-400 border-gray-200 hover:border-green-500'">P</button>
-                    <button @click="setRtPf(sIdx, tIdx, 'F')" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'F' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200 hover:border-red-500'">F</button>
+                    <button @click="setRtPf(sIdx, tIdx, 'P')" :disabled="scoreForms[sIdx]?.absent" class="px-2 h-8 text-xs font-bold rounded border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'P' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-500 border-gray-200 hover:border-green-500'">Clear</button>
+                    <button @click="setRtPf(sIdx, tIdx, 'F')" :disabled="scoreForms[sIdx]?.absent" class="px-2 h-8 text-xs font-bold rounded border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].rt_details[tIdx].correct === 'F' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-500 border-gray-200 hover:border-red-500'">Clinic</button>
                   </div>
                   <input v-else v-model.number="scoreForms[sIdx].rt_details[tIdx].correct" type="number" min="0" max="100" step="0.1" placeholder="점수" class="w-16 px-2 py-1 text-sm border rounded text-center disabled:bg-gray-200 disabled:cursor-not-allowed" :disabled="scoreForms[sIdx]?.absent" @input="calculateScore(sIdx)" />
                 </template>
@@ -216,8 +216,9 @@ import type { Student } from '../types';
 const selectedClass = ref<string>('');
 const examDate = ref<string>(getToday());
 const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
+const clinicComment = '오늘 우리 학생은 Review Test 오답 보완을 위해 Clinic을 진행했습니다. 밀착 감독하에 틀린 문제를 스스로 다시 풀며 취약한 오답 요인을 꼼꼼하게 정리해 Clear했습니다.';
 
-const rtTestTypes = ref<Array<{ name: string; type: 'score' | 'pf' }>>([{ name: 'RT 1', type: 'score' }]);
+const rtTestTypes = ref<Array<{ name: string; type: 'score' | 'pf' }>>([{ name: 'RT 1', type: 'pf' }]);
 const wordTestTypes = ref<Array<{ name: string; total: number | null }>>([{ name: '단어 1', total: null }]);
 
 const allStudents = ref<Student[]>([]);
@@ -233,7 +234,7 @@ const assignmentMap: Record<string, number> = { 'A': 100, 'B': 85, 'C': 70, 'F':
 
   const addTestType = (type: 'rt' | 'word') => {
     if (type === 'rt') {
-      rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, type: 'score' });
+      rtTestTypes.value.push({ name: `RT ${rtTestTypes.value.length + 1}`, type: 'pf' });
     } else {
     wordTestTypes.value.push({ name: `단어 ${wordTestTypes.value.length + 1}`, total: null });
   }
@@ -338,8 +339,17 @@ const calculateScore = (sIdx: number) => {
   
   // RT 평균 점수 (100점 만점으로 직접 입력된 점수 사용)
   let rtSum = 0;
+  let rtClinicFound = false;
   rtTestTypes.value.forEach((test, tIdx) => {
-    let score = 0; const val = form.rt_details[tIdx]?.correct; if (test.type === 'pf') { if (val === 'P') score = 100; else if (val === 'F') score = 0; } else { score = Number(val) || 0; }
+    let score = 0; 
+    const val = form.rt_details[tIdx]?.correct; 
+    if (test.type === 'pf') { 
+      if (val === 'P') score = 100; 
+      else if (val === 'F') { score = 0; rtClinicFound = true; } 
+    } else { 
+      score = Number(val) || 0; 
+      if (score < 50) rtClinicFound = true;
+    }
     rtSum += score; // correct가 이미 0-100 점수
   });
   const rtAvg = rtTestTypes.value.length > 0 ? rtSum / rtTestTypes.value.length : 0;
@@ -362,21 +372,30 @@ const calculateScore = (sIdx: number) => {
   });
   const wordAvg = wordTestTypes.value.length > 0 ? wordSum / wordTestTypes.value.length : 0;
 
-  // 85점 미만인 경우 코멘트 자동 추가 (수동 편집하지 않은 경우에만)
+  // 85점 미만인 경우 및 RT Clinic인 경우 코멘트 자동 추가 (수동 편집하지 않은 경우에만)
   if (!form.commentManuallyEdited) {
-    const currentComment = (form.comment || '').trim();
+    let currentComment = (form.comment || '').trim();
+    
     if (retestFound) {
       // 재시험 코멘트가 없으면 추가
       if (!currentComment.includes(retestComment)) {
-        form.comment = currentComment ? `${currentComment} ${retestComment}` : retestComment;
+        currentComment = currentComment ? `${currentComment}\n${retestComment}` : retestComment;
       }
     } else {
       // 재시험이 없으면 자동생성 코멘트만 제거
-      const commentWithoutRetest = currentComment.replace(new RegExp(retestComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
-      if (commentWithoutRetest !== currentComment) {
-        form.comment = commentWithoutRetest;
-      }
+      currentComment = currentComment.replace(new RegExp(retestComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
     }
+
+    if (rtClinicFound) {
+      // 클리닉 코멘트가 없으면 추가
+      if (!currentComment.includes(clinicComment)) {
+        currentComment = currentComment ? `${currentComment}\n${clinicComment}` : clinicComment;
+      }
+    } else {
+      currentComment = currentComment.replace(new RegExp(clinicComment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
+    }
+
+    form.comment = currentComment;
   }
 
   // 총점 및 평균 (RT, 단어, 과제 3개 항목)
@@ -424,7 +443,7 @@ const onClassChange = () => {
 
   const loadExistingScores = async () => {
     // 테스트 종류 초기화 (기본값으로)
-    rtTestTypes.value = [{ name: 'RT 1', type: 'score' }];
+    rtTestTypes.value = [{ name: 'RT 1', type: 'pf' }];
     wordTestTypes.value = [{ name: '단어 1', total: null }];
 
   // 상태 초기화 (시험일자 변경 시 기본값으로)
@@ -758,7 +777,7 @@ const resetAllScores = async () => {
   }
   
     // 테스트 종류 초기화
-    rtTestTypes.value = [{ name: 'RT 1', type: 'score' }];
+    rtTestTypes.value = [{ name: 'RT 1', type: 'pf' }];
     wordTestTypes.value = [{ name: '단어 1', total: null }];
 
   // 입력 폼 및 계산 결과 초기화

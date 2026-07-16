@@ -476,13 +476,13 @@
             <!-- 코멘트 -->
             <div v-if="displayComment" class="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 class="font-semibold text-gray-800 mb-2">코멘트</h3>
-              <p class="text-gray-700">{{ displayComment }}</p>
+              <p class="text-gray-700 whitespace-pre-wrap">{{ displayComment }}</p>
             </div>
 
             <!-- 종합 문구 -->
             <div v-if="reportData.general_comment" class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
               <h3 class="font-semibold text-gray-800 mb-2">종합 문구</h3>
-              <p class="text-gray-700">{{ reportData.general_comment }}</p>
+              <p class="text-gray-700 whitespace-pre-wrap">{{ reportData.general_comment }}</p>
             </div>
           </div>
         </div>

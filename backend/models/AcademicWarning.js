@@ -216,7 +216,7 @@ export class AcademicWarning {
             exam_date: latestScore.exam_date,
             warning_type: 'RT_3_FAIL',
             test_name: rtName,
-            message: `${rtName} 시험 3회 연속 Fail (재시험 대상)`
+            message: `${rtName} 시험 3회 연속 Clinic 대상`
           });
         }
       }
@@ -293,9 +293,9 @@ export class AcademicWarning {
           .eq('test_name', rtName)
           .is('student_id', null);
 
-        // 응시자 50% 초과 (절반보다 많은 학생이 Fail) 인 경우에만 새롭게 1건 추가
+        // 응시자 50% 초과 (절반보다 많은 학생이 Clinic) 인 경우에만 새롭게 1건 추가
         if (failCount > (totalStudents / 2)) {
-          const message = `난이도 조절 실패 의심 - ${rtName} 응시자 ${totalStudents}명중 ${failCount}명 Fail`;
+          const message = `${className} ${rtName} Clinic ${totalStudents}명중 ${failCount}명 Clinic`;
           
           await supabase
             .from('academic_warnings')
