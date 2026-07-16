@@ -110,7 +110,7 @@
     <main class="container mx-auto px-4 py-8">
       <div v-if="user" class="mb-4 text-right">
         <span class="text-sm text-gray-600 font-bold">
-          {{ user.name }}님 ({{ user.role === 'admin' ? '관리자' : '강사' }}) 환영합니다.
+          {{ user.name }}님 ({{ user.role === 'admin' ? '원장' : (user.username?.startsWith('staff') ? '조교' : '강사') }}) 환영합니다.
         </span>
       </div>
       <RouterView />

@@ -68,9 +68,9 @@
               <td class="px-4 py-4 whitespace-nowrap text-sm">
                 <span 
                   class="px-2 py-1 rounded-full text-xs font-bold"
-                  :class="user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                  :class="user.role === 'admin' ? 'bg-purple-100 text-purple-700' : (user.username?.startsWith('staff') ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700')"
                 >
-                  {{ user.role === 'admin' ? '관리자' : '강사' }}
+                  {{ user.role === 'admin' ? '원장' : (user.username?.startsWith('staff') ? '조교' : '강사') }}
                 </span>
               </td>
               <td class="px-4 py-4 whitespace-nowrap text-sm text-center font-medium">
@@ -110,8 +110,8 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">권한</label>
             <select v-model="userForm.role" class="w-full px-4 py-2 border rounded-lg">
-              <option value="admin">관리자</option>
-              <option value="instructor">강사</option>
+              <option value="admin">원장</option>
+              <option value="instructor">강사 (staff 계정은 조교로 자동 표시됨)</option>
             </select>
           </div>
           <div>
