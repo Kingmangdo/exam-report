@@ -176,6 +176,33 @@
     <div v-if="saveSuccessMessage" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
       {{ saveSuccessMessage }}
     </div>
+
+    <!-- 학습 경고 안내 커스텀 모달 (복사 지원) -->
+    <div v-if="showWarningModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
+        <div class="bg-red-50 p-4 border-b border-red-100 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-red-700 flex items-center gap-2">
+            ⚠️ 학습 및 난이도 경고 발생
+          </h3>
+          <button @click="showWarningModal = false" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-gray-600 mb-4">성적 저장이 완료되었습니다.<br/>아래 경고 내역을 복사하여 원장님께 보고해 주세요.</p>
+          
+          <div class="bg-gray-50 p-4 rounded border text-sm text-gray-800 font-medium whitespace-pre-wrap select-all">
+            {{ warningMessages.join('\n') }}
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button @click="showWarningModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 font-bold">닫기</button>
+            <button @click="copyWarnings" class="px-4 py-2 bg-primary text-white rounded hover:bg-blue-800 font-bold flex items-center gap-2">
+              <span>📋 텍스트 복사</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -539,6 +566,19 @@ const saveDraftAll = async () => {
   }
 };
 
+const warningMessages = ref<string[]>([]);
+const showWarningModal = ref(false);
+
+const copyWarnings = async () => {
+  const textToCopy = warningMessages.value.join('\n');
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    alert('복사되었습니다! 원장님께 카톡으로 바로 붙여넣기(Ctrl+V) 해주세요.');
+  } catch (err) {
+    alert('복사에 실패했습니다. 텍스트를 직접 드래그해서 복사해 주세요.');
+  }
+};
+
 const saveSingleScore = async (sIdx: number) => {
   savingSingle.value[sIdx] = true;
   savedSingle.value[sIdx] = false;
@@ -590,9 +630,12 @@ const saveSingleScore = async (sIdx: number) => {
           if (warnRes.data.success && warnRes.data.data) {
             const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
             if (newWarnings.length > 0) {
-              const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`)));
-              const msg = uniqueMessages.join('\n');
-              alert(`저장 완료\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인 가능합니다)`);
+              const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => {
+                if (w.student_name) return `⚠️ [학생경고] ${w.student_name} - ${w.message}`;
+                return `🚨 [반전체경고] ${w.message}`;
+              })));
+              warningMessages.value = uniqueMessages as string[];
+              showWarningModal.value = true;
             } else {
               showToast(`${student.name} 성적이 저장되었습니다.`);
             }
@@ -668,9 +711,12 @@ const saveAllScores = async () => {
           const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
           if (newWarnings.length > 0) {
             // 중복된 메시지 제거 (예: 반 전체 경고가 여러 개일 경우 가장 최신 1개만 표시)
-            const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`)));
-            const msg = uniqueMessages.join('\n');
-            alert(`✅ ${classStudents.value.length}명 전체 성적 저장 완료!\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인하세요)`);
+            const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => {
+              if (w.student_name) return `⚠️ [학생경고] ${w.student_name} - ${w.message}`;
+              return `🚨 [반전체경고] ${w.message}`;
+            })));
+            warningMessages.value = uniqueMessages as string[];
+            showWarningModal.value = true;
           } else {
             showToast('모든 성적이 저장되었습니다.');
           }

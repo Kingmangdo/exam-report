@@ -212,8 +212,6 @@ export class AcademicWarning {
 
         // 응시자 50% 초과 (절반보다 많은 학생이 Fail)
         if (failCount > (totalStudents / 2)) {
-          const failRate = Math.round((failCount / totalStudents) * 100);
-          
           // 기존에 해당 시험에 대해 경고가 있었는지 확인 후 업데이트 (중복 방지 및 수치 갱신)
           const { data: existing } = await supabase
             .from('academic_warnings')
@@ -225,7 +223,7 @@ export class AcademicWarning {
             .is('student_id', null)
             .maybeSingle();
 
-          const message = `난이도 조절 실패 의심 - ${rtName} 응시자 중 ${failCount}명 Fail (${failRate}%)`;
+          const message = `${className} ${rtName} Fail ${totalStudents}명중 ${failCount}명 Fail`;
 
           if (existing) {
             await supabase
