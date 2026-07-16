@@ -181,7 +181,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { studentApi, scoreApi } from '../services/api';
+import { studentApi, scoreApi, warningApi } from '../services/api';
 import { getToday } from '../utils/date';
 import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
@@ -581,10 +581,30 @@ const saveSingleScore = async (sIdx: number) => {
       console.error('임시저장 삭제 실패:', e);
     }
     
-    savedSingle.value[sIdx] = true;
-    showToast(`${student.name} 성적이 저장되었습니다.`);
-    setTimeout(() => { savedSingle.value[sIdx] = false; }, 2000);
-  } catch (err: any) {
+      savedSingle.value[sIdx] = true;
+      
+      // 비동기 계산을 위해 백엔드가 경고를 생성할 시간을 약간 줍니다 (1.5초)
+      setTimeout(async () => {
+        try {
+          const warnRes = await warningApi.getUnacknowledged();
+          if (warnRes.data.success && warnRes.data.data) {
+            const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
+            if (newWarnings.length > 0) {
+              const msg = newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`).join('\n');
+              alert(`저장 완료\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인 가능합니다)`);
+            } else {
+              showToast(`${student.name} 성적이 저장되었습니다.`);
+            }
+          } else {
+            showToast(`${student.name} 성적이 저장되었습니다.`);
+          }
+        } catch (e) {
+          showToast(`${student.name} 성적이 저장되었습니다.`);
+        }
+      }, 1500);
+
+      setTimeout(() => { savedSingle.value[sIdx] = false; }, 3000);
+    } catch (err: any) {
     console.error('개별 저장 오류:', err.response?.data || err.message);
     alert(`저장 실패: ${err.response?.data?.message || err.message}`);
   } finally {
@@ -639,7 +659,26 @@ const saveAllScores = async () => {
       console.error('임시저장 삭제 실패:', e);
     }
     
-    showToast('모든 성적이 저장되었습니다.');
+    // 전체 저장 완료 후 1.5초 대기 후 경고 체크
+    setTimeout(async () => {
+      try {
+        const warnRes = await warningApi.getUnacknowledged();
+        if (warnRes.data.success && warnRes.data.data) {
+          const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
+          if (newWarnings.length > 0) {
+            const msg = newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`).join('\n');
+            alert(`✅ ${classStudents.value.length}명 전체 성적 저장 완료!\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인하세요)`);
+          } else {
+            showToast('모든 성적이 저장되었습니다.');
+          }
+        } else {
+          showToast('모든 성적이 저장되었습니다.');
+        }
+      } catch (e) {
+        showToast('모든 성적이 저장되었습니다.');
+      }
+    }, 1500);
+
   } catch (err: any) {
     console.error('성적 저장 오류 상세:', err.response?.data || err.message);
     const errorMsg = err.response?.data?.message || err.message;

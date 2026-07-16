@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { AcademicWarning } from './AcademicWarning.js';
 
 export class Score {
   // 모든 성적 조회 (필터링 가능)
@@ -235,6 +236,9 @@ export class Score {
         savedScore.class_average = classAverage;
       }
     }
+
+    // 비동기로 학습 경고 백그라운드 체크 실행 (성능 저하 없음)
+    AcademicWarning.checkWarningsInBackground(payload.student_id, payload.class_name, payload.exam_date);
 
     return savedScore;
   }

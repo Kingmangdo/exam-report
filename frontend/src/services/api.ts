@@ -356,6 +356,16 @@ export const paymentApi = {
   }
 };
 
+// 학습 경고 API
+export const warningApi = {
+  getUnacknowledged: () => {
+    return api.get<ApiResponse<any[]>>('/warnings');
+  },
+  acknowledge: (id: number) => {
+    return api.put<ApiResponse<any>>(`/warnings/${id}/acknowledge`);
+  }
+};
+
 // 카카????림??API
 export const kakaoApi = {
   sendReport: (scoreId: number) => {

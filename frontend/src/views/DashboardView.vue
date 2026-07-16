@@ -85,19 +85,40 @@
         </div>
       </div>
 
-      <!-- 특이사항 -->
+      <!-- 특이사항 (학습 경고) -->
       <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div class="bg-red-50 px-5 py-3 border-b">
-          <h3 class="font-bold text-red-700 text-sm">특이사항</h3>
+        <div class="bg-red-50 px-5 py-3 border-b flex justify-between items-center">
+          <h3 class="font-bold text-red-700 text-sm flex items-center gap-2">
+            🚨 오늘의 학습 경고 상황판
+            <span v-if="alertItems.length > 0" class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{{ alertItems.length }}</span>
+          </h3>
         </div>
-        <div v-if="alertItems.length === 0" class="p-6 text-center text-gray-400 text-sm">
-          특이사항이 없습니다.
+        <div v-if="alertItems.length === 0" class="p-8 text-center text-gray-400 text-sm">
+          확인하지 않은 학습 경고가 없습니다. 🎉
         </div>
-        <div v-else class="divide-y divide-gray-100">
-          <div v-for="(item, idx) in alertItems" :key="idx" class="px-5 py-3 flex items-center gap-3 text-sm">
-            <span class="text-red-500">•</span>
-            <span class="font-bold text-gray-800">{{ item.name }}</span>
-            <span class="text-gray-600">{{ item.message }}</span>
+        <div v-else class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+          <div v-for="warning in alertItems" :key="warning.id" class="px-5 py-4 hover:bg-red-50/50 transition">
+            <div class="flex items-start justify-between">
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-red-500">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="font-bold text-gray-900">{{ warning.student_id ? warning.student_name : '반 전체 알림' }}</span>
+                    <span class="text-xs text-gray-500 border px-1.5 rounded bg-white">{{ warning.class_name }}</span>
+                    <span class="text-xs text-gray-400">{{ warning.exam_date }}</span>
+                  </div>
+                  <p class="text-sm font-medium text-red-700">{{ warning.message }}</p>
+                </div>
+              </div>
+              <button 
+                @click="acknowledgeWarning(warning.id)" 
+                class="px-3 py-1.5 bg-white border border-gray-300 text-gray-600 rounded text-xs font-bold hover:bg-gray-100 transition shadow-sm"
+              >
+                확인 (지우기)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -107,7 +128,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { statisticsApi, attendanceApi, classApi, studentApi, dailyBoardApi } from '../services/api';
+import { statisticsApi, attendanceApi, classApi, studentApi, dailyBoardApi, warningApi } from '../services/api';
 import type { Statistics } from '../types';
 
 const statistics = ref<Statistics | null>(null);
@@ -193,22 +214,29 @@ const classOverview = computed(() => {
   });
 });
 
-const alertItems = computed(() => {
-  const items: any[] = [];
-  
-  // 학원 전체 공지/특이사항 추가 (데일리 보드 메모)
-  if (globalMemo.value) {
-    items.push({ name: '📢 학원 공지', message: globalMemo.value });
-  }
+const alertItems = ref<any[]>([]);
 
-  consecutiveAbsent.value.forEach(s => {
-    items.push({ name: s.name, message: `${s.consecutive_days}일 연속 결석 (학부모 연락 필요)` });
-  });
-  todayAttendance.value.filter(a => a.status === '지각').forEach(a => {
-    items.push({ name: a.students?.name || '알 수 없음', message: `지각 (등원 ${a.arrival_time || ''})` });
-  });
-  return items;
-});
+const loadWarnings = async () => {
+  try {
+    const res = await warningApi.getUnacknowledged();
+    if (res.data.success) {
+      alertItems.value = res.data.data || [];
+    }
+  } catch (err) {
+    console.error('학습 경고 불러오기 실패:', err);
+  }
+};
+
+const acknowledgeWarning = async (id: number) => {
+  try {
+    const res = await warningApi.acknowledge(id);
+    if (res.data.success) {
+      alertItems.value = alertItems.value.filter(item => item.id !== id);
+    }
+  } catch (err) {
+    console.error('경고 확인 처리 실패:', err);
+  }
+};
 
 onMounted(async () => {
   try {
@@ -239,6 +267,9 @@ onMounted(async () => {
       const hwRes = await classApi.getHomeworkDue(today);
       homeworkDue.value = hwRes.data.success ? hwRes.data.data : [];
     } catch (e) { console.error(e); }
+
+    // 학습 경고 로드
+    await loadWarnings();
 
   } catch (err: any) {
     error.value = err.response?.data?.message || '데이터를 불러오는 중 오류가 발생했습니다.';

@@ -76,6 +76,7 @@ import aiRouter from './routes/ai.js';
 import dailyBoardRouter from './routes/dailyBoard.js';
 import attendanceRouter from './routes/attendance.js';
 import softLandingRouter from './routes/softLanding.js';
+import warningsRouter from './routes/warnings.js';
 
 app.use('/api/students', studentsRouter);
 app.use('/api/scores', scoresRouter);
@@ -95,6 +96,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/daily-board', dailyBoardRouter);
 app.use('/api/attendance', attendanceRouter);
 app.use('/api/soft-landing', softLandingRouter);
+app.use('/api/warnings', warningsRouter);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
