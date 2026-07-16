@@ -159,44 +159,64 @@ const todayReservations = ref<any[]>([]);
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
   { name: '독강 데일리 보드', path: '/daily-board', adminOnly: false },
-  { name: '신입생 소프트랜딩', path: '/soft-landing', adminOnly: false },
-  { name: '학생 관리', path: '/students', adminOnly: true },
-  {
-    name: '반 관리',
-    path: '/classes',
-    adminOnly: false,
-    children: [
-      { name: '반 관리', path: '/classes' },
-      { name: '보강 관리', path: '/supplementary' }
-    ]
-  },
-  { 
-    name: '성적 입력', 
-    path: '/scores-input', 
-    adminOnly: false,
-    children: [
-      { name: 'Daily Report', path: '/scores/new' },
-      { name: '성취평가', path: '/scores/bimonthly/new' }
-    ]
-  },
-  { 
-    name: '성적 발송', 
-    path: '/scores-view', 
-    adminOnly: false,
-    children: [
-      { name: 'Daily Report', path: '/scores' },
-      { name: '성취평가', path: '/scores/bimonthly' }
-    ]
-  },
   { name: '출결 관리', path: '/attendance', adminOnly: false },
-  { name: '알림톡 발송', path: '/notification', adminOnly: true },
-  { name: '예약 관리', path: '/reservations', adminOnly: true },
+  {
+    name: '학생/반 관리',
+    path: '/manage-students',
+    adminOnly: false,
+    children: [
+      { name: '학생 관리', path: '/students', adminOnly: true },
+      { name: '반 관리', path: '/classes', adminOnly: false },
+      { name: '보강 관리', path: '/supplementary', adminOnly: false },
+      { name: '신입생 소프트랜딩', path: '/soft-landing', adminOnly: false, excludeStaff: true }
+    ]
+  },
+  { 
+    name: '성적 관리', 
+    path: '/manage-scores', 
+    adminOnly: false,
+    children: [
+      { name: '성적 입력 (Daily)', path: '/scores/new', adminOnly: false },
+      { name: '성적 입력 (성취)', path: '/scores/bimonthly/new', adminOnly: false },
+      { name: '성적 발송 (Daily)', path: '/scores', adminOnly: false },
+      { name: '성적 발송 (성취)', path: '/scores/bimonthly', adminOnly: false }
+    ]
+  },
+  {
+    name: '학원 관리',
+    path: '/manage-academy',
+    adminOnly: true,
+    children: [
+      { name: '예약 관리', path: '/reservations', adminOnly: true },
+      { name: '알림톡 발송', path: '/notification', adminOnly: true }
+    ]
+  },
   { name: '설정', path: '/settings', adminOnly: true }
 ]);
 
 const filteredNavItems = computed(() => {
   if (!user) return [];
-  return navItems.value.filter(item => !item.adminOnly || user.role === 'admin');
+  const isAdmin = user.role === 'admin';
+  const isStaff = user.username?.startsWith('staff');
+
+  return navItems.value
+    .map(item => {
+      const newItem = { ...item };
+      if (newItem.children) {
+        newItem.children = newItem.children.filter(child => {
+          if (child.adminOnly && !isAdmin) return false;
+          if (child.excludeStaff && isStaff) return false;
+          return true;
+        });
+      }
+      return newItem;
+    })
+    .filter(item => {
+      if (item.adminOnly && !isAdmin) return false;
+      if (item.excludeStaff && isStaff) return false;
+      if (item.children && item.children.length === 0) return false;
+      return true;
+    });
 });
 
 const isChildActive = (item: any) => {
