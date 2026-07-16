@@ -67,8 +67,9 @@ export const enrollStudent = async (req, res) => {
       name: reservation.name,
       school: reservation.school || null,
       grade: reservation.grade || null,
-      phone: reservation.student_phone || null,
-      parent_phone: reservation.parent_phone || null,
+      student_no: reservation.student_phone || null, // 학생 연락처는 student_no 필드에 매핑
+      parent_phone: reservation.parent_phone || null, // 학부모 연락처 1
+      phone: null, // 학부모 연락처 2는 비워둠
       class_name: null
     };
     const student = await Student.create(studentData);
