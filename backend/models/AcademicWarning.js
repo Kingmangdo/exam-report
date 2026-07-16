@@ -6,17 +6,32 @@ export class AcademicWarning {
     const { student_id, class_name, exam_date, warning_type, test_name, message } = data;
     
     // 동일 날짜, 동일 유형의 중복 경고 방지
-    const { data: existing } = await supabase
+    let query = supabase
       .from('academic_warnings')
       .select('id')
       .eq('exam_date', exam_date)
       .eq('class_name', class_name)
       .eq('warning_type', warning_type)
-      .eq('test_name', test_name || '')
-      .eq(student_id ? 'student_id' : 'student_id', student_id ? student_id : null)
-      .maybeSingle();
+      .eq('test_name', test_name || '');
       
-    if (existing) return existing; // 이미 저장됨
+    if (student_id) {
+      query = query.eq('student_id', student_id);
+    } else {
+      query = query.is('student_id', null);
+    }
+    
+    const { data: existing } = await query.maybeSingle();
+      
+    if (existing) {
+      // 반 전체 경고의 경우, 나중에 저장된 학생으로 인해 Fail 인원수가 늘어날 수 있으므로 메시지를 최신으로 업데이트
+      const { data: updated } = await supabase
+        .from('academic_warnings')
+        .update({ message })
+        .eq('id', existing.id)
+        .select('*')
+        .single();
+      return updated;
+    }
 
     const { data: inserted, error } = await supabase
       .from('academic_warnings')
@@ -177,7 +192,7 @@ export class AcademicWarning {
 
     if (!scores || scores.length === 0) return;
 
-    // 결석을 제외한 응시자 기준이 필요하지만, 여기서는 저장된 점수가 있는 사람 기준
+    // 결석을 제외한 응시자 기준
     const totalStudents = scores.length;
 
     // RT 시험 항목별로 Fail 수 집계
@@ -198,14 +213,35 @@ export class AcademicWarning {
         // 응시자 50% 초과 (절반보다 많은 학생이 Fail)
         if (failCount > (totalStudents / 2)) {
           const failRate = Math.round((failCount / totalStudents) * 100);
-          await this.create({
-            student_id: null, // 반 전체 경고
-            class_name: className,
-            exam_date: examDate,
-            warning_type: 'CLASS_FAIL_50',
-            test_name: rtName,
-            message: `난이도 조절 실패 의심 - ${rtName} 응시자 중 ${failCount}명 Fail (${failRate}%)`
-          });
+          
+          // 기존에 해당 시험에 대해 경고가 있었는지 확인 후 업데이트 (중복 방지 및 수치 갱신)
+          const { data: existing } = await supabase
+            .from('academic_warnings')
+            .select('id')
+            .eq('exam_date', examDate)
+            .eq('class_name', className)
+            .eq('warning_type', 'CLASS_FAIL_50')
+            .eq('test_name', rtName)
+            .is('student_id', null)
+            .maybeSingle();
+
+          const message = `난이도 조절 실패 의심 - ${rtName} 응시자 중 ${failCount}명 Fail (${failRate}%)`;
+
+          if (existing) {
+            await supabase
+              .from('academic_warnings')
+              .update({ message, is_acknowledged: false })
+              .eq('id', existing.id);
+          } else {
+            await this.create({
+              student_id: null, // 반 전체 경고
+              class_name: className,
+              exam_date: examDate,
+              warning_type: 'CLASS_FAIL_50',
+              test_name: rtName,
+              message
+            });
+          }
         }
       }
     }

@@ -590,7 +590,8 @@ const saveSingleScore = async (sIdx: number) => {
           if (warnRes.data.success && warnRes.data.data) {
             const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
             if (newWarnings.length > 0) {
-              const msg = newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`).join('\n');
+              const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`)));
+              const msg = uniqueMessages.join('\n');
               alert(`저장 완료\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인 가능합니다)`);
             } else {
               showToast(`${student.name} 성적이 저장되었습니다.`);
@@ -666,7 +667,9 @@ const saveAllScores = async () => {
         if (warnRes.data.success && warnRes.data.data) {
           const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
           if (newWarnings.length > 0) {
-            const msg = newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`).join('\n');
+            // 중복된 메시지 제거 (예: 반 전체 경고가 여러 개일 경우 가장 최신 1개만 표시)
+            const uniqueMessages = Array.from(new Set(newWarnings.map((w: any) => `⚠️ [경고] ${w.student_name || '반 전체'} - ${w.message}`)));
+            const msg = uniqueMessages.join('\n');
             alert(`✅ ${classStudents.value.length}명 전체 성적 저장 완료!\n\n${msg}\n\n(자세한 내역은 대시보드에서 확인하세요)`);
           } else {
             showToast('모든 성적이 저장되었습니다.');
