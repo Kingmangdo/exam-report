@@ -626,7 +626,7 @@ const saveSingleScore = async (sIdx: number) => {
       // 비동기 계산을 위해 백엔드가 경고를 생성할 시간을 약간 줍니다 (1.5초)
       setTimeout(async () => {
         try {
-          const warnRes = await warningApi.getUnacknowledged();
+          const warnRes = await warningApi.getActive();
           if (warnRes.data.success && warnRes.data.data) {
             const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
             if (newWarnings.length > 0) {
@@ -712,7 +712,7 @@ const saveAllScores = async () => {
     // 전체 저장 완료 후 1.5초 대기 후 경고 체크
     setTimeout(async () => {
       try {
-        const warnRes = await warningApi.getUnacknowledged();
+        const warnRes = await warningApi.getActive();
         if (warnRes.data.success && warnRes.data.data) {
           const newWarnings = warnRes.data.data.filter((w: any) => w.exam_date === examDate.value && w.class_name === selectedClass.value);
           if (newWarnings.length > 0) {

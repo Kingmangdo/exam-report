@@ -358,11 +358,17 @@ export const paymentApi = {
 
 // 학습 경고 API
 export const warningApi = {
-  getUnacknowledged: () => {
+  getActive: () => {
     return api.get<ApiResponse<any[]>>('/warnings');
   },
   acknowledge: (id: number) => {
     return api.put<ApiResponse<any>>(`/warnings/${id}/acknowledge`);
+  },
+  updateAdminSettings: (id: number, data: { assigned_teachers?: string[], custom_message?: string | null }) => {
+    return api.put<ApiResponse<any>>(`/warnings/${id}/admin-settings`, data);
+  },
+  updateFeedback: (id: number, data: { reason: string, solution: string }) => {
+    return api.put<ApiResponse<any>>(`/warnings/${id}/feedback`, data);
   }
 };
 

@@ -53,15 +53,88 @@ export class AcademicWarning {
     return inserted;
   }
 
-  // 아직 확인되지 않은 최신 경고 조회 (대시보드용)
-  static async getUnacknowledged() {
+  // 강사 배정 및 원장 커스텀 메시지 업데이트
+  static async updateAdminSettings(id, data) {
+    const { assigned_teachers, custom_message, status } = data;
+    
+    // 만약 할당된 강사가 있다면 상태를 'assigned'로 변경 (단, 이미 resolved 상태가 아닐 때만)
+    const updatePayload = {
+      assigned_teachers: assigned_teachers || [],
+      custom_message: custom_message !== undefined ? custom_message : null
+    };
+
+    if (status) {
+      updatePayload.status = status;
+    } else if (assigned_teachers && assigned_teachers.length > 0) {
+      updatePayload.status = 'assigned';
+    }
+
+    const { data: updated, error } = await supabase
+      .from('academic_warnings')
+      .update(updatePayload)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw new Error(error.message);
+    return updated;
+  }
+
+  // 강사 피드백 추가/업데이트
+  static async updateTeacherFeedback(id, teacherName, reason, solution) {
+    // 기존 피드백 가져오기
+    const { data: warning, error: fetchError } = await supabase
+      .from('academic_warnings')
+      .select('teacher_feedback, assigned_teachers')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw new Error(fetchError.message);
+
+    let feedbackArray = warning.teacher_feedback || [];
+    
+    // 이미 해당 강사가 작성한 피드백이 있으면 덮어쓰기
+    const existingIdx = feedbackArray.findIndex(f => f.teacher === teacherName);
+    const newFeedback = {
+      teacher: teacherName,
+      reason,
+      solution,
+      updated_at: new Date().toISOString()
+    };
+
+    if (existingIdx >= 0) {
+      feedbackArray[existingIdx] = newFeedback;
+    } else {
+      feedbackArray.push(newFeedback);
+    }
+
+    // 모든 할당된 강사가 피드백을 작성했는지 확인
+    const assigned = warning.assigned_teachers || [];
+    const allCompleted = assigned.every(tName => feedbackArray.some(f => f.teacher === tName));
+
+    const { data: updated, error } = await supabase
+      .from('academic_warnings')
+      .update({ 
+        teacher_feedback: feedbackArray,
+        status: allCompleted ? 'feedback_completed' : 'assigned'
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    return updated;
+  }
+
+  // 아직 완료(resolved)되지 않은 활성 경고 전체 조회 (대시보드용, 기존 getUnacknowledged 대체)
+  static async getActiveWarnings() {
     const { data, error } = await supabase
       .from('academic_warnings')
       .select(`
         *,
         students(name)
       `)
-      .eq('is_acknowledged', false)
+      .neq('status', 'resolved')
       .order('created_at', { ascending: false });
       
     if (error) throw new Error(error.message);
@@ -72,11 +145,11 @@ export class AcademicWarning {
     }));
   }
 
-  // 경고 확인 처리
+  // 경고 확인 처리 (원장님 최종 확인 시 status = 'resolved' 처리)
   static async acknowledge(id) {
     const { data, error } = await supabase
       .from('academic_warnings')
-      .update({ is_acknowledged: true })
+      .update({ is_acknowledged: true, status: 'resolved' })
       .eq('id', id)
       .select()
       .single();
