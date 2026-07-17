@@ -111,10 +111,15 @@
                   <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                     <div>
                       <p class="font-semibold text-gray-800">{{ rt.name || `RT ${idx + 1}` }}</p>
-                      <p class="text-sm text-gray-500">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                      <p class="text-sm text-gray-500" v-if="rt.type !== 'pf'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
                     </div>
-                    <p class="text-2xl font-bold text-primary">
-                      {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
+                    <p class="text-2xl font-bold" :class="rt.type === 'pf' && rt.correct === 'F' ? 'text-red-600' : 'text-primary'">
+                      <template v-if="rt.type === 'pf'">
+                        {{ rt.correct === 'P' ? 'Clear' : (rt.correct === 'F' ? 'Clinic' : '-') }}
+                      </template>
+                      <template v-else>
+                        {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
+                      </template>
                     </p>
                   </div>
                 </div>
