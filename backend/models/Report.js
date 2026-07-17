@@ -94,8 +94,8 @@ export class Report {
     };
   }
 
-  // 안전하게 숫자로 변환 (NaN 방지)
   static safeNumber(val) {
+    if (val === null || val === undefined) return null; // null 반환 허용
     const num = Number(val);
     return isNaN(num) ? 0 : num;
   }
@@ -194,10 +194,10 @@ export class Report {
         total: this.safeNumber(previousScore.total_score)
       } : null,
       comparison: previousScore ? {
-        average_diff: Math.round((this.safeNumber(score.average_score) - this.safeNumber(previousScore.average_score)) * 100) / 100,
-        total_diff: Math.round((this.safeNumber(score.total_score) - this.safeNumber(previousScore.total_score)) * 100) / 100,
-        trend: this.safeNumber(score.average_score) > this.safeNumber(previousScore.average_score) ? 'up' : 
-               this.safeNumber(score.average_score) < this.safeNumber(previousScore.average_score) ? 'down' : 'stable'
+        average_diff: Math.round(((this.safeNumber(score.average_score)||0) - (this.safeNumber(previousScore.average_score)||0)) * 100) / 100,
+        total_diff: Math.round(((this.safeNumber(score.total_score)||0) - (this.safeNumber(previousScore.total_score)||0)) * 100) / 100,
+        trend: (this.safeNumber(score.average_score)||0) > (this.safeNumber(previousScore.average_score)||0) ? 'up' : 
+               (this.safeNumber(score.average_score)||0) < (this.safeNumber(previousScore.average_score)||0) ? 'down' : 'stable'
       } : null,
       recent_scores: recentScores.map(item => ({
         id: item.id,

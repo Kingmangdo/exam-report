@@ -105,17 +105,17 @@
               <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">RT 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">RT 평균: {{ reportData.score.rt.score.toFixed(1) }}점</p>
+                  <p class="text-sm font-bold text-primary">RT 평균: {{ reportData.score.rt.score === null ? '-' : reportData.score.rt.score.toFixed(1) + '점' }}</p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                     <div>
                       <p class="font-semibold text-gray-800">{{ rt.name || `RT ${idx + 1}` }}</p>
-                      <p class="text-sm text-gray-500" v-if="rt.type !== 'pf'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                      <p class="text-sm text-gray-500" v-if="rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
                     </div>
-                    <p class="text-2xl font-bold" :class="rt.type === 'pf' && rt.correct === 'F' ? 'text-red-600' : 'text-primary'">
-                      <template v-if="rt.type === 'pf'">
-                        {{ rt.correct === 'P' ? 'Clear' : (rt.correct === 'F' ? 'Clinic' : '-') }}
+                    <p class="text-2xl font-bold" :class="rt.correct === 'F' ? 'text-red-600' : 'text-primary'">
+                      <template v-if="rt.correct === 'P' || rt.correct === 'F'">
+                        {{ rt.correct === 'P' ? 'Clear' : 'Clinic' }}
                       </template>
                       <template v-else>
                         {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
@@ -128,11 +128,18 @@
               <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                 <div>
                   <p class="font-semibold text-gray-800">RT점수 (평균)</p>
-                  <p class="text-sm text-gray-500">
+                  <p class="text-sm text-gray-500" v-if="reportData.score.rt.score !== null">
                     {{ reportData.score.rt.correct }} / {{ reportData.score.rt.total }}
                   </p>
                 </div>
-                <p class="text-2xl font-bold text-primary">{{ reportData.score.rt.score.toFixed(1) }}점</p>
+                <p class="text-2xl font-bold text-primary">
+                  <template v-if="reportData.score.rt.score === null">
+                    -
+                  </template>
+                  <template v-else>
+                    {{ reportData.score.rt.score.toFixed(1) }}점
+                  </template>
+                </p>
               </div>
 
               <!-- 단어 테스트 상세 -->

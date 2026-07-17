@@ -146,10 +146,10 @@
 
             <!-- RT 상세 점수 -->
             <template v-if="maxRtCount > 0">
-              <td v-for="n in maxRtCount" :key="'rt-d-'+score.id+'-'+n" class="px-4 py-4 whitespace-nowrap text-sm text-center" :class="score.rt_details && score.rt_details[n-1] && score.rt_details[n-1].type === 'pf' && score.rt_details[n-1].correct === 'F' ? 'text-red-600 font-bold' : 'text-gray-500'">
+              <td v-for="n in maxRtCount" :key="'rt-d-'+score.id+'-'+n" class="px-4 py-4 whitespace-nowrap text-sm text-center" :class="score.rt_details && score.rt_details[n-1] && (score.rt_details[n-1].correct === 'F' || (score.rt_details[n-1].type === 'pf' && score.rt_details[n-1].correct === 'F')) ? 'text-red-600 font-bold' : 'text-gray-500'">
                 <template v-if="score.rt_details && score.rt_details[n-1]">
-                  <template v-if="score.rt_details[n-1].type === 'pf'">
-                    {{ score.rt_details[n-1].correct === 'P' ? 'Clear' : (score.rt_details[n-1].correct === 'F' ? 'Clinic' : '-') }}
+                  <template v-if="score.rt_details[n-1].correct === 'P' || score.rt_details[n-1].correct === 'F'">
+                    {{ score.rt_details[n-1].correct === 'P' ? 'Clear' : 'Clinic' }}
                   </template>
                   <template v-else>
                     {{ ((score.rt_details[n-1].correct / (score.rt_details[n-1].total || 10)) * 100).toFixed(1) }}
@@ -917,7 +917,7 @@ const downloadExcel = () => {
       for (let i = 0; i < maxRtCount.value; i++) {
         if (score.rt_details && score.rt_details[i]) {
           const detail = score.rt_details[i];
-          if (detail.type === 'pf') {
+          if (detail.correct === 'P' || detail.correct === 'F' || detail.type === 'pf') {
             row[`RT ${i + 1}`] = detail.correct === 'P' ? 'Clear' : (detail.correct === 'F' ? 'Clinic' : '-');
           } else {
             const pct = ((detail.correct / (detail.total || 10)) * 100).toFixed(1);
