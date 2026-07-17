@@ -93,13 +93,22 @@ export class Score {
     return Math.round((c / t) * 100 * 100) / 100; // 소수점 2자리
   }
 
-  // 총점 및 평균 계산
+    // 총점 및 평균 계산
   static calculateTotalAndAverage(rtScore, wordScore, assignmentScore) {
     const s1 = Number(rtScore) || 0;
     const s2 = Number(wordScore) || 0;
     const s3 = Number(assignmentScore) || 0;
-    const total = s1 + s2 + s3;
-    const average = total / 3;
+    
+    // 만약 rtScore가 null 이면 단어와 과제 2개 항목으로만 평균 산출
+    let total = s2 + s3;
+    let average = 0;
+    if (rtScore !== null) {
+      total += s1;
+      average = total / 3;
+    } else {
+      average = total / 2;
+    }
+
     return {
       total: Math.round(total * 100) / 100,
       average: Math.round(average * 100) / 100
@@ -137,6 +146,7 @@ export class Score {
       class_name,
       rt_total,
       rt_correct,
+      rt_all_pf, // 클라이언트로부터 전달받음
       word_total,
       word_correct,
       rt_details,
@@ -145,14 +155,31 @@ export class Score {
       comment
     } = data;
 
-    // 카테고리별 점수 계산 (RT는 100점 만점으로 직접 입력된 점수 사용)
+    // 카테고리별 점수 계산
     let rtScore = 0;
+    let isRtAllPf = rt_all_pf;
+    
     if (rt_details && rt_details.length > 0) {
-      // rt.correct가 이미 0-100 점수이므로 직접 사용
-      const rtScores = rt_details.map(rt => Number(rt.correct) || 0);
-      rtScore = rtScores.reduce((a, b) => a + b, 0) / rt_details.length;
+      // 프론트에서 전달받지 못했을 경우 자체 검사
+      if (isRtAllPf === undefined) {
+        isRtAllPf = rt_details.every(rt => rt.type === 'pf');
+      }
+
+      const rtScores = [];
+      rt_details.forEach(rt => {
+        if (rt.type === 'pf') {
+          // PF의 경우 평균 점수 자체에서는 제외하지만, 로직 호환성을 위해 우선 계산
+        } else {
+          rtScores.push(Number(rt.correct) || 0);
+        }
+      });
+      
+      if (rtScores.length > 0) {
+        rtScore = rtScores.reduce((a, b) => a + b, 0) / rtScores.length;
+      } else {
+        rtScore = null; // 모두 PF면 null 부여
+      }
     } else {
-      // 레거시 지원: rt_total이 100이면 rt_correct를 점수로 사용, 아니면 백분율 계산
       rtScore = rt_total === 100 ? rt_correct : (rt_total > 0 ? (rt_correct / rt_total) * 100 : 0);
     }
 
@@ -164,7 +191,7 @@ export class Score {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
     }
 
-    // 총점 및 평균 계산 (RT, 단어, 과제 3개 카테고리 동일 비율)
+    // 총점 및 평균 계산 (RT가 null인 경우 단어+과제로만 평균 계산)
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,
@@ -248,6 +275,7 @@ export class Score {
     const {
       rt_total,
       rt_correct,
+      rt_all_pf, // 클라이언트로부터 전달받음
       word_total,
       word_correct,
       rt_details,
@@ -261,14 +289,30 @@ export class Score {
       return null;
     }
 
-    // 카테고리별 점수 계산 (RT는 100점 만점으로 직접 입력된 점수 사용)
+    // 카테고리별 점수 계산
     let rtScore = 0;
+    let isRtAllPf = rt_all_pf;
+
     if (rt_details && rt_details.length > 0) {
-      // rt.correct가 이미 0-100 점수이므로 직접 사용
-      const rtScores = rt_details.map(rt => Number(rt.correct) || 0);
-      rtScore = rtScores.reduce((a, b) => a + b, 0) / rt_details.length;
+      if (isRtAllPf === undefined) {
+        isRtAllPf = rt_details.every(rt => rt.type === 'pf');
+      }
+
+      const rtScores = [];
+      rt_details.forEach(rt => {
+        if (rt.type === 'pf') {
+          // 제외
+        } else {
+          rtScores.push(Number(rt.correct) || 0);
+        }
+      });
+      
+      if (rtScores.length > 0) {
+        rtScore = rtScores.reduce((a, b) => a + b, 0) / rtScores.length;
+      } else {
+        rtScore = null;
+      }
     } else {
-      // 레거시 지원: rt_total이 100이면 rt_correct를 점수로 사용, 아니면 백분율 계산
       rtScore = rt_total === 100 ? rt_correct : (rt_total > 0 ? (rt_correct / rt_total) * 100 : 0);
     }
 
@@ -280,6 +324,7 @@ export class Score {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
     }
 
+    // 총점 및 평균 계산 (RT가 null인 경우 단어+과제로만 평균 계산)
     const { total, average } = this.calculateTotalAndAverage(
       rtScore,
       wordScore,

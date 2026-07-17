@@ -126,7 +126,7 @@
 
               <!-- 평균 -->
               <td class="px-2 py-3 text-center text-sm font-semibold text-primary">
-                {{ calculatedScores[sIdx]?.average?.toFixed(1) || '-' }}
+                {{ calculatedScores[sIdx]?.average !== null && calculatedScores[sIdx]?.average !== undefined ? calculatedScores[sIdx]?.average?.toFixed(1) : '-' }}
               </td>
 
               <!-- 코멘트 -->
@@ -254,7 +254,7 @@ const removeTestType = (type: 'rt' | 'word', index: number) => {
     scoreForms.value.forEach((form, sIdx) => {
       // RT details sync
       while (form.rt_details.length < rtTestTypes.value.length) {
-        form.rt_details.push({ correct: 0, name: '', type: 'score', total: 100 });
+        form.rt_details.push({ correct: 0, name: '', type: 'pf', total: 100 });
       }
     if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
     
@@ -337,22 +337,34 @@ const calculateScore = (sIdx: number) => {
     return;
   }
   
-  // RT 평균 점수 (100점 만점으로 직접 입력된 점수 사용)
+  // RT 평균 점수 계산 로직 변경 (Clear/Clinic은 점수 합산에서 제외)
   let rtSum = 0;
+  let rtScoreTestCount = 0;
   let rtClinicFound = false;
+  let rtAllPf = rtTestTypes.value.length > 0 && rtTestTypes.value.every(test => test.type === 'pf');
+  let rtClearCount = 0;
+
   rtTestTypes.value.forEach((test, tIdx) => {
     let score = 0; 
     const val = form.rt_details[tIdx]?.correct; 
     if (test.type === 'pf') { 
-      if (val === 'P') score = 100; 
-      else if (val === 'F') { score = 0; rtClinicFound = true; } 
+      // pf 타입은 평균 점수 계산에서 제외
+      if (val === 'F') { rtClinicFound = true; } 
+      else if (val === 'P') { rtClearCount++; }
     } else { 
       score = Number(val) || 0; 
       if (score < 50) rtClinicFound = true;
+      rtSum += score; 
+      rtScoreTestCount++;
     }
-    rtSum += score; // correct가 이미 0-100 점수
   });
-  const rtAvg = rtTestTypes.value.length > 0 ? rtSum / rtTestTypes.value.length : 0;
+  
+  let rtAvg = 0;
+  if (rtScoreTestCount > 0) {
+    rtAvg = rtSum / rtScoreTestCount; // 100점 만점인 테스트들끼리만 평균
+  } else if (rtAllPf) {
+    rtAvg = null; // 모두 pf 테스트인 경우 RT 평균은 계산하지 않음 (null로 표시)
+  }
 
   // 단어 평균 점수
   let wordSum = 0;
@@ -398,15 +410,24 @@ const calculateScore = (sIdx: number) => {
     form.comment = currentComment;
   }
 
-  // 총점 및 평균 (RT, 단어, 과제 3개 항목)
-  const total = rtAvg + wordAvg + (form.assignment_score || 0);
-  const average = total / 3;
+  // 총점 및 평균 (RT가 null인 경우 분모를 2로 조정)
+  let total = wordAvg + (form.assignment_score || 0);
+  let average = 0;
+  if (rtAvg !== null) {
+    total += rtAvg;
+    average = total / 3;
+  } else {
+    average = total / 2;
+  }
 
   calculatedScores.value[sIdx] = {
-    rtScore: rtAvg,
+    rtScore: rtAvg === null ? null : rtAvg,
     wordScore: wordAvg,
     total: Math.round(total * 100) / 100,
-    average: Math.round(average * 100) / 100
+    average: Math.round(average * 100) / 100,
+    rtAllPf: rtAllPf,
+    rtClinicFound: rtClinicFound,
+    rtClearCount: rtClearCount
   };
 };
 
@@ -489,10 +510,10 @@ const onClassChange = () => {
       classStudents.value.forEach((student, sIdx) => {
         const score = data.find((s: any) => s.student_id === student.id);
         if (score) {
-          // average_score가 0이면 결석으로 간주
-          const isAbsent = (score.average_score === 0 || score.average_score === null);
+          // average_score가 0이면 결석으로 간주 (단, 출석했는데 0점인 경우 제외)
+          const isAbsent = (score.average_score === 0 || score.average_score === null) && !score.rt_details?.some((d: any) => d.correct > 0 || d.correct === 'P' || d.correct === 'F') && !score.word_details?.some((d: any) => d.correct > 0) && score.assignment_score === 0;
           scoreForms.value[sIdx] = {
-            rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(() => ({ correct: 0 })),
+      rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100 })),
             word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
             assignment_score: score.assignment_score || 0,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
@@ -532,7 +553,7 @@ const onClassChange = () => {
       }
         scoreForms.value.forEach((form, i) => {
           while (form.rt_details.length < rtTestTypes.value.length) {
-            form.rt_details.push({ correct: 0, name: '', type: 'score', total: 100 });
+            form.rt_details.push({ correct: 0, name: '', type: 'pf', total: 100 });
           }
         if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
         while (form.word_details.length < wordTestTypes.value.length) {
@@ -622,8 +643,9 @@ const saveSingleScore = async (sIdx: number) => {
       student_id: student.id,
       exam_date: examDate.value,
       class_name: selectedClass.value,
-      rt_total: rtTestTypes.value.length * 100, // RT 테스트 개수 * 100점
+      rt_total: rtTestTypes.value.length * 100,
       rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
+      rt_all_pf: calculatedScores.value[sIdx]?.rtAllPf || false,
       word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
       word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
       rt_details: finalRtDetails,
@@ -708,8 +730,9 @@ const saveAllScores = async () => {
         student_id: student.id,
         exam_date: examDate.value,
         class_name: selectedClass.value,
-        rt_total: rtTestTypes.value.length * 100, // RT 테스트 개수 * 100점
+        rt_total: rtTestTypes.value.length * 100,
         rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
+        rt_all_pf: calculatedScores.value[i]?.rtAllPf || false, // 백엔드에서 평균 산출 시 사용
         word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
         word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
         rt_details: finalRtDetails,

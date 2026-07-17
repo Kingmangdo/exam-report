@@ -94,6 +94,12 @@ export class Report {
     };
   }
 
+  // 안전하게 숫자로 변환 (NaN 방지)
+  static safeNumber(val) {
+    const num = Number(val);
+    return isNaN(num) ? 0 : num;
+  }
+
   // 성적표 데이터 조회
   static async getReportData(scoreId) {
     const score = await Score.getById(scoreId);
@@ -162,47 +168,47 @@ export class Report {
         id: score.id,
         exam_date: score.exam_date,
         rt: {
-          total: score.rt_total || 0,
-          correct: score.rt_correct || 0,
-          score: score.rt_score || 0
+          total: this.safeNumber(score.rt_total),
+          correct: this.safeNumber(score.rt_correct),
+          score: this.safeNumber(score.rt_score)
         },
         word: {
-          total: score.word_total || 0,
-          correct: score.word_correct || 0,
-          score: score.word_score || 0,
+          total: this.safeNumber(score.word_total),
+          correct: this.safeNumber(score.word_correct),
+          score: this.safeNumber(score.word_score),
           retest: wordRetest,
           cumulative_correct: totalCumulativeWordCorrect
         },
         rt_details: score.rt_details || [],
         word_details: score.word_details || [],
-        assignment: score.assignment_score || 0,
-        attitude: score.attitude_score || 0,
-        total: score.total_score || 0,
-        average: score.average_score || 0,
-        class_average: score.class_average || 0,
+        assignment: this.safeNumber(score.assignment_score),
+        attitude: this.safeNumber(score.attitude_score),
+        total: this.safeNumber(score.total_score),
+        average: this.safeNumber(score.average_score),
+        class_average: this.safeNumber(score.class_average),
         comment: score.comment || ''
       },
       previous: previousScore ? {
         exam_date: previousScore.exam_date,
-        average: previousScore.average_score,
-        total: previousScore.total_score
+        average: this.safeNumber(previousScore.average_score),
+        total: this.safeNumber(previousScore.total_score)
       } : null,
       comparison: previousScore ? {
-        average_diff: Math.round(((score.average_score || 0) - (previousScore.average_score || 0)) * 100) / 100,
-        total_diff: Math.round(((score.total_score || 0) - (previousScore.total_score || 0)) * 100) / 100,
-        trend: (score.average_score || 0) > (previousScore.average_score || 0) ? 'up' : 
-               (score.average_score || 0) < (previousScore.average_score || 0) ? 'down' : 'stable'
+        average_diff: Math.round((this.safeNumber(score.average_score) - this.safeNumber(previousScore.average_score)) * 100) / 100,
+        total_diff: Math.round((this.safeNumber(score.total_score) - this.safeNumber(previousScore.total_score)) * 100) / 100,
+        trend: this.safeNumber(score.average_score) > this.safeNumber(previousScore.average_score) ? 'up' : 
+               this.safeNumber(score.average_score) < this.safeNumber(previousScore.average_score) ? 'down' : 'stable'
       } : null,
       recent_scores: recentScores.map(item => ({
         id: item.id,
         exam_date: item.exam_date,
-        rt_score: item.rt_score || 0,
-        word_score: item.word_score || 0,
-        assignment_score: item.assignment_score || 0,
-        attitude_score: item.attitude_score || 0,
-        total_score: item.total_score || 0,
-        average_score: item.average_score || 0,
-        class_average: item.class_average || 0
+        rt_score: this.safeNumber(item.rt_score),
+        word_score: this.safeNumber(item.word_score),
+        assignment_score: this.safeNumber(item.assignment_score),
+        attitude_score: this.safeNumber(item.attitude_score),
+        total_score: this.safeNumber(item.total_score),
+        average_score: this.safeNumber(item.average_score),
+        class_average: this.safeNumber(item.class_average)
       })),
       general_comment: generalComment
     };
