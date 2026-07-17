@@ -266,11 +266,11 @@
               <div class="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <p class="text-sm opacity-90">평균 점수</p>
-                  <p class="text-3xl font-bold">{{ reportData.score.average?.toFixed(1) || '0.0' }}점</p>
+                  <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
                 </div>
                 <div>
                   <p class="text-sm opacity-90">반 평균</p>
-                  <p class="text-3xl font-bold">{{ reportData.score.class_average?.toFixed(1) || '0.0' }}점</p>
+                  <p class="text-3xl font-bold">{{ reportData.score.class_average !== null && reportData.score.class_average !== undefined ? reportData.score.class_average.toFixed(1) + '점' : '-' }}</p>
                 </div>
               </div>
             </div>
@@ -281,16 +281,24 @@
               <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">RT 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">RT 평균: {{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점</p>
+                  <p class="text-sm font-bold text-primary">RT 평균: <template v-if="reportData.score.rt?.score === null || isNaN(reportData.score.rt?.score)">-</template><template v-else>{{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점</template></p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <div>
                       <p class="font-semibold text-gray-800 text-sm">{{ rt.name || `RT ${idx + 1}` }}</p>
-                      <p class="text-xs text-gray-500">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                      <p class="text-xs text-gray-500" v-if="rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf' && rt.correct !== 'Clear' && rt.correct !== 'Clinic'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
                     </div>
-                    <p class="text-lg font-bold text-primary">
-                      {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
+                    <p class="text-lg font-bold" :class="rt.correct === 'F' || rt.correct === 'Clinic' ? 'text-red-600' : 'text-primary'">
+                      <template v-if="rt.correct === 'P' || rt.correct === 'F'">
+                        {{ rt.correct === 'P' ? 'Clear' : 'Clinic' }}
+                      </template>
+                      <template v-else-if="rt.correct === 'Clear' || rt.correct === 'Clinic'">
+                        {{ rt.correct }}
+                      </template>
+                      <template v-else>
+                        {{ (Number(rt.total) || 0) > 0 ? ((Number(rt.correct) / Number(rt.total)) * 100).toFixed(1) : '0.0' }}점
+                      </template>
                     </p>
                   </div>
                 </div>
@@ -299,12 +307,17 @@
               <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                 <div>
                   <p class="font-semibold text-gray-800">RT점수 (평균)</p>
-                  <p class="text-sm text-gray-500">
+                  <p class="text-sm text-gray-500" v-if="reportData.score.rt?.score !== null && !isNaN(reportData.score.rt?.score)">
                     {{ reportData.score.rt?.correct || '-' }} / {{ reportData.score.rt?.total || '-' }}
                   </p>
                 </div>
                 <p class="text-2xl font-bold text-primary">
-                  {{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점
+                  <template v-if="reportData.score.rt?.score === null || isNaN(reportData.score.rt?.score)">
+                    -
+                  </template>
+                  <template v-else>
+                    {{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점
+                  </template>
                 </p>
               </div>
 

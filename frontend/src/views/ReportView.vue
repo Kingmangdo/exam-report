@@ -86,11 +86,11 @@
           <div class="grid grid-cols-2 gap-4 text-center">
             <div>
               <p class="text-sm opacity-90">평균 점수</p>
-              <p class="text-3xl font-bold">{{ reportData.score.average.toFixed(1) }}점</p>
+              <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
             </div>
             <div>
               <p class="text-sm opacity-90">반 평균</p>
-              <p class="text-3xl font-bold">{{ reportData.score.class_average.toFixed(1) }}점</p>
+              <p class="text-3xl font-bold">{{ reportData.score.class_average !== null && reportData.score.class_average !== undefined ? reportData.score.class_average.toFixed(1) + '점' : '-' }}</p>
             </div>
           </div>
         </div>
