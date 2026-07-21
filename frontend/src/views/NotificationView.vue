@@ -79,7 +79,7 @@
           <div class="mb-6">
             <label class="block text-sm font-bold text-gray-700 mb-2">템플릿 선택</label>
             <select v-model="selectedTemplate" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-              <option value="UG_9086">상담 안내 (승인 완료)</option>
+              <option value="UJ_6077">상담 안내 (승인 완료)</option>
               <option value="future_notice" disabled>학원 공지사항 (추후 심사 예정)</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">* 현재 '상담 안내' 템플릿만 승인되어 발송 가능합니다.</p>
@@ -276,7 +276,7 @@ const selectedClass = ref('');
 const searchQuery = ref('');
 const selectedStudents = ref<any[]>([]);
 
-const selectedTemplate = ref('UG_9086');
+const selectedTemplate = ref('UJ_6077');
 const activeTab = ref('compose');
 const historyList = ref<any[]>([]);
 const isLoadingHistory = ref(false);

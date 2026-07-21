@@ -8,7 +8,7 @@ async function test() {
   form.append('apikey', process.env.ALIGO_API_KEY || '');
   form.append('userid', process.env.ALIGO_USER_ID || '');
   form.append('senderkey', process.env.ALIGO_SENDER_KEY || '');
-  form.append('tpl_code', 'UG_9086');
+  form.append('tpl_code', 'UJ_6077');
   form.append('sender', process.env.ALIGO_SENDER || '');
   form.append('receiver_1', '01000000000');
   form.append('subject_1', '상담 안내');

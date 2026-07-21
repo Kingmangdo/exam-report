@@ -127,7 +127,7 @@ ${reportUrl}
   }
 };
 
-// ========== 상담 안내 (UG_9086) 알림톡 발송 ==========
+// ========== 상담 안내 (UJ_6077) 알림톡 발송 ==========
 export const sendCounselingNotification = async (req, res) => {
   try {
     const { student_id, class_name, date, content, targets = ['parent', 'student'] } = req.body;
@@ -172,14 +172,19 @@ export const sendCounselingNotification = async (req, res) => {
     const displayClass = class_name ? class_name : '-';
     
     // 알리고 템플릿과 100% 일치해야 하는 메시지 본문
-    const message = `[독강영어전문학원 상담 안내]
-학부모님, 안녕하십니까.
-${student.name} 학생의 상담 내용을 안내해 드립니다.
-■ 클래스 : ${displayClass}
+    const message = `[독강영어전문학원 상담안내]
+
+학부모님, 안녕하십니까
+${student.name} 학생의 상담 내용을
+안내해드립니다.
+
 ■ 이름 : ${student.name}
 ■ 일자 : ${date}
 ■ 내용 : ${content}
-궁금하신 사항은 학원으로 문의해 주시기 바랍니다.
+
+궁금하신 사항은 학원으로 문의해
+주시기 바랍니다.
+
 감사합니다.`;
 
     let isSuccess = false;
@@ -190,7 +195,7 @@ ${student.name} 학생의 상담 내용을 안내해 드립니다.
       const aligoData = {
         receiver_1: r.cleanPhone,
         message_1: message,
-        tpl_code: 'UG_9086',
+        tpl_code: 'UJ_6077',
         button_1: {
           "button": [{
           "name": "채널 추가",
@@ -286,14 +291,19 @@ export const sendAttendanceNotification = async (req, res) => {
 ${student.name}이(가) ${time}에
 안전하게 등원했습니다. 🙂`;
     } else if (type === '하원') {
-      tpl_code = 'UI_1699';
-      message = `[독강영어학원] 하원 알림
+      tpl_code = 'UJ_6076';
+      message = `[독강영어학원] 하원 알림 🔔
 
-안녕하세요, ${student.name} 학부모님
-${student.name}이(가) ${time}에
-하원했습니다. 🙂
+안녕하세요 ${student.name} 학부모님 
+오늘도 꼼꼼하게 한걸음 성장한
+${student.name} 학생이 ${time}에 하원했습니다. 
 
-오늘도 수고했어요, 감사합니다.`;
+‘독’보적인 성적💯은 ‘강’력한🔥
+복습으로 완성할 수 있도록 
+우리 아이에게 따뜻한 
+격려 말씀 부탁드립니다. 
+
+감사합니다.`;
     } else if (type === '지각') {
       tpl_code = 'UI_2941';
       message = `[독강영어학원] 지각 알림
