@@ -182,27 +182,29 @@ export class AcademicWarning {
 
   // 1. 학생별 단어/RT 연속 3회 Clinic(Fail) 여부 체크
   static async _checkStudentWarnings(studentId, className, examDate) {
-    // 해당 학생의 최신 성적 3건을 가져옴 (exam_date 기준 내림차순, 결석-average 0점 제외)
+    // 해당 학생의 최신 성적 3건을 가져옴 (exam_date 기준 내림차순, 결석-total_score 0점 제외)
+    // 이전에는 average_score > 0 으로 제외하려 했으나, RT가 없는 경우 등에서 0처리가 애매할 수 있어 total_score 사용
     const { data: recentScores } = await supabase
       .from('scores')
-      .select('id, exam_date, rt_details, word_details')
+      .select('id, exam_date, rt_details, word_details, total_score, average_score')
       .eq('student_id', studentId)
       .eq('class_name', className)
       .lte('exam_date', examDate)
-      .gt('average_score', 0) // 결석한 학생(평균 0점) 미반영
-      .order('exam_date', { ascending: false })
-      .limit(3);
+      .order('exam_date', { ascending: false });
+      
+    // 결석 데이터(total_score가 0이고 average_score가 0인 경우) 제외하고 3건 추출
+    const validScores = recentScores.filter(s => !(s.total_score === 0 && s.average_score === 0)).slice(0, 3);
 
-    // 3건 미만이면 아직 연속 3회 체크 불가
-    if (!recentScores || recentScores.length < 3) return;
+    // 유효한 성적이 3건 미만이면 연속 3회 체크 불가
+    if (validScores.length < 3) return;
 
     // 단어 테스트 Fail 기준: 정답률 85% 미만
     // RT 테스트 Fail 기준: 점수 50점 미만 또는 'F' (Pass/Fail)
     
-    // 가장 최근 시험의 세부 항목별로 분석
-    const latestScore = recentScores[0];
-    const prev1Score = recentScores[1];
-    const prev2Score = recentScores[2];
+    // 가장 최근 유효한 시험의 세부 항목별로 분석
+    const latestScore = validScores[0];
+    const prev1Score = validScores[1];
+    const prev2Score = validScores[2];
 
     // RT 테스트 체크
     if (latestScore.rt_details && Array.isArray(latestScore.rt_details)) {
@@ -269,24 +271,26 @@ export class AcademicWarning {
     // 해당 반, 해당 날짜의 결석하지 않은 학생 성적 조회
     const { data: scores } = await supabase
       .from('scores')
-      .select('id, rt_details')
+      .select('id, rt_details, total_score, average_score')
       .eq('class_name', className)
-      .eq('exam_date', examDate)
-      .gt('average_score', 0); // 결석한 학생(평균 0점) 제외
+      .eq('exam_date', examDate);
 
-    if (!scores || scores.length === 0) return;
+    // 결석 데이터 제외
+    const validScores = scores ? scores.filter(s => !(s.total_score === 0 && s.average_score === 0)) : [];
+
+    if (validScores.length === 0) return;
 
     // 결석을 제외한 응시자 기준
-    const totalStudents = scores.length;
+    const totalStudents = validScores.length;
 
     // RT 시험 항목별로 Fail 수 집계
-    const firstScore = scores[0];
+    const firstScore = validScores[0];
     if (firstScore.rt_details && Array.isArray(firstScore.rt_details)) {
       for (let i = 0; i < firstScore.rt_details.length; i++) {
         let failCount = 0;
         const rtName = firstScore.rt_details[i].name || `RT ${i+1}`;
 
-        for (const score of scores) {
+        for (const score of validScores) {
           const detail = score.rt_details?.[i];
           if (detail) {
             const isFail = detail.type === 'pf' ? detail.correct === 'F' : Number(detail.correct) < 50;
