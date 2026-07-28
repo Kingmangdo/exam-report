@@ -198,6 +198,10 @@ export class Score {
       assignment_score
     );
 
+    // is_absent 필드가 명시적으로 넘어온 경우, 총점과 평균을 0으로 덮어씌웁니다.
+    const finalTotal = data.is_absent ? 0 : total;
+    const finalAverage = data.is_absent ? 0 : average;
+
     // 학생 정보 조회 (반 평균 계산용)
     const { data: student, error: studentError } = await supabase
       .from('students')
@@ -223,8 +227,8 @@ export class Score {
       rt_details: rt_details || [],
       word_details: word_details || [],
       assignment_score: Number(assignment_score) || 0,
-      total_score: total,
-      average_score: average,
+      total_score: finalTotal,
+      average_score: finalAverage,
       class_average: 0, // 임시값, 저장 후 재계산
       comment: comment || '',
       updated_at: new Date().toISOString()

@@ -332,7 +332,8 @@ const calculateScore = (sIdx: number) => {
       rtScore: 0,
       wordScore: 0,
       total: 0,
-      average: 0
+      average: 0,
+      rtAllPf: false
     };
     return;
   }
@@ -513,7 +514,7 @@ const onClassChange = () => {
           // average_score가 0이면 결석으로 간주 (단, 출석했는데 0점인 경우 제외)
           const isAbsent = (score.average_score === 0 || score.average_score === null) && !score.rt_details?.some((d: any) => d.correct > 0 || d.correct === 'P' || d.correct === 'F') && !score.word_details?.some((d: any) => d.correct > 0) && score.assignment_score === 0;
           scoreForms.value[sIdx] = {
-      rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100 })),
+            rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100 })),
             word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false })),
             assignment_score: score.assignment_score || 0,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
@@ -639,20 +640,21 @@ const saveSingleScore = async (sIdx: number) => {
       total: Number(wordTestTypes.value[idx]?.total) || 0
     }));
 
-    const payload = {
-      student_id: student.id,
-      exam_date: examDate.value,
-      class_name: selectedClass.value,
-      rt_total: rtTestTypes.value.length * 100,
-      rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
-      rt_all_pf: calculatedScores.value[sIdx]?.rtAllPf || false,
-      word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
-      word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
-      rt_details: finalRtDetails,
-      word_details: finalWordDetails,
-      assignment_score: Number(form.assignment_score) || 0,
-      comment: form.comment || ''
-    };
+      const payload = {
+        student_id: student.id,
+        exam_date: examDate.value,
+        class_name: selectedClass.value,
+        rt_total: rtTestTypes.value.length * 100,
+        rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { const test = rtTestTypes.value[idx]; if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } return acc + (Number(d.correct) || 0); }, 0),
+        rt_all_pf: calculatedScores.value[sIdx]?.rtAllPf || false,
+        word_total: wordTestTypes.value.reduce((acc, t) => acc + (Number(t.total) || 0), 0),
+        word_correct: form.word_details.reduce((acc: number, d: any) => acc + (Number(d.correct) || 0), 0),
+        rt_details: finalRtDetails,
+        word_details: finalWordDetails,
+        assignment_score: Number(form.assignment_score) || 0,
+        comment: form.comment || '',
+        is_absent: form.absent // 개별 저장 시에도 결석 여부 전송
+      };
 
     await scoreApi.create(payload);
     
@@ -726,6 +728,7 @@ const saveAllScores = async () => {
         total: Number(wordTestTypes.value[idx]?.total) || 0
       }));
       
+// scoreapi.create 호출 부분 찾아서 저장 로직 확인
       const payload = {
         student_id: student.id,
         exam_date: examDate.value,
@@ -738,7 +741,8 @@ const saveAllScores = async () => {
         rt_details: finalRtDetails,
         word_details: finalWordDetails,
         assignment_score: Number(form.assignment_score) || 0,
-        comment: form.comment || ''
+        comment: form.comment || '',
+        is_absent: form.absent // 결석 여부 명시적 전송
       };
       
       console.log('저장 시도 데이터:', payload);
