@@ -182,4 +182,67 @@ export class Statistics {
       today_sends: todaySends || 0
     };
   }
+
+  // 이달의 단어왕 통계 (중등 1등, 고등 1등)
+  static async getWordKings() {
+    const kstTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+    const year = kstTime.getFullYear().toString().slice(2);
+    const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+    // exam_date 포맷이 "26-07-17" 형태이므로 "26-07-"로 시작하는 데이터 조회
+    const monthPrefix = `${year}-${month}-`;
+
+    const { data: scores, error } = await supabase
+      .from('scores')
+      .select(`
+        word_score,
+        average_score,
+        students!inner(
+          id, name, grade
+        )
+      `)
+      .like('exam_date', `${monthPrefix}%`)
+      .gt('average_score', 0); // 결석 데이터 제외
+
+    if (error) throw new Error(error.message);
+
+    // 학생별 평균 단어 점수 집계
+    const studentStats = {};
+    scores.forEach(s => {
+      const studentId = s.students.id;
+      if (!studentStats[studentId]) {
+        studentStats[studentId] = {
+          name: s.students.name,
+          grade: s.students.grade || '',
+          totalWordScore: 0,
+          count: 0
+        };
+      }
+      studentStats[studentId].totalWordScore += (s.word_score || 0);
+      studentStats[studentId].count++;
+    });
+
+    const middleSchoolStudents = [];
+    const highSchoolStudents = [];
+
+    for (const key in studentStats) {
+      const stat = studentStats[key];
+      const avg = stat.totalWordScore / stat.count;
+      stat.avgWordScore = Math.round(avg * 100) / 100;
+
+      if (stat.grade.includes('중')) {
+        middleSchoolStudents.push(stat);
+      } else if (stat.grade.includes('고')) {
+        highSchoolStudents.push(stat);
+      }
+    }
+
+    // 내림차순 정렬
+    middleSchoolStudents.sort((a, b) => b.avgWordScore - a.avgWordScore);
+    highSchoolStudents.sort((a, b) => b.avgWordScore - a.avgWordScore);
+
+    return {
+      middleSchool: middleSchoolStudents.length > 0 ? middleSchoolStudents[0] : null,
+      highSchool: highSchoolStudents.length > 0 ? highSchoolStudents[0] : null
+    };
+  }
 }

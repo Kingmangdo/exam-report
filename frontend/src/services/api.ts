@@ -260,6 +260,9 @@ export const statisticsApi = {
   getOverall: () => {
     return api.get<ApiResponse<Statistics>>('/statistics/overall');
   },
+  getWordKings: () => {
+    return api.get<ApiResponse<any>>('/statistics/word-kings');
+  },
   getStudent: (studentId: number, startDate?: string, endDate?: string) => {
     return api.get<ApiResponse<any>>(`/statistics/student/${studentId}`, {
       params: { start_date: startDate, end_date: endDate }

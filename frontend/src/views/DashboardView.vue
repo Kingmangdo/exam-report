@@ -128,6 +128,39 @@
         </div>
       </div>
 
+      <!-- 이달의 단어왕 -->
+      <div v-if="user?.role === 'admin' && wordKings">
+        <h3 class="text-sm font-bold text-gray-500 mb-3 mt-4">🏆 이달의 단어왕</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+          <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl shadow-sm border border-yellow-200 p-4 md:p-5 flex items-center justify-between">
+            <div>
+              <h4 class="text-xs font-bold text-yellow-800 mb-1">중등부 1위</h4>
+              <p class="text-xl md:text-2xl font-bold text-gray-900" v-if="wordKings.middleSchool">
+                {{ wordKings.middleSchool.name }} <span class="text-sm font-medium text-gray-600 ml-1">({{ wordKings.middleSchool.grade }})</span>
+              </p>
+              <p class="text-sm text-gray-500" v-else>이번 달 데이터 없음</p>
+            </div>
+            <div class="text-right" v-if="wordKings.middleSchool">
+              <p class="text-xs font-medium text-yellow-700 mb-1">평균 점수</p>
+              <p class="text-2xl font-black text-yellow-600">{{ wordKings.middleSchool.avgWordScore }}<span class="text-sm text-yellow-700 ml-0.5">점</span></p>
+            </div>
+          </div>
+          <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-4 md:p-5 flex items-center justify-between">
+            <div>
+              <h4 class="text-xs font-bold text-blue-800 mb-1">고등부 1위</h4>
+              <p class="text-xl md:text-2xl font-bold text-gray-900" v-if="wordKings.highSchool">
+                {{ wordKings.highSchool.name }} <span class="text-sm font-medium text-gray-600 ml-1">({{ wordKings.highSchool.grade }})</span>
+              </p>
+              <p class="text-sm text-gray-500" v-else>이번 달 데이터 없음</p>
+            </div>
+            <div class="text-right" v-if="wordKings.highSchool">
+              <p class="text-xs font-medium text-blue-700 mb-1">평균 점수</p>
+              <p class="text-2xl font-black text-blue-600">{{ wordKings.highSchool.avgWordScore }}<span class="text-sm text-blue-700 ml-0.5">점</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 반별 출결 + 오늘 할일 요약 -->
       <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div class="bg-gray-50 px-5 py-3 border-b">
@@ -348,6 +381,19 @@ const instructorWarnings = computed(() => {
   return alertItems.value.filter(w => w.assigned_teachers && w.assigned_teachers.includes(myName));
 });
 
+const wordKings = ref<any>(null);
+
+const loadWordKings = async () => {
+  try {
+    const res = await statisticsApi.getWordKings();
+    if (res.data.success) {
+      wordKings.value = res.data.data;
+    }
+  } catch (err) {
+    console.error('단어왕 로드 실패:', err);
+  }
+};
+
 const loadWarnings = async () => {
   try {
     const res = await warningApi.getActive();
@@ -444,6 +490,9 @@ onMounted(async () => {
 
     // 학습 경고 로드
     await loadWarnings();
+    
+    // 단어왕 로드
+    await loadWordKings();
 
   } catch (err: any) {
     error.value = err.response?.data?.message || '데이터를 불러오는 중 오류가 발생했습니다.';

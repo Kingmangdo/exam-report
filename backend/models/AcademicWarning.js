@@ -128,6 +128,14 @@ export class AcademicWarning {
 
   // 아직 완료(resolved)되지 않은 활성 경고 전체 조회 (대시보드용, 기존 getUnacknowledged 대체)
   static async getActiveWarnings() {
+    const kstTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+    kstTime.setDate(kstTime.getDate() - 7); // 일주일 전
+    // 포맷: 26-07-28
+    const year = kstTime.getFullYear().toString().slice(2);
+    const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+    const day = String(kstTime.getDate()).padStart(2, '0');
+    const sevenDaysAgoStr = `${year}-${month}-${day}`;
+
     const { data, error } = await supabase
       .from('academic_warnings')
       .select(`
@@ -135,6 +143,7 @@ export class AcademicWarning {
         students(name)
       `)
       .neq('status', 'resolved')
+      .gte('exam_date', sevenDaysAgoStr) // 1주일 지난 데이터는 대시보드 미노출
       .order('created_at', { ascending: false });
       
     if (error) throw new Error(error.message);
@@ -171,15 +180,16 @@ export class AcademicWarning {
     });
   }
 
-  // 1. 학생별 단어/RT 연속 3회 Fail 여부 체크
+  // 1. 학생별 단어/RT 연속 3회 Clinic(Fail) 여부 체크
   static async _checkStudentWarnings(studentId, className, examDate) {
-    // 해당 학생의 최신 성적 3건을 가져옴 (exam_date 기준 내림차순)
+    // 해당 학생의 최신 성적 3건을 가져옴 (exam_date 기준 내림차순, 결석-average 0점 제외)
     const { data: recentScores } = await supabase
       .from('scores')
       .select('id, exam_date, rt_details, word_details')
       .eq('student_id', studentId)
       .eq('class_name', className)
       .lte('exam_date', examDate)
+      .gt('average_score', 0) // 결석한 학생(평균 0점) 미반영
       .order('exam_date', { ascending: false })
       .limit(3);
 
@@ -254,14 +264,15 @@ export class AcademicWarning {
     }
   }
 
-  // 2. 반 전체 난이도 조절 실패 여부 체크 (RT 시험 50% 초과 Fail)
+  // 2. 반 전체 난이도 조절 실패 여부 체크 (RT 시험 50% 초과 Clinic)
   static async _checkClassDifficultyWarning(className, examDate) {
-    // 해당 반, 해당 날짜의 전체 학생 성적 조회
+    // 해당 반, 해당 날짜의 결석하지 않은 학생 성적 조회
     const { data: scores } = await supabase
       .from('scores')
       .select('id, rt_details')
       .eq('class_name', className)
-      .eq('exam_date', examDate);
+      .eq('exam_date', examDate)
+      .gt('average_score', 0); // 결석한 학생(평균 0점) 제외
 
     if (!scores || scores.length === 0) return;
 

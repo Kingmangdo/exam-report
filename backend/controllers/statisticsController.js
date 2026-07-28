@@ -1,5 +1,15 @@
 import { Statistics } from '../models/Statistics.js';
 
+// 이달의 단어왕 조회
+export const getWordKings = async (req, res) => {
+  try {
+    const data = await Statistics.getWordKings();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: '단어왕 통계 조회 중 오류가 발생했습니다.', error: error.message });
+  }
+};
+
 // 학생별 통계
 export const getStudentStatistics = async (req, res) => {
   try {
