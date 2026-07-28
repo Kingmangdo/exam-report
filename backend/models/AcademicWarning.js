@@ -148,10 +148,20 @@ export class AcademicWarning {
       
     if (error) throw new Error(error.message);
     
-    return data.map(w => ({
-      ...w,
-      student_name: w.students?.name
-    }));
+    // [자가 치유 로직]: 이전에 잘못 생성되어 남아있는 결석생(단어 마지막 0%) 오작동 경고를 화면에서 숨기고 DB에서도 비동기 삭제
+    supabase.from('academic_warnings')
+      .delete()
+      .eq('warning_type', 'WORD_3_FAIL')
+      .like('message', '%→ 0%)')
+      .then(() => {})
+      .catch(() => {});
+    
+    return data
+      .filter(w => !(w.warning_type === 'WORD_3_FAIL' && w.message.includes('→ 0%)')))
+      .map(w => ({
+        ...w,
+        student_name: w.students?.name
+      }));
   }
 
   // 경고 확인 처리 (원장님 최종 확인 시 status = 'resolved' 처리)
@@ -192,8 +202,12 @@ export class AcademicWarning {
       .lte('exam_date', examDate)
       .order('exam_date', { ascending: false });
       
-    // 결석 데이터(total_score가 0이고 average_score가 0인 경우) 제외하고 3건 추출
-    const validScores = recentScores.filter(s => !(s.total_score === 0 && s.average_score === 0)).slice(0, 3);
+    // 결석 데이터 완벽 제외 (DB에서 문자열 '0'이나 null로 넘어오는 경우까지 모두 처리)
+    const validScores = recentScores.filter(s => {
+      const t = Number(s.total_score) || 0;
+      const a = Number(s.average_score) || 0;
+      return !(t === 0 && a === 0);
+    }).slice(0, 3);
 
     // 유효한 성적이 3건 미만이면 연속 3회 체크 불가
     if (validScores.length < 3) return;
@@ -275,8 +289,12 @@ export class AcademicWarning {
       .eq('class_name', className)
       .eq('exam_date', examDate);
 
-    // 결석 데이터 제외
-    const validScores = scores ? scores.filter(s => !(s.total_score === 0 && s.average_score === 0)) : [];
+    // 결석 데이터 완벽 제외 (DB에서 문자열 '0'이나 null로 넘어오는 경우까지 모두 처리)
+    const validScores = scores ? scores.filter(s => {
+      const t = Number(s.total_score) || 0;
+      const a = Number(s.average_score) || 0;
+      return !(t === 0 && a === 0);
+    }) : [];
 
     if (validScores.length === 0) return;
 
