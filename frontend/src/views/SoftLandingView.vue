@@ -447,6 +447,9 @@ const fetchStudents = async () => {
           grade: s.grade,
           class_name: s.class_name || '',
           created_at: s.created_at,
+          parent_phone: s.parent_phone || '',
+          phone: s.phone || '',
+          student_no: s.student_no || '',
           isExcluded: settings.excluded || false,
           excludedReason: settings.excluded_reason,
           initialLevel: settings.initial_level || '',
@@ -624,11 +627,7 @@ const previewReport = async () => {
   
   try {
     const phoneLast4 = getStudentPhoneLast4(selectedStudent.value);
-    if (!phoneLast4) {
-      alert('학생/학부모 연락처가 등록되지 않았습니다.\n학생 관리에서 연락처를 먼저 등록해 주세요.');
-      return;
-    }
-    // 서버에 리포트 링크 생성 요청
+    // 서버에 리포트 링크 생성 요청 (연락처는 서버에서도 DB 기준으로 보정)
     const res = await softLandingApi.generateReportLink(
       selectedStudent.value.id,
       activePhase.value,
@@ -640,7 +639,7 @@ const previewReport = async () => {
       const linkUrl = window.location.origin + res.data.data.url;
       window.open(linkUrl + '?preview=true', '_blank');
     } else {
-      alert('리포트 링크 생성에 실패했습니다.');
+      alert(res.data.message || '리포트 링크 생성에 실패했습니다.');
     }
   } catch (error: any) {
     console.error('리포트 링크 생성 실패', error);
@@ -656,11 +655,7 @@ const openReportModal = async () => {
   
   try {
     const phoneLast4 = getStudentPhoneLast4(selectedStudent.value);
-    if (!phoneLast4) {
-      alert('학생/학부모 연락처가 등록되지 않았습니다.\n학생 관리에서 연락처를 먼저 등록해 주세요.');
-      return;
-    }
-    // 서버에 리포트 링크 생성 요청
+    // 서버에 리포트 링크 생성 요청 (연락처는 서버에서도 DB 기준으로 보정)
     const res = await softLandingApi.generateReportLink(
       selectedStudent.value.id,
       activePhase.value,
@@ -672,11 +667,13 @@ const openReportModal = async () => {
       const linkUrl = window.location.origin + res.data.data.url;
       const authPhone = res.data.data.phone_last4 || phoneLast4;
       reportUrl.value = linkUrl + '?preview=true';
-      reportAuthHint.value = `학부모 인증 정보: 이름 "${res.data.data.student_name || name}" / 연락처 뒷자리 "${authPhone}"`;
+      reportAuthHint.value = authPhone
+        ? `학부모 인증 정보: 이름 "${res.data.data.student_name || name}" / 연락처 뒷자리 "${authPhone}"`
+        : '';
       reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 학원에 등원한 지 ${phaseName}가 되었습니다.\n학생의 학원 적응도와 종합적인 안내 리포트를 준비했습니다.\n\n아래 링크를 눌러 꼼꼼하게 작성된 우리 아이의 소프트랜딩 성적표를 확인해 보세요!\n\n▶ 리포트 확인하기\n${linkUrl}\n\n앞으로도 ${name} 학생이 목표를 이룰 수 있도록 최선을 다해 지도하겠습니다.\n감사합니다.`;
       showReportModal.value = true;
     } else {
-      alert('리포트 링크 생성에 실패했습니다.');
+      alert(res.data.message || '리포트 링크 생성에 실패했습니다.');
     }
   } catch (error: any) {
     console.error('리포트 링크 생성 실패', error);
