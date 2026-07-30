@@ -118,13 +118,29 @@
           </section>
 
           <!-- 항목별 평가 (방사형 차트) -->
-          <section v-if="reportData?.checkpoint?.ratings && Object.keys(reportData.checkpoint.ratings).length > 0">
+          <section v-if="hasRatings">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex justify-center items-center">
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
               <div class="w-full max-w-[320px] aspect-square relative mx-auto" style="height: 320px; width: 100%;">
-                <canvas ref="radarChartRef"></canvas>
+                <canvas ref="radarChartRef" width="320" height="320"></canvas>
+              </div>
+              <!-- 차트 보조: 항목별 점수 바 -->
+              <div class="mt-6 space-y-3 max-w-md mx-auto">
+                <div v-for="item in criteriaList" :key="item.key" class="flex items-center gap-3">
+                  <span class="text-sm font-medium text-gray-600 w-24 shrink-0">{{ item.label }}</span>
+                  <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :class="getRatingBgColor(Number(reportData.checkpoint.ratings[item.key]) || 0)"
+                      :style="{ width: ((Number(reportData.checkpoint.ratings[item.key]) || 0) / 5 * 100) + '%' }"
+                    ></div>
+                  </div>
+                  <span class="text-sm font-bold w-10 text-right" :class="getRatingColor(Number(reportData.checkpoint.ratings[item.key]) || 0)">
+                    {{ reportData.checkpoint.ratings[item.key] || 0 }}점
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -182,6 +198,12 @@ const phaseName = computed(() => {
   if (!reportData.value) return '';
   const p = reportData.value.phase;
   return p === 1 ? '2주차' : p === 2 ? '6주차' : '10주차';
+});
+
+const hasRatings = computed(() => {
+  const ratings = reportData.value?.checkpoint?.ratings;
+  if (!ratings || typeof ratings !== 'object') return false;
+  return Object.keys(ratings).some(k => Number(ratings[k]) > 0);
 });
 
 const criteriaList = computed(() => {
@@ -263,14 +285,18 @@ const fetchReportData = async () => {
     
     if (res.data.success) {
       reportData.value = res.data.data;
+      // 로딩을 먼저 해제해야 리포트 DOM(canvas)이 마운트됨
+      isLoading.value = false;
+      await nextTick();
       await nextTick();
       renderRadarChart();
+    } else {
+      isLoading.value = false;
     }
   } catch (error: any) {
     console.error('리포트 조회 실패:', error);
     authError.value = error.response?.data?.message || '리포트 데이터를 불러오는데 실패했습니다.';
     isAuthenticated.value = false;
-  } finally {
     isLoading.value = false;
   }
 };
@@ -286,25 +312,20 @@ onMounted(() => {
 const renderRadarChart = () => {
   if (radarChart.value) {
     radarChart.value.destroy();
+    radarChart.value = null;
   }
-  
+
+  if (!hasRatings.value) return;
+
   if (!radarChartRef.value) {
-    console.error("Radar chart canvas not found.");
-    return;
-  }
-  
-  if (!reportData.value || !reportData.value.checkpoint || !reportData.value.checkpoint.ratings) {
-    console.error("Ratings data is missing.");
+    // DOM이 아직 안 그려진 경우 한 번 더 재시도
+    setTimeout(() => renderRadarChart(), 100);
     return;
   }
 
+  const ratings = reportData.value.checkpoint.ratings;
   const labels = criteriaList.value.map(c => c.label);
-  const data = criteriaList.value.map(c => reportData.value.checkpoint.ratings[c.key] || 0);
-
-  // 데이터가 모두 0이면 차트를 그리지 않음 (빈 박스 방지)
-  if (data.every(val => val === 0)) {
-    return;
-  }
+  const data = criteriaList.value.map(c => Number(ratings[c.key]) || 0);
 
   radarChart.value = new Chart(radarChartRef.value, {
     type: 'radar',
@@ -329,6 +350,8 @@ const renderRadarChart = () => {
       maintainAspectRatio: false,
       scales: {
         r: {
+          min: 0,
+          max: 5,
           angleLines: { color: 'rgba(0,0,0,0.1)' },
           grid: { color: 'rgba(0,0,0,0.1)' },
           pointLabels: {
@@ -338,8 +361,6 @@ const renderRadarChart = () => {
           ticks: {
             display: true,
             stepSize: 1,
-            max: 5,
-            min: 0,
             color: '#9CA3AF',
             backdropColor: 'transparent',
             font: { size: 10 }
@@ -354,7 +375,7 @@ const renderRadarChart = () => {
           font: { weight: 'bold', size: 14 },
           align: 'end',
           anchor: 'end',
-          formatter: (value) => value + '점'
+          formatter: (value: number) => value + '점'
         }
       }
     }

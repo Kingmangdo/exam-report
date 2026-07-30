@@ -176,4 +176,46 @@ export class SoftLanding {
     if (error) throw new Error(error.message);
     return data;
   }
+
+  // 리포트용 학생/체크포인트 직접 조회 (대상 목록 기간 필터와 무관)
+  static async getReportPayload(studentId, phase) {
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('id, name, grade, school')
+      .eq('id', studentId)
+      .single();
+
+    if (studentError || !student) return null;
+
+    const { data: settings } = await supabase
+      .from('soft_landing_settings')
+      .select('initial_level')
+      .eq('student_id', studentId)
+      .maybeSingle();
+
+    const { data: checkpoint } = await supabase
+      .from('soft_landing_checkpoints')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('phase', Number(phase))
+      .maybeSingle();
+
+    let ratings = checkpoint?.ratings || {};
+    if (typeof ratings === 'string') {
+      try { ratings = JSON.parse(ratings); } catch { ratings = {}; }
+    }
+
+    return {
+      student: {
+        name: student.name,
+        grade: student.grade,
+        school: student.school,
+        initialLevel: settings?.initial_level || ''
+      },
+      phase: Number(phase),
+      checkpoint: checkpoint
+        ? { ...checkpoint, ratings }
+        : { ratings: {} }
+    };
+  }
 }
