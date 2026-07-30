@@ -122,12 +122,12 @@
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-100">
               <span class="text-primary text-xl">🎯</span> 세부 항목별 적응도 평가
             </h3>
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div class="w-full max-w-[320px] aspect-square relative mx-auto" style="height: 320px; width: 100%;">
-                <canvas ref="radarChartRef" width="320" height="320"></canvas>
+            <div class="bg-white rounded-2xl border border-gray-100 p-4 md:p-6 shadow-sm">
+              <div class="w-full max-w-[420px] relative mx-auto" style="height: 400px; width: 100%;">
+                <canvas ref="radarChartRef"></canvas>
               </div>
               <!-- 차트 보조: 항목별 점수 바 -->
-              <div class="mt-6 space-y-3 max-w-md mx-auto">
+              <div class="mt-4 space-y-3 max-w-md mx-auto">
                 <div v-for="item in criteriaList" :key="item.key" class="flex items-center gap-3">
                   <span class="text-sm font-medium text-gray-600 w-24 shrink-0">{{ item.label }}</span>
                   <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -335,47 +335,63 @@ const renderRadarChart = () => {
       datasets: [{
         label: '평가 점수 (5점 만점)',
         data: data,
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        backgroundColor: 'rgba(59, 130, 246, 0.25)',
         borderColor: 'rgba(59, 130, 246, 1)',
-        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+        pointBackgroundColor: 'rgba(30, 58, 138, 1)',
         pointBorderColor: '#fff',
         pointHoverBackgroundColor: '#fff',
         pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 2,
-        pointRadius: 4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: { top: 28, right: 36, bottom: 28, left: 36 }
+      },
       scales: {
         r: {
           min: 0,
           max: 5,
-          angleLines: { color: 'rgba(0,0,0,0.1)' },
-          grid: { color: 'rgba(0,0,0,0.1)' },
+          angleLines: { color: 'rgba(0,0,0,0.08)' },
+          grid: { color: 'rgba(0,0,0,0.08)' },
           pointLabels: {
             font: { family: "'Pretendard', sans-serif", size: 13, weight: 'bold' },
-            color: '#4B5563'
+            color: '#374151',
+            padding: 18
           },
           ticks: {
             display: true,
             stepSize: 1,
             color: '#9CA3AF',
             backdropColor: 'transparent',
-            font: { size: 10 }
+            font: { size: 10 },
+            // 바깥쪽 축 숫자와 점수 라벨이 겹치지 않도록 축 눈금 숫자는 약하게
+            z: 0
           }
         }
       },
       plugins: {
         legend: { display: false },
+        // 점수는 꼭지점 안쪽(중심 방향) 뱃지로 표시 → 외곽 항목명과 분리
         datalabels: {
           display: true,
           color: '#1e3a8a',
-          font: { weight: 'bold', size: 14 },
-          align: 'end',
-          anchor: 'end',
-          formatter: (value: number) => value + '점'
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: 'rgba(59, 130, 246, 0.35)',
+          borderWidth: 1,
+          borderRadius: 6,
+          padding: { top: 3, bottom: 3, left: 6, right: 6 },
+          font: { weight: 'bold', size: 12 },
+          // radar에서 start = 중심 방향 → 외곽 항목명과 겹침 방지
+          anchor: 'center',
+          align: 'start',
+          offset: 14,
+          clamp: false,
+          formatter: (value: number) => `${value}점`
         }
       }
     }
