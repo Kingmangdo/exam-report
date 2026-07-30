@@ -522,11 +522,16 @@ const getPhaseDotClass = (student: any, phase: number) => {
   return 'bg-gray-300'; // 대기
 };
 
-// 학생 선택
-const selectStudent = (student: any) => {
+// 학생 선택 (keepPhase=true면 현재 주차 탭 유지)
+const selectStudent = (student: any, keepPhase = false) => {
+  const prevPhase = activePhase.value;
   selectedStudent.value = student;
-  activePhase.value = Math.min(student.currentPhase || 1, 3);
-  if (activePhase.value === 0) activePhase.value = 1; // 제외된 학생 기본값
+  if (!keepPhase) {
+    activePhase.value = Math.min(student.currentPhase || 1, 3);
+    if (activePhase.value === 0) activePhase.value = 1; // 제외된 학생 기본값
+  } else {
+    activePhase.value = Math.min(Math.max(prevPhase || 1, 1), 3);
+  }
   initialLevel.value = student.initialLevel;
   loadCheckpointForm();
 };
@@ -571,14 +576,19 @@ const saveInitialLevel = async () => {
 // 체크포인트 저장
 const saveCheckpoint = async () => {
   if (!selectedStudent.value) return;
+  const savedPhase = activePhase.value;
   try {
-    await softLandingApi.upsertCheckpoint(selectedStudent.value.id, activePhase.value, currentCheckpoint.value);
+    await softLandingApi.upsertCheckpoint(selectedStudent.value.id, savedPhase, currentCheckpoint.value);
     alert('상담 기록이 저장되었습니다.');
     await fetchStudents(); // 데이터 재로딩하여 상태 업데이트
     
-    // 재선택 유지
+    // 재선택 유지 + 저장한 주차 탭 유지
     const updated = studentsRaw.value.find(s => s.id === selectedStudent.value.id);
-    if (updated) selectStudent(updated);
+    if (updated) {
+      selectStudent(updated, true);
+      activePhase.value = savedPhase;
+      loadCheckpointForm();
+    }
   } catch (error) {
     console.error('체크포인트 저장 실패', error);
   }
