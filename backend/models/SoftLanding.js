@@ -6,11 +6,56 @@ export class SoftLanding {
     return crypto.randomBytes(32).toString('hex');
   }
 
+  // 연락처에서 숫자만 추출한 뒤 뒷 4자리 반환
+  static extractPhoneLast4(...phones) {
+    for (const p of phones) {
+      if (!p) continue;
+      const digits = String(p).replace(/\D/g, '');
+      if (digits.length >= 4) return digits.slice(-4);
+    }
+    return null;
+  }
+
+  static normalizeName(name) {
+    return String(name || '').trim().replace(/\s+/g, '');
+  }
+
+  // 학생 DB에서 인증용 뒷4자리 후보 목록 (학부모1, 학부모2, 학생연락처)
+  static async getStudentPhoneLast4Candidates(studentId) {
+    const { data: student, error } = await supabase
+      .from('students')
+      .select('name, parent_phone, phone, student_no')
+      .eq('id', studentId)
+      .single();
+
+    if (error || !student) return { student: null, candidates: [] };
+
+    const candidates = [
+      this.extractPhoneLast4(student.parent_phone),
+      this.extractPhoneLast4(student.phone),
+      this.extractPhoneLast4(student.student_no)
+    ].filter(Boolean);
+
+    return { student, candidates: [...new Set(candidates)] };
+  }
+
   // 리포트 접근 링크 생성
   static async createAccessLink(studentId, phase, studentName, phoneLast4) {
     const token = this.generateToken();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // 프론트에서 잘못된 값을 보내도 DB 학생 연락처 기준으로 보정
+    const { student, candidates } = await this.getStudentPhoneLast4Candidates(studentId);
+    const resolvedName = (student?.name || studentName || '').trim();
+    const resolvedPhone =
+      this.extractPhoneLast4(phoneLast4) ||
+      candidates[0] ||
+      null;
+
+    if (!resolvedPhone) {
+      throw new Error('학생/학부모 연락처가 등록되지 않아 리포트 링크를 생성할 수 없습니다. 학생 관리에서 연락처를 먼저 등록해 주세요.');
+    }
 
     // 기존 토큰 삭제
     await supabase
@@ -26,13 +71,13 @@ export class SoftLanding {
         access_token: token,
         student_id: studentId,
         phase: phase,
-        student_name: studentName,
-        phone_last4: phoneLast4,
+        student_name: resolvedName,
+        phone_last4: resolvedPhone,
         expires_at: expiresAt.toISOString()
       });
       
     if (error) throw new Error(error.message);
-    return token;
+    return { token, phone_last4: resolvedPhone, student_name: resolvedName };
   }
 
   // 접근 인증 확인
@@ -51,7 +96,26 @@ export class SoftLanding {
       return { valid: false, message: '링크가 만료되었습니다. (발송 후 7일)' };
     }
 
-    if (access.student_name !== studentName || access.phone_last4 !== phoneLast4) {
+    const inputName = this.normalizeName(studentName);
+    const storedName = this.normalizeName(access.student_name);
+    const inputPhone = this.extractPhoneLast4(phoneLast4);
+
+    if (!inputName || !inputPhone) {
+      return { valid: false, message: '학생 이름과 연락처 뒷 4자리를 모두 입력해 주세요.' };
+    }
+
+    if (inputName !== storedName) {
+      return { valid: false, message: '학생 이름 또는 연락처가 일치하지 않습니다.' };
+    }
+
+    // 저장된 뒷자리 + 학생 DB의 학부모/학생 연락처 뒷자리 모두 허용
+    const { candidates } = await this.getStudentPhoneLast4Candidates(access.student_id);
+    const allowedPhones = new Set([
+      this.extractPhoneLast4(access.phone_last4),
+      ...candidates
+    ].filter(Boolean));
+
+    if (!allowedPhones.has(inputPhone)) {
       return { valid: false, message: '학생 이름 또는 연락처가 일치하지 않습니다.' };
     }
 

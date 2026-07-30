@@ -312,9 +312,12 @@
         </div>
         
         <div class="p-6 overflow-y-auto flex-1">
-          <p class="text-sm text-gray-600 mb-4">
+          <p class="text-sm text-gray-600 mb-2">
             입력하신 평가 내용과 메모를 바탕으로 카카오 알림톡(상담 안내 템플릿)으로 발송할 내용을 자동 생성했습니다. 수정 후 발송하세요.
           </p>
+          <div v-if="reportAuthHint" class="mb-4 text-sm bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
+            {{ reportAuthHint }}
+          </div>
           <textarea 
             v-model="reportContent" 
             rows="10" 
@@ -358,6 +361,17 @@ const excludeReasonCustom = ref('');
 const showReportModal = ref(false);
 const reportContent = ref('');
 const reportUrl = ref('');
+const reportAuthHint = ref('');
+
+const getStudentPhoneLast4 = (student: any) => {
+  const candidates = [student?.parent_phone, student?.phone, student?.student_no];
+  for (const p of candidates) {
+    if (!p) continue;
+    const digits = String(p).replace(/\D/g, '');
+    if (digits.length >= 4) return digits.slice(-4);
+  }
+  return '';
+};
 
 // 중등 여부 판별 유틸
 const isMiddleSchool = (grade: string) => {
@@ -599,7 +613,11 @@ const previewReport = async () => {
   const name = selectedStudent.value.name;
   
   try {
-    const phoneLast4 = selectedStudent.value.parent_phone ? selectedStudent.value.parent_phone.slice(-4) : '0000';
+    const phoneLast4 = getStudentPhoneLast4(selectedStudent.value);
+    if (!phoneLast4) {
+      alert('학생/학부모 연락처가 등록되지 않았습니다.\n학생 관리에서 연락처를 먼저 등록해 주세요.');
+      return;
+    }
     // 서버에 리포트 링크 생성 요청
     const res = await softLandingApi.generateReportLink(
       selectedStudent.value.id,
@@ -614,9 +632,9 @@ const previewReport = async () => {
     } else {
       alert('리포트 링크 생성에 실패했습니다.');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('리포트 링크 생성 실패', error);
-    alert('오류가 발생했습니다.');
+    alert(error.response?.data?.message || '오류가 발생했습니다.');
   }
 };
 
@@ -627,7 +645,11 @@ const openReportModal = async () => {
   const name = selectedStudent.value.name;
   
   try {
-    const phoneLast4 = selectedStudent.value.parent_phone ? selectedStudent.value.parent_phone.slice(-4) : '0000';
+    const phoneLast4 = getStudentPhoneLast4(selectedStudent.value);
+    if (!phoneLast4) {
+      alert('학생/학부모 연락처가 등록되지 않았습니다.\n학생 관리에서 연락처를 먼저 등록해 주세요.');
+      return;
+    }
     // 서버에 리포트 링크 생성 요청
     const res = await softLandingApi.generateReportLink(
       selectedStudent.value.id,
@@ -638,15 +660,17 @@ const openReportModal = async () => {
 
     if (res.data.success) {
       const linkUrl = window.location.origin + res.data.data.url;
+      const authPhone = res.data.data.phone_last4 || phoneLast4;
       reportUrl.value = linkUrl + '?preview=true';
+      reportAuthHint.value = `학부모 인증 정보: 이름 "${res.data.data.student_name || name}" / 연락처 뒷자리 "${authPhone}"`;
       reportContent.value = `[신입생 소프트랜딩 ${phaseName} 안내]\n\n${name} 학생이 학원에 등원한 지 ${phaseName}가 되었습니다.\n학생의 학원 적응도와 종합적인 안내 리포트를 준비했습니다.\n\n아래 링크를 눌러 꼼꼼하게 작성된 우리 아이의 소프트랜딩 성적표를 확인해 보세요!\n\n▶ 리포트 확인하기\n${linkUrl}\n\n앞으로도 ${name} 학생이 목표를 이룰 수 있도록 최선을 다해 지도하겠습니다.\n감사합니다.`;
       showReportModal.value = true;
     } else {
       alert('리포트 링크 생성에 실패했습니다.');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('리포트 링크 생성 실패', error);
-    alert('오류가 발생했습니다.');
+    alert(error.response?.data?.message || '오류가 발생했습니다.');
   }
 };
 

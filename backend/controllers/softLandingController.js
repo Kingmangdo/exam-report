@@ -60,17 +60,19 @@ export const upsertCheckpoint = async (req, res) => {
 export const generateReportLink = async (req, res) => {
   try {
     const { student_id, phase, student_name, phone_last4 } = req.body;
-    if (!student_id || !phase || !student_name || !phone_last4) {
+    if (!student_id || !phase || !student_name) {
       return res.status(400).json({ success: false, message: '필수 파라미터가 누락되었습니다.' });
     }
 
-    const token = await SoftLanding.createAccessLink(student_id, phase, student_name, phone_last4);
+    const result = await SoftLanding.createAccessLink(student_id, phase, student_name, phone_last4);
 
     res.json({
       success: true,
       data: {
-        token,
-        url: `/report/soft-landing/${token}`,
+        token: result.token,
+        url: `/report/soft-landing/${result.token}`,
+        phone_last4: result.phone_last4,
+        student_name: result.student_name,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       }
     });

@@ -21,15 +21,18 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1.5">학부모 연락처 뒷 4자리</label>
+            <label class="block text-sm font-bold text-gray-700 mb-1.5">등록된 연락처 뒷 4자리</label>
             <input 
               type="text" 
               v-model="authForm.phoneLast4"
               placeholder="예: 1234"
               maxlength="4"
+              inputmode="numeric"
+              pattern="[0-9]*"
               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition outline-none"
               required
             />
+            <p class="text-xs text-gray-400 mt-1.5">학부모 또는 학생 연락처 중 등록된 번호의 뒷 4자리를 입력하세요.</p>
           </div>
 
           <div v-if="authError" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center font-medium">
@@ -251,9 +254,18 @@ const handleAuth = async () => {
   try {
     isAuthenticating.value = true;
     authError.value = '';
+
+    const studentName = authForm.value.studentName.trim();
+    const phoneLast4 = String(authForm.value.phoneLast4 || '').replace(/\D/g, '').slice(-4);
+
+    if (!studentName || phoneLast4.length !== 4) {
+      authError.value = '학생 이름과 연락처 뒷 4자리를 정확히 입력해 주세요.';
+      isAuthenticating.value = false;
+      return;
+    }
     
     // 1. 토큰 및 정보 확인
-    const verifyRes = await softLandingApi.verifyReportAccess(token, authForm.value.studentName, authForm.value.phoneLast4);
+    const verifyRes = await softLandingApi.verifyReportAccess(token, studentName, phoneLast4);
     
     if (!verifyRes.data.success) {
       authError.value = verifyRes.data.message || '인증에 실패했습니다.';
@@ -262,6 +274,8 @@ const handleAuth = async () => {
     }
     
     isAuthenticated.value = true;
+    authForm.value.studentName = studentName;
+    authForm.value.phoneLast4 = phoneLast4;
     fetchReportData();
   } catch (error: any) {
     authError.value = error.response?.data?.message || '인증 중 오류가 발생했습니다. 학원으로 문의해 주세요.';
