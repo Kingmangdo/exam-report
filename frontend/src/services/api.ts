@@ -403,6 +403,9 @@ export const kakaoApi = {
   sendCounselingNotification: (data: { student_id: number; class_name: string; date: string; content: string; targets: string[] }) => {
     return api.post<ApiResponse<any>>('/kakao/send-counseling', data);
   },
+  sendManualCounselingNotification: (data: { name: string; phone: string; date: string; content: string }) => {
+    return api.post<ApiResponse<any>>('/kakao/send-counseling-manual', data);
+  },
   getCounselingSendStatus: (params?: { startDate?: string; endDate?: string }) => {
     return api.get<ApiResponse<any[]>>('/kakao/counseling-send-status', { params });
   },

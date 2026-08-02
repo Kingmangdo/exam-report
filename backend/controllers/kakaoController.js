@@ -261,6 +261,90 @@ ${student.name} 학생의 상담 내용을
   }
 };
 
+// ========== 상담 안내 (UJ_6077) - 이름/번호 직접 입력 발송 ==========
+export const sendManualCounselingNotification = async (req, res) => {
+  try {
+    const { name, phone, date, content } = req.body;
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ success: false, message: '이름을 입력해주세요.' });
+    }
+    if (!phone) {
+      return res.status(400).json({ success: false, message: '전화번호를 입력해주세요.' });
+    }
+    if (!date || !content) {
+      return res.status(400).json({ success: false, message: '일자와 내용은 필수입니다.' });
+    }
+
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+      return res.status(400).json({ success: false, message: '전화번호 형식이 올바르지 않습니다. (예: 01012345678)' });
+    }
+
+    const displayName = String(name).trim();
+
+    // UJ_6077 템플릿과 동일한 본문 (변수: 이름, 일자, 내용)
+    const message = `[독강영어전문학원 상담안내]
+
+학부모님, 안녕하십니까
+${displayName} 학생의 상담 내용을
+안내해드립니다.
+
+■ 이름 : ${displayName}
+■ 일자 : ${date}
+■ 내용 : ${content}
+
+궁금하신 사항은 학원으로 문의해
+주시기 바랍니다.
+
+감사합니다.`;
+
+    const aligoData = {
+      receiver_1: cleanPhone,
+      message_1: message,
+      tpl_code: 'UJ_6077',
+      button_1: {
+        button: [{
+          name: '채널 추가',
+          linkType: 'AC'
+        }]
+      }
+    };
+
+    const result = await sendAligoAlimtalk(aligoData);
+
+    console.log('================================================');
+    console.log(`MANUAL COUNSELING ALIGO RESPONSE FOR ${cleanPhone}:`, JSON.stringify(result, null, 2));
+    console.log('================================================');
+
+    let currentSuccess = false;
+    if (result) {
+      if (result.result_code == 1 || String(result.result_code) === '1') currentSuccess = true;
+      else if (result.code == 0 || String(result.code) === '0') currentSuccess = true;
+      else if (result.message && (result.message.includes('성공') || result.message.toLowerCase().includes('success'))) currentSuccess = true;
+    }
+
+    // 발송 이력 저장 (등록 학생 없이 직접 입력)
+    await supabase.from('counseling_kakao_send_history').insert({
+      student_id: null,
+      receiver_type: 'manual',
+      receiver_phone: cleanPhone,
+      send_status: currentSuccess ? 'success' : 'fail',
+      error_message: currentSuccess ? null : (result?.message || '발송 실패'),
+      message_content: message
+    });
+
+    return res.json({
+      success: currentSuccess,
+      message: currentSuccess ? '발송 성공' : (result?.message || '발송 실패'),
+      data: [{ ...result, receiver_type: 'manual', receiver_phone: cleanPhone, name: displayName }]
+    });
+  } catch (error) {
+    console.error('직접입력 상담 알림톡 발송 에러:', error);
+    res.status(500).json({ success: false, message: `알림톡 발송 중 오류가 발생했습니다: ${error.message}` });
+  }
+};
+
 // ========== 등/하원 알림톡 발송 ==========
 export const sendAttendanceNotification = async (req, res) => {
   try {

@@ -9,9 +9,15 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- 좌측: 대상자 선택 -->
-      <div class="lg:col-span-1 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[500px] lg:h-[700px]">
+      <div
+        class="lg:col-span-1 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-[500px] lg:h-[700px]"
+        :class="{ 'opacity-50 pointer-events-none': composeMode === 'manual' }"
+      >
         <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
-          <h3 class="font-bold text-gray-800">수신자 선택 ({{ selectedStudents.length }}명)</h3>
+          <h3 class="font-bold text-gray-800">
+            <template v-if="composeMode === 'manual'">직접 입력 모드</template>
+            <template v-else>수신자 선택 ({{ selectedStudents.length }}명)</template>
+          </h3>
         </div>
         
         <!-- 필터 -->
@@ -75,6 +81,26 @@
         <!-- 탭 내용: 메시지 작성 -->
         <div v-show="activeTab === 'compose'" class="flex-1 overflow-y-auto flex flex-col">
           <div class="p-6 flex-1 overflow-y-auto">
+          <!-- 발송 방식 선택 -->
+          <div class="mb-6 flex gap-2 p-1 bg-gray-100 rounded-lg">
+            <button
+              type="button"
+              @click="composeMode = 'student'"
+              class="flex-1 py-2.5 text-sm font-bold rounded-md transition"
+              :class="composeMode === 'student' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              등록 학생 선택
+            </button>
+            <button
+              type="button"
+              @click="composeMode = 'manual'"
+              class="flex-1 py-2.5 text-sm font-bold rounded-md transition"
+              :class="composeMode === 'manual' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            >
+              이름/번호 직접 입력
+            </button>
+          </div>
+
           <!-- 템플릿 선택 -->
           <div class="mb-6">
             <label class="block text-sm font-bold text-gray-700 mb-2">템플릿 선택</label>
@@ -85,8 +111,33 @@
             <p class="text-xs text-gray-500 mt-1">* 현재 '상담 안내' 템플릿만 승인되어 발송 가능합니다.</p>
           </div>
 
-          <!-- 발송 대상 선택 -->
-          <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <!-- 직접 입력 모드 -->
+          <div v-if="composeMode === 'manual'" class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200 space-y-4">
+            <p class="text-sm font-bold text-amber-800">신규 학부모 등 미등록 번호로 발송합니다. (템플릿 UJ_6077)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">이름 (#{이름}) <span class="text-red-500">*</span></label>
+                <input
+                  v-model="manualForm.name"
+                  type="text"
+                  placeholder="예: 홍길동"
+                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">전화번호 <span class="text-red-500">*</span></label>
+                <input
+                  v-model="manualForm.phone"
+                  type="tel"
+                  placeholder="예: 01012345678"
+                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 발송 대상 선택 (등록 학생 모드만) -->
+          <div v-if="composeMode === 'student'" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <label class="block text-sm font-bold text-gray-700 mb-3">발송 대상 선택 <span class="text-xs font-normal text-gray-500">(선택한 학생 기준)</span></label>
             <div class="flex gap-6">
               <label class="flex items-center gap-2 cursor-pointer">
@@ -116,44 +167,68 @@
                 placeholder="발송할 상담 내용이나 공지사항을 입력하세요."
                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
               ></textarea>
-              <p class="text-xs text-gray-500 mt-1">※ 클래스와 이름은 선택한 학생 데이터로 자동 채워집니다.</p>
+              <p class="text-xs text-gray-500 mt-1">
+                <template v-if="composeMode === 'student'">※ 이름은 선택한 학생 데이터로 자동 채워집니다.</template>
+                <template v-else>※ 위에 입력한 이름/번호로 발송됩니다.</template>
+              </p>
             </div>
           </div>
 
           <!-- 미리보기 -->
           <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-5">
             <h4 class="text-sm font-bold text-yellow-800 mb-3 flex items-center gap-2">
-              <span>📱</span> 알림톡 미리보기 (첫 번째 선택 학생 기준)
+              <span>📱</span>
+              {{ composeMode === 'manual' ? '알림톡 미리보기 (직접 입력)' : '알림톡 미리보기 (첫 번째 선택 학생 기준)' }}
             </h4>
             <div class="bg-white p-4 rounded border text-sm text-gray-700 whitespace-pre-wrap leading-relaxed shadow-sm">
-[독강영어전문학원 상담 안내]
+[독강영어전문학원 상담안내]
 
-학부모님, 안녕하십니까.
-{{ previewStudent.name }} 학생의 상담 내용을 안내해 드립니다.
+학부모님, 안녕하십니까
+{{ previewName }} 학생의 상담 내용을
+안내해드립니다.
 
-■ 클래스 : {{ previewStudent.class }}
-■ 이름 : {{ previewStudent.name }}
+■ 이름 : {{ previewName }}
 ■ 일자 : {{ formData.date }}
 ■ 내용 : {{ formData.content || '(내용이 여기에 들어갑니다)' }}
 
-궁금하신 사항은 학원으로 문의해 주시기 바랍니다.
+궁금하신 사항은 학원으로 문의해
+주시기 바랍니다.
+
 감사합니다.
             </div>
+            <p v-if="composeMode === 'manual' && manualForm.phone" class="text-xs text-amber-700 mt-2 font-bold">
+              수신 번호: {{ manualForm.phone }}
+            </p>
           </div>
         </div>
 
           <!-- 하단 전송 버튼 -->
           <div class="bg-gray-50 px-6 py-4 border-t flex items-center justify-between mt-auto">
             <div class="text-sm text-gray-600">
-              총 <span class="font-bold text-primary">{{ selectedStudents.length }}</span>명에게 발송합니다.
+              <template v-if="composeMode === 'student'">
+                총 <span class="font-bold text-primary">{{ selectedStudents.length }}</span>명에게 발송합니다.
+              </template>
+              <template v-else>
+                <span class="font-bold text-primary">직접 입력</span> 번호로 1건 발송합니다.
+              </template>
             </div>
             <button 
+              v-if="composeMode === 'student'"
               @click="sendMessages" 
               :disabled="isSending || selectedStudents.length === 0 || !formData.content || (!formData.sendToParent && !formData.sendToStudent)"
               class="px-8 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-blue-800 transition disabled:opacity-50 shadow-md flex items-center gap-2"
             >
               <span v-if="isSending">발송 중... ({{ sentCount }}/{{ selectedStudents.length }})</span>
               <span v-else>🚀 선택한 학생에게 발송</span>
+            </button>
+            <button 
+              v-else
+              @click="sendManualMessage" 
+              :disabled="isSending || !manualForm.name.trim() || !manualForm.phone.trim() || !formData.content"
+              class="px-8 py-2.5 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition disabled:opacity-50 shadow-md flex items-center gap-2"
+            >
+              <span v-if="isSending">발송 중...</span>
+              <span v-else>🚀 직접 입력 번호로 발송</span>
             </button>
           </div>
         </div>
@@ -188,9 +263,9 @@
             <div v-for="item in historyList" :key="item.id" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <div class="flex justify-between items-start mb-2">
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-gray-800">{{ item.students?.name || '알 수 없음' }}</span>
-                  <span class="text-xs px-2 py-0.5 rounded-full" :class="item.receiver_type === 'parent' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'">
-                    {{ item.receiver_type === 'parent' ? '학부모' : '학생' }}
+                  <span class="font-bold text-gray-800">{{ historyDisplayName(item) }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full" :class="receiverTypeBadgeClass(item.receiver_type)">
+                    {{ receiverTypeLabel(item.receiver_type) }}
                   </span>
                   <span class="text-xs text-gray-500">{{ item.receiver_phone }}</span>
                 </div>
@@ -277,6 +352,11 @@ const searchQuery = ref('');
 const selectedStudents = ref<any[]>([]);
 
 const selectedTemplate = ref('UJ_6077');
+const composeMode = ref<'student' | 'manual'>('student');
+const manualForm = ref({
+  name: '',
+  phone: ''
+});
 const activeTab = ref('compose');
 const historyList = ref<any[]>([]);
 const isLoadingHistory = ref(false);
@@ -313,6 +393,31 @@ const isSending = ref(false);
 const sentCount = ref(0);
 const showResultModal = ref(false);
 const results = ref({ success: 0, fail: 0, errors: [] as string[], details: [] as string[] });
+
+const extractNameFromMessage = (message?: string) => {
+  if (!message) return '';
+  const match = message.match(/■\s*이름\s*:\s*(.+)/);
+  return match?.[1]?.trim() || '';
+};
+
+const historyDisplayName = (item: any) => {
+  if (item.students?.name) return item.students.name;
+  return extractNameFromMessage(item.message_content) || '직접입력';
+};
+
+const receiverTypeLabel = (type: string) => {
+  if (type === 'parent') return '학부모';
+  if (type === 'student') return '학생';
+  if (type === 'manual') return '직접입력';
+  return type || '-';
+};
+
+const receiverTypeBadgeClass = (type: string) => {
+  if (type === 'parent') return 'bg-blue-100 text-blue-700';
+  if (type === 'student') return 'bg-green-100 text-green-700';
+  if (type === 'manual') return 'bg-amber-100 text-amber-800';
+  return 'bg-gray-100 text-gray-600';
+};
 
 const fetchStudents = async () => {
   try {
@@ -371,6 +476,52 @@ const previewStudent = computed(() => {
   }
   return { name: '홍길동', class: '화목 수능' };
 });
+
+const previewName = computed(() => {
+  if (composeMode.value === 'manual') {
+    return manualForm.value.name.trim() || '홍길동';
+  }
+  return previewStudent.value.name;
+});
+
+const sendManualMessage = async () => {
+  const name = manualForm.value.name.trim();
+  const phone = manualForm.value.phone.trim();
+
+  if (!name || !phone || !formData.value.content) {
+    alert('이름, 전화번호, 내용을 모두 입력해주세요.');
+    return;
+  }
+
+  if (!confirm(`${name} / ${phone} 번호로 알림톡을 발송하시겠습니까?`)) return;
+
+  isSending.value = true;
+  sentCount.value = 0;
+  results.value = { success: 0, fail: 0, errors: [], details: [] };
+
+  try {
+    const res = await kakaoApi.sendManualCounselingNotification({
+      name,
+      phone,
+      date: formData.value.date,
+      content: formData.value.content
+    });
+
+    if (res.data.success) {
+      results.value.success = 1;
+    } else {
+      results.value.fail = 1;
+      results.value.errors.push(`${name}: ${res.data.message || '발송 실패'}`);
+    }
+  } catch (err: any) {
+    results.value.fail = 1;
+    results.value.errors.push(`${name}: ${err.response?.data?.message || err.message}`);
+  }
+
+  sentCount.value = 1;
+  isSending.value = false;
+  showResultModal.value = true;
+};
 
 const sendMessages = async () => {
   if (!confirm(`${selectedStudents.value.length}명에게 알림톡을 발송하시겠습니까?`)) return;
