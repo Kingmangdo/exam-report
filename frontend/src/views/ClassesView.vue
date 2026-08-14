@@ -30,11 +30,16 @@
               <th scope="col" class="px-4 py-3 w-[10%] text-center">확인</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody>
             <template v-for="(items, teacher) in homeworkDueByTeacher" :key="teacher">
-              <tr v-for="(item, index) in items" :key="item.id" class="hover:bg-gray-50 transition-colors">
+              <tr
+                v-for="(item, index) in items"
+                :key="item.id"
+                class="hover:bg-gray-50 transition-colors"
+                :class="index === items.length - 1 ? 'border-b-[3px] border-gray-400' : 'border-b border-gray-100'"
+              >
                 <!-- 선생님 이름은 첫 번째 행에만 표시하고 rowspan 적용 -->
-                <th v-if="index === 0" :rowspan="items.length" scope="row" class="px-4 py-3 font-bold text-gray-900 bg-gray-50 border-r align-top">
+                <th v-if="index === 0" :rowspan="items.length" scope="row" class="px-4 py-3 font-bold text-gray-900 bg-gray-50 border-r-[3px] border-gray-400 align-top">
                   {{ teacher }}
                 </th>
                 <td class="px-4 py-3 text-center">
