@@ -823,10 +823,6 @@ const formatPhone = (phone: string) => {
 };
 
 const openCounselingModal = async (student: Student) => {
-  if (isCommon.value) {
-    alert('공통 계정은 상담 내역을 조회하거나 입력할 수 없습니다.');
-    return;
-  }
   selectedStudentForCounseling.value = student;
   showCounselingModal.value = true;
   fetchCounselingLogs(student.id);
