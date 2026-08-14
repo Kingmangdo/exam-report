@@ -370,60 +370,71 @@
       </div>
     </div>
 
-    <!-- 상담일지 모달 (반 관리에서 바로 사용) -->
-    <div v-if="showCounselingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800">{{ selectedStudentForCounseling?.name }} 학생 상담</h3>
-          <button @click="closeCounselingModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    <!-- 상담일지 모달 -->
+    <div
+      v-if="showCounselingModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div class="p-4 border-b bg-green-600 text-white flex justify-between items-center rounded-t-lg">
+          <h3 class="text-xl font-bold">{{ selectedStudentForCounseling?.name }} 학생 상담일지</h3>
+          <button @click="closeCounselingModal" class="text-2xl font-bold">&times;</button>
         </div>
 
-        <!-- 상담 입력 -->
-        <div class="bg-gray-50 p-4 rounded-lg mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">상담 날짜</label>
-              <input v-model="counselingForm.consultation_date" type="date" class="w-full px-3 py-2 border rounded text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">상담 분류</label>
-              <select v-model="counselingForm.category" class="w-full px-3 py-2 border rounded text-sm">
-                <option value="일반상담">일반상담</option>
-                <option value="성적상담">성적상담</option>
-                <option value="진로상담">진로상담</option>
-                <option value="생활지도">생활지도</option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-4">
-            <label class="block text-xs text-gray-500 mb-1">상담 내용</label>
-            <textarea v-model="counselingForm.content" rows="3" class="w-full px-3 py-2 border rounded text-sm outline-none focus:ring-1 focus:ring-primary" placeholder="상담 내용을 입력하세요"></textarea>
-          </div>
-          <div class="flex justify-end">
-            <button @click="saveCounselingLog" :disabled="savingCounseling || !counselingForm.content" class="px-6 py-2 bg-primary text-white rounded font-bold hover:bg-primary-dark transition disabled:opacity-50">
-              {{ savingCounseling ? '저장 중...' : '상담 기록 저장' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 상담 내역 목록 -->
-        <div class="flex-1 overflow-y-auto">
-          <h4 class="text-sm font-bold text-gray-700 mb-3">상담 이력</h4>
-          <div v-if="counselingLogs.length === 0" class="text-center py-8 text-gray-400 text-sm">
-            등록된 상담 기록이 없습니다.
-          </div>
-          <div v-else class="space-y-4">
-            <div v-for="log in counselingLogs" :key="log.id" class="border rounded-lg p-4 hover:bg-gray-50 transition">
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">{{ log.category }}</span>
-                  <span class="text-xs text-gray-500 font-medium">{{ log.consultation_date }}</span>
-                  <span class="text-xs text-gray-400">|</span>
-                  <span class="text-xs text-gray-500">{{ log.counselor_name }} 선생님</span>
-                </div>
-                <button v-if="isAdmin || user.name === log.counselor_name" @click="deleteCounselingLog(log.id)" class="text-red-400 hover:text-red-600 text-xs">삭제</button>
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- 상담 입력 폼 -->
+          <div class="mb-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 class="font-bold text-gray-700 mb-3">새 상담 기록</h4>
+            <div class="grid grid-cols-3 gap-4 mb-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담 날짜</label>
+                <input v-model="counselingForm.consultation_date" type="date" class="w-full px-3 py-2 text-sm border rounded" />
               </div>
-              <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ log.content }}</p>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담자</label>
+                <input v-model="counselingForm.counselor_name" type="text" class="w-full px-3 py-2 text-sm border rounded" placeholder="선생님 성함" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">상담 유형</label>
+                <select v-model="counselingForm.category" class="w-full px-3 py-2 text-sm border rounded">
+                  <option value="일반상담">일반상담</option>
+                  <option value="학습상담">학습상담</option>
+                  <option value="진학상담">진학상담</option>
+                  <option value="생활상담">생활상담</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="block text-xs text-gray-500 mb-1">상담 내용</label>
+              <textarea v-model="counselingForm.content" rows="3" class="w-full px-3 py-2 text-sm border rounded" placeholder="상담 내용을 입력하세요"></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button @click="saveCounselingLog" :disabled="savingCounseling" class="px-4 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition disabled:opacity-50">
+                {{ savingCounseling ? '저장 중...' : '기록 저장' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 상담 히스토리 -->
+          <div>
+            <h4 class="font-bold text-gray-700 mb-4">상담 히스토리 ({{ counselingLogs.length }}건)</h4>
+            <div v-if="counselingLogs.length === 0" class="text-center py-8 text-gray-400 text-sm">
+              기록된 상담 내역이 없습니다.
+            </div>
+            <div v-else class="space-y-4">
+              <div v-for="log in counselingLogs" :key="log.id" class="border-l-4 border-green-500 bg-white p-4 shadow-sm rounded-r-lg border-y border-r transition hover:bg-gray-50">
+                <div class="flex justify-between items-start mb-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-bold rounded">{{ log.category }}</span>
+                    <span class="text-xs text-gray-500 font-medium">{{ log.consultation_date }}</span>
+                  </div>
+                  <button v-if="isAdmin || user.name === log.counselor_name" @click="deleteCounselingLog(log.id)" class="text-red-400 hover:text-red-600 text-xs">삭제</button>
+                </div>
+                <p class="text-sm text-gray-800 whitespace-pre-wrap mb-2">{{ log.content }}</p>
+                <div class="text-right">
+                  <span class="text-xs text-gray-400">작성자: {{ log.counselor_name }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -807,6 +818,7 @@ const showCounselingModal = ref(false);
 const selectedStudentForCounseling = ref<Student | null>(null);
 const counselingLogs = ref<any[]>([]);
 const counselingForm = ref({
+  counselor_name: '',
   category: '일반상담',
   content: '',
   consultation_date: getTodayFull()
@@ -832,6 +844,12 @@ const closeCounselingModal = () => {
   showCounselingModal.value = false;
   selectedStudentForCounseling.value = null;
   counselingLogs.value = [];
+  counselingForm.value = {
+    counselor_name: '',
+    category: '일반상담',
+    content: '',
+    consultation_date: getTodayFull()
+  };
 };
 
 const fetchCounselingLogs = async (studentId: number) => {
@@ -844,21 +862,28 @@ const fetchCounselingLogs = async (studentId: number) => {
 };
 
 const saveCounselingLog = async () => {
-  if (!selectedStudentForCounseling.value || !counselingForm.value.content) return;
+  if (!selectedStudentForCounseling.value) return;
+  if (!counselingForm.value.counselor_name || !counselingForm.value.content) {
+    alert('상담자와 내용을 입력해주세요.');
+    return;
+  }
+  
   try {
     savingCounseling.value = true;
-    await counselingApi.createLog({
+    const response = await counselingApi.createLog({
       student_id: selectedStudentForCounseling.value.id,
-      counselor_name: user.name,
       ...counselingForm.value
     });
-    counselingForm.value.content = '';
-    fetchCounselingLogs(selectedStudentForCounseling.value.id);
     
-    // 상담 저장 후 목록의 상담일자 즉시 업데이트
-    const studentIdx = classStudents.value.findIndex(s => s.id === selectedStudentForCounseling.value?.id);
-    if (studentIdx !== -1) {
-      classStudents.value[studentIdx].last_counseling_date = counselingForm.value.consultation_date;
+    if (response.data.success) {
+      counselingForm.value.content = '';
+      fetchCounselingLogs(selectedStudentForCounseling.value.id);
+      
+      // 상담 저장 후 목록의 상담일자 즉시 업데이트
+      const studentIdx = classStudents.value.findIndex(s => s.id === selectedStudentForCounseling.value?.id);
+      if (studentIdx !== -1) {
+        classStudents.value[studentIdx].last_counseling_date = counselingForm.value.consultation_date;
+      }
     }
   } catch (err) {
     alert('상담 저장 중 오류가 발생했습니다.');
