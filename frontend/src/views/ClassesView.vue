@@ -11,45 +11,54 @@
       </button>
     </div>
 
-    <!-- 오늘 숙제 검사 알림 배너 (숙제) -->
     <div
-      v-if="homeworkDueTodayHomework.length > 0"
-      class="mb-3 bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-sm animate-pulse-slow"
+      v-if="homeworkDueToday.length > 0"
+      class="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
     >
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-2xl">🔔</span>
-        <h3 class="text-lg font-bold text-red-700">오늘 숙제 검사날입니다.!</h3>
+      <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b flex items-center gap-2">
+        <span class="text-2xl">📋</span>
+        <h3 class="text-lg font-bold text-blue-800">오늘 숙제 및 RT 검사 현황</h3>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <span
-          v-for="due in homeworkDueTodayHomework"
-          :key="due.id"
-          class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-sm font-bold cursor-pointer hover:bg-red-200 transition"
-          @click="goToClassHomeworkCheck(due)"
-        >
-          📋 {{ due.class_name || '반' }} - {{ due.content?.substring(0, 20) }}{{ (due.content?.length || 0) > 20 ? '...' : '' }}
-        </span>
-      </div>
-    </div>
-
-    <!-- 오늘 RT 검사 알림 배너 (RT) -->
-    <div
-      v-if="homeworkDueTodayRT.length > 0"
-      class="mb-6 bg-purple-50 border-l-4 border-purple-500 rounded-lg p-4 shadow-sm animate-pulse-slow"
-    >
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-2xl">🔔</span>
-        <h3 class="text-lg font-bold text-purple-700">오늘 RT</h3>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <span
-          v-for="due in homeworkDueTodayRT"
-          :key="due.id"
-          class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-sm font-bold cursor-pointer hover:bg-purple-200 transition"
-          @click="goToClassHomeworkCheck(due)"
-        >
-          📋 {{ due.class_name || '반' }} - {{ due.content?.substring(0, 20) }}{{ (due.content?.length || 0) > 20 ? '...' : '' }}
-        </span>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-600">
+          <thead class="text-xs text-gray-700 bg-gray-50 border-b">
+            <tr>
+              <th scope="col" class="px-4 py-3 w-[15%]">담당 선생님</th>
+              <th scope="col" class="px-4 py-3 w-[10%] text-center">구분</th>
+              <th scope="col" class="px-4 py-3 w-[20%]">반 이름</th>
+              <th scope="col" class="px-4 py-3 w-[45%]">내용</th>
+              <th scope="col" class="px-4 py-3 w-[10%] text-center">확인</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <template v-for="(items, teacher) in homeworkDueByTeacher" :key="teacher">
+              <tr v-for="(item, index) in items" :key="item.id" class="hover:bg-gray-50 transition-colors">
+                <!-- 선생님 이름은 첫 번째 행에만 표시하고 rowspan 적용 -->
+                <th v-if="index === 0" :rowspan="items.length" scope="row" class="px-4 py-3 font-bold text-gray-900 bg-gray-50 border-r align-top">
+                  {{ teacher }}
+                </th>
+                <td class="px-4 py-3 text-center">
+                  <span
+                    class="px-2.5 py-1 text-xs font-bold rounded-full"
+                    :class="item.type === 'rt' ? 'bg-purple-100 text-purple-800' : 'bg-red-100 text-red-800'"
+                  >
+                    {{ item.type === 'rt' ? 'RT' : '숙제' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-800">{{ item.class_name }}</td>
+                <td class="px-4 py-3 truncate max-w-[300px]" :title="item.content">{{ item.content }}</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    @click="goToClassHomeworkCheck(item)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700 transition"
+                  >
+                    바로가기
+                  </button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -129,24 +138,26 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="student in sortedClassStudents" :key="student.id" class="hover:bg-gray-50 cursor-pointer" @click="openCounselingModal(student)">
-                <td class="px-2 py-2.5 text-sm font-bold text-gray-900 truncate">
+              <tr v-for="student in sortedClassStudents" :key="student.id" class="hover:bg-gray-50">
+                <td class="px-2 py-2.5 text-sm font-bold text-gray-900 truncate cursor-pointer" @click="openCounselingModal(student)">
                   {{ student.name }}
                 </td>
-                <td class="px-2 py-2.5 text-sm text-gray-700 font-bold">
+                <td class="px-2 py-2.5 text-sm text-gray-700 font-bold cursor-pointer" @click="openCounselingModal(student)">
                   {{ student.school || '-' }}<br/>{{ student.grade || '-' }}
                 </td>
-                <td class="px-2 py-2.5 text-sm text-gray-600">
+                <td class="px-2 py-2.5 text-sm text-gray-600 cursor-pointer" @click="openCounselingModal(student)">
                   <div class="flex flex-col gap-0.5">
                     <span class="font-bold">학: {{ formatPhone((student as any).student_no) }}</span>
                     <span class="font-extrabold text-blue-700">부: {{ formatPhone(student.parent_phone) }}</span>
                   </div>
                 </td>
-                <td class="px-2 py-2.5 text-sm text-gray-600 font-bold">
-                  <div v-if="student.last_counseling_date" class="text-primary">
-                    {{ student.last_counseling_date }}
+                <td class="px-2 py-2.5 text-sm text-gray-600 font-bold cursor-pointer hover:bg-blue-50 transition-colors" @click.stop="openCounselingModal(student)">
+                  <div v-if="student.last_counseling_date" class="text-primary flex items-center justify-between">
+                    <span>{{ student.last_counseling_date }}</span>
                   </div>
-                  <div v-else class="text-gray-300">-</div>
+                  <div v-else class="text-gray-400 text-xs flex items-center justify-center h-full min-h-[2rem] border border-dashed border-gray-300 rounded hover:border-blue-400 hover:text-blue-500">
+                    + 입력
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -661,12 +672,15 @@ const todayRTCount = computed(
 );
 
 // 상단 배너용 숙제 / RT 분리 목록
-const homeworkDueTodayHomework = computed(() =>
-  homeworkDueToday.value.filter((h: any) => h.type !== 'rt')
-);
-const homeworkDueTodayRT = computed(() =>
-  homeworkDueToday.value.filter((h: any) => h.type === 'rt')
-);
+const homeworkDueByTeacher = computed(() => {
+  const grouped: Record<string, any[]> = {};
+  homeworkDueToday.value.forEach(h => {
+    const teacher = h.teacher || '기타';
+    if (!grouped[teacher]) grouped[teacher] = [];
+    grouped[teacher].push(h);
+  });
+  return grouped;
+});
 
 // 학습일지 입력용: 숙제 / RT 구분된 목록
 const homeworkItems = computed(() =>
@@ -1267,6 +1281,7 @@ const fetchHomeworkDue = async () => {
                 type: itemType,
                 class_name: cls.name || '-',
                 class_id: log.class_id,
+                teacher: log.created_by || log.updated_by || '선생님 미상',
                 id: `${log.id}-${itemType}-${h.content}`
               });
             }
@@ -1280,6 +1295,7 @@ const fetchHomeworkDue = async () => {
             content: log.homework,
             class_name: cls.name || '-',
             class_id: log.class_id,
+            teacher: log.created_by || log.updated_by || '선생님 미상',
             id: log.id
           });
         }
