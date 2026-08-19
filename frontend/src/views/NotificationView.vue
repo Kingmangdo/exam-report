@@ -105,7 +105,7 @@
           <div class="mb-6">
             <label class="block text-sm font-bold text-gray-700 mb-2">템플릿 선택</label>
             <select v-model="selectedTemplate" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary outline-none">
-              <option value="UJ_6077">상담 안내 (승인 완료)</option>
+              <option value="UK_3821">상담 안내 (승인 완료)</option>
               <option value="future_notice" disabled>학원 공지사항 (추후 심사 예정)</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">* 현재 '상담 안내' 템플릿만 승인되어 발송 가능합니다.</p>
@@ -113,7 +113,7 @@
 
           <!-- 직접 입력 모드 -->
           <div v-if="composeMode === 'manual'" class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200 space-y-4">
-            <p class="text-sm font-bold text-amber-800">신규 학부모 등 미등록 번호로 발송합니다. (템플릿 UJ_6077)</p>
+            <p class="text-sm font-bold text-amber-800">신규 학부모 등 미등록 번호로 발송합니다. (템플릿 UK_3821)</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">이름 (#{이름}) <span class="text-red-500">*</span></label>
@@ -183,16 +183,14 @@
             <div class="bg-white p-4 rounded border text-sm text-gray-700 whitespace-pre-wrap leading-relaxed shadow-sm">
 [독강영어전문학원 상담안내]
 
-학부모님, 안녕하십니까
-{{ previewName }} 학생의 상담 내용을
-안내해드립니다.
-
 ■ 이름 : {{ previewName }}
 ■ 일자 : {{ formData.date }}
 ■ 내용 : {{ formData.content || '(내용이 여기에 들어갑니다)' }}
 
-궁금하신 사항은 학원으로 문의해
-주시기 바랍니다.
+추가로 문의하실 점은 학생의 
+【학년 & 이름】과 함께 채팅창에 
+보내주시면 확인하는 대로 
+답변 드리도록 하겠습니다. 
 
 감사합니다.
             </div>
@@ -351,7 +349,7 @@ const selectedClass = ref('');
 const searchQuery = ref('');
 const selectedStudents = ref<any[]>([]);
 
-const selectedTemplate = ref('UJ_6077');
+const selectedTemplate = ref('UK_3821');
 const composeMode = ref<'student' | 'manual'>('student');
 const manualForm = ref({
   name: '',

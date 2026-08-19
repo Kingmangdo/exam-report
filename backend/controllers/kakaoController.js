@@ -127,7 +127,7 @@ ${reportUrl}
   }
 };
 
-// ========== 상담 안내 (UJ_6077) 알림톡 발송 ==========
+// ========== 상담 안내 (UK_3821) 알림톡 발송 ==========
 export const sendCounselingNotification = async (req, res) => {
   try {
     const { student_id, class_name, date, content, targets = ['parent', 'student'] } = req.body;
@@ -174,16 +174,14 @@ export const sendCounselingNotification = async (req, res) => {
     // 알리고 템플릿과 100% 일치해야 하는 메시지 본문
     const message = `[독강영어전문학원 상담안내]
 
-학부모님, 안녕하십니까
-${student.name} 학생의 상담 내용을
-안내해드립니다.
-
 ■ 이름 : ${student.name}
 ■ 일자 : ${date}
 ■ 내용 : ${content}
 
-궁금하신 사항은 학원으로 문의해
-주시기 바랍니다.
+추가로 문의하실 점은 학생의 
+【학년 & 이름】과 함께 채팅창에 
+보내주시면 확인하는 대로 
+답변 드리도록 하겠습니다. 
 
 감사합니다.`;
 
@@ -195,7 +193,7 @@ ${student.name} 학생의 상담 내용을
       const aligoData = {
         receiver_1: r.cleanPhone,
         message_1: message,
-        tpl_code: 'UJ_6077',
+        tpl_code: 'UK_3821',
         button_1: {
           "button": [{
           "name": "채널 추가",
@@ -261,7 +259,7 @@ ${student.name} 학생의 상담 내용을
   }
 };
 
-// ========== 상담 안내 (UJ_6077) - 이름/번호 직접 입력 발송 ==========
+// ========== 상담 안내 (UK_3821) - 이름/번호 직접 입력 발송 ==========
 export const sendManualCounselingNotification = async (req, res) => {
   try {
     const { name, phone, date, content } = req.body;
@@ -283,26 +281,24 @@ export const sendManualCounselingNotification = async (req, res) => {
 
     const displayName = String(name).trim();
 
-    // UJ_6077 템플릿과 동일한 본문 (변수: 이름, 일자, 내용)
+    // UK_3821 템플릿과 동일한 본문 (변수: 이름, 일자, 내용)
     const message = `[독강영어전문학원 상담안내]
-
-학부모님, 안녕하십니까
-${displayName} 학생의 상담 내용을
-안내해드립니다.
 
 ■ 이름 : ${displayName}
 ■ 일자 : ${date}
 ■ 내용 : ${content}
 
-궁금하신 사항은 학원으로 문의해
-주시기 바랍니다.
+추가로 문의하실 점은 학생의 
+【학년 & 이름】과 함께 채팅창에 
+보내주시면 확인하는 대로 
+답변 드리도록 하겠습니다. 
 
 감사합니다.`;
 
     const aligoData = {
       receiver_1: cleanPhone,
       message_1: message,
-      tpl_code: 'UJ_6077',
+      tpl_code: 'UK_3821',
       button_1: {
         button: [{
           name: '채널 추가',
