@@ -131,7 +131,7 @@
               <td class="px-3 py-3 text-center whitespace-nowrap">
                 <template v-if="activeTab === 'reservations'">
                   <button @click="openEditModal(r)" class="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition font-bold mr-1">수정</button>
-                  <button @click="openLevelTestModal(r)" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition font-bold mr-1">레벨테스트</button>
+                  <button @click="openLevelTestModal(r)" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition font-bold mr-1">레테</button>
                   <button v-if="r.status !== '입학'" @click="enrollStudent(r)" class="px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition font-bold mr-1">입학</button>
                   <button @click="openWaitlistModal(r)" class="px-2 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition font-bold mr-1">대기</button>
                   <button @click="deleteReservation(r.id)" class="px-2 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold">삭제</button>
