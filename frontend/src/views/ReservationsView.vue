@@ -1,35 +1,70 @@
 <template>
   <div>
-    <h2 class="text-3xl font-bold text-gray-800 mb-6">예약자 명단 관리</h2>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-bold text-gray-800">예약 및 대기 관리</h2>
+    </div>
 
-    <!-- 상단: 필터 + 추가 버튼 -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="flex flex-wrap gap-4 items-end">
-        <div>
-          <label class="block text-sm text-gray-500 mb-1">상태</label>
-          <select v-model="filterStatus" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
-            <option value="">전체</option>
-            <option value="예약">예약</option>
-            <option value="방문완료">방문완료</option>
-            <option value="입학">입학</option>
-            <option value="취소">취소</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-500 mb-1">기간 조회</label>
-          <select v-model="filterPeriod" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
-            <option value="recent">최근 3주</option>
-            <option value="all">전체 내역</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-500 mb-1">이름 검색</label>
-          <input v-model="searchName" type="text" placeholder="이름 입력" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
-        </div>
-        <div class="ml-auto">
-          <button @click="openCreateModal" class="text-base px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold">
-            + 예약 등록
+    <!-- 탭 메뉴 -->
+    <div class="bg-white rounded-lg shadow mb-6">
+      <div class="flex border-b border-gray-200">
+        <div class="flex space-x-1 px-4 pt-2">
+
+          <button
+            @click="activeTab = 'reservations'"
+            class="px-6 py-3 text-base font-bold transition-colors relative"
+            :class="activeTab === 'reservations' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'"
+          >
+            예약 명단 관리
           </button>
+          <button
+            @click="activeTab = 'waitlist'"
+            class="px-6 py-3 text-base font-bold transition-colors relative"
+            :class="activeTab === 'waitlist' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'"
+          >
+            대기자 명단 관리
+          </button>
+        </div>
+      </div>
+      
+      <!-- 상단: 필터 + 추가 버튼 -->
+      <div class="p-4">
+        <div class="flex flex-wrap gap-4 items-end">
+          <div v-if="activeTab === 'reservations'">
+            <label class="block text-sm text-gray-500 mb-1">상태</label>
+            <select v-model="filterStatus" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
+              <option value="">전체</option>
+              <option value="예약">예약</option>
+              <option value="방문완료">방문완료</option>
+              <option value="입학">입학</option>
+              <option value="취소">취소</option>
+            </select>
+          </div>
+          <div v-if="activeTab === 'waitlist'">
+            <label class="block text-sm text-gray-500 mb-1">대기 사유</label>
+            <select v-model="filterWaitReason" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">전체</option>
+              <option value="노쇼/일정변경">노쇼 / 일정 변경</option>
+              <option value="상담후고민">상담 후 고민</option>
+              <option value="정원마감">정원 마감 (TO 대기)</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div v-if="activeTab === 'reservations'">
+            <label class="block text-sm text-gray-500 mb-1">기간 조회</label>
+            <select v-model="filterPeriod" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
+              <option value="recent">최근 3주</option>
+              <option value="all">전체 내역</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-500 mb-1">이름 검색</label>
+            <input v-model="searchName" type="text" placeholder="이름 입력" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div class="ml-auto">
+            <button @click="openCreateModal" class="text-base px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition font-bold">
+              + 예약 등록
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -50,11 +85,11 @@
               <th class="px-3 py-3 text-left text-sm font-bold text-gray-500">기타</th>
               <th class="px-3 py-3 text-center text-sm font-bold text-gray-500">상태</th>
               <th class="px-3 py-3 text-center text-sm font-bold text-gray-500">안내 발송</th>
-              <th class="px-3 py-3 text-center text-sm font-bold text-gray-500">관리</th>
+              <th class="px-3 py-3 text-center text-sm font-bold text-gray-500 w-[240px]">관리</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="r in filteredReservations" :key="r.id" class="hover:bg-gray-50">
+            <tr v-for="r in displayReservations" :key="r.id" class="hover:bg-gray-50">
               <td class="px-3 py-3 text-base font-bold text-gray-900">{{ r.name }}</td>
               <td class="px-3 py-3 text-base text-gray-600">{{ formatDateTime(r.visit_date) }}</td>
               <td class="px-3 py-3 text-base text-gray-600">{{ r.school || '-' }}</td>
@@ -69,7 +104,8 @@
                     'bg-blue-100 text-blue-700': r.status === '예약',
                     'bg-green-100 text-green-700': r.status === '방문완료',
                     'bg-purple-100 text-purple-700': r.status === '입학',
-                    'bg-gray-100 text-gray-500': r.status === '취소'
+                    'bg-gray-100 text-gray-500': r.status === '취소',
+                    'bg-orange-100 text-orange-700': r.status === '대기'
                   }"
                 >{{ r.status }}</span>
               </td>
@@ -93,17 +129,26 @@
                 </template>
               </td>
               <td class="px-3 py-3 text-center whitespace-nowrap">
-                <button @click="openEditModal(r)" class="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition font-bold mr-1">수정</button>
-                <button @click="openLevelTestModal(r)" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition font-bold mr-1">레벨테스트</button>
-                <button v-if="r.status !== '입학'" @click="enrollStudent(r)" class="px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition font-bold mr-1">입학</button>
-                <button @click="deleteReservation(r.id)" class="px-2 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold">삭제</button>
+                <template v-if="activeTab === 'reservations'">
+                  <button @click="openEditModal(r)" class="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition font-bold mr-1">수정</button>
+                  <button @click="openLevelTestModal(r)" class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition font-bold mr-1">레벨테스트</button>
+                  <button v-if="r.status !== '입학'" @click="enrollStudent(r)" class="px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition font-bold mr-1">입학</button>
+                  <button @click="openWaitlistModal(r)" class="px-2 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition font-bold mr-1">대기</button>
+                  <button @click="deleteReservation(r.id)" class="px-2 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold">삭제</button>
+                </template>
+                <template v-else>
+                  <button @click="openEditModal(r)" class="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition font-bold mr-1">수정</button>
+                  <button @click="openRebookModal(r)" class="px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition font-bold mr-1">재예약(일정잡기)</button>
+                  <button v-if="r.status !== '입학'" @click="enrollStudent(r)" class="px-2 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition font-bold mr-1">입학</button>
+                  <button @click="deleteReservation(r.id)" class="px-2 py-1 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200 transition font-bold">삭제</button>
+                </template>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div v-if="filteredReservations.length === 0" class="p-8 text-center text-gray-500 text-lg">
-        예약자가 없습니다.
+      <div v-if="displayReservations.length === 0" class="p-8 text-center text-gray-500 text-lg">
+        {{ activeTab === 'reservations' ? '예약자가 없습니다.' : '대기자가 없습니다.' }}
       </div>
     </div>
 
@@ -161,13 +206,14 @@
             <label class="block text-sm font-bold text-gray-700 mb-1">기타</label>
             <textarea v-model="form.notes" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="특이사항, 메모 등"></textarea>
           </div>
-          <div v-if="editingId">
+          <div v-if="editingId && activeTab === 'reservations'">
             <label class="block text-sm font-bold text-gray-700 mb-1">상태</label>
             <select v-model="form.status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="예약">예약</option>
               <option value="방문완료">방문완료</option>
               <option value="입학">입학</option>
               <option value="취소">취소</option>
+              <option value="대기">대기</option>
             </select>
           </div>
         </div>
@@ -402,6 +448,67 @@
     <div v-if="toastMsg" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-[70] font-bold">
       {{ toastMsg }}
     </div>
+    <!-- ========== 대기 처리 모달 ========== -->
+    <div v-if="showWaitlistModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-6 border-b">
+          <h3 class="text-lg font-bold text-gray-800">대기 명단으로 이동</h3>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600 mb-4"><span class="font-bold text-primary">{{ selectedReservation?.name }}</span> 학생을 대기 명단으로 이동합니다. 사유를 선택하세요.</p>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">대기 사유</label>
+            <select v-model="waitReason" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="노쇼/일정변경">노쇼 / 일정 변경</option>
+              <option value="상담후고민">상담 후 고민</option>
+              <option value="정원마감">정원 마감 (TO 대기)</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">대기 메모 (기타 내용 등)</label>
+            <textarea v-model="waitMemo" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="대기 관련 특이사항을 적어주세요."></textarea>
+          </div>
+        </div>
+        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+          <button @click="showWaitlistModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold">취소</button>
+          <button @click="confirmMoveToWaitlist" class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold shadow-sm">이동</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 재예약(방문일시 입력) 모달 ========== -->
+    <div v-if="showRebookModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-6 border-b">
+          <h3 class="text-lg font-bold text-gray-800">재예약 (새 일정 지정)</h3>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600 mb-4"><span class="font-bold text-primary">{{ selectedReservation?.name }}</span> 학생의 새로운 방문 일정을 지정합니다. 저장 후 상태가 '예약'으로 돌아갑니다.</p>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">새 방문일시 <span class="text-red-500">*</span></label>
+            <div class="flex gap-3 items-center">
+              <div class="flex-1 relative">
+                <input v-model="rebookForm.visit_date_only" type="date" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                <span v-if="rebookForm.visit_date_only" class="absolute right-10 top-1/2 -translate-y-1/2 text-sm font-bold text-primary pointer-events-none">
+                  ({{ getDayName(rebookForm.visit_date_only) }})
+                </span>
+              </div>
+              <select v-model="rebookForm.visit_time" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="" disabled>시간 선택</option>
+                <option v-for="t in timeSlots" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+          <button @click="showRebookModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-bold">취소</button>
+          <button @click="confirmRebook" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-sm">
+            일정 저장 및 예약으로 이동
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -492,9 +599,24 @@ const levelTestAvgScore = computed(() => {
   return totalMax > 0 ? ((total / totalMax) * 100).toFixed(1) : '0.0';
 });
 
+const activeTab = ref('reservations');
+const filterWaitReason = ref('');
+
 const filteredReservations = computed(() => {
   if (!searchName.value) return reservations.value;
   return reservations.value.filter(r => r.name?.includes(searchName.value));
+});
+
+const displayReservations = computed(() => {
+  if (activeTab.value === 'reservations') {
+    return filteredReservations.value.filter(r => r.status !== '대기');
+  } else {
+    let waitlist = filteredReservations.value.filter(r => r.status === '대기');
+    if (filterWaitReason.value) {
+      waitlist = waitlist.filter(r => r.notes && r.notes.startsWith(`[대기:${filterWaitReason.value}]`));
+    }
+    return waitlist;
+  }
 });
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
@@ -514,9 +636,12 @@ const formatDateTime = (dateStr: string): string => {
 const fetchReservations = async () => {
   try {
     const params: any = {};
-    if (filterStatus.value) params.status = filterStatus.value;
+    if (filterStatus.value && activeTab.value === 'reservations') {
+      params.status = filterStatus.value;
+    }
     
-    if (filterPeriod.value === 'recent') {
+    // 대기자 명단은 무조건 전체 기간 조회
+    if (filterPeriod.value === 'recent' && activeTab.value === 'reservations') {
       const today = new Date();
       // 3주 전 (21일 전) 날짜
       const threeWeeksAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 21);
@@ -609,7 +734,82 @@ const deleteReservation = async (id: number) => {
   }
 };
 
-// ========== 입학 처리 ==========
+// ========== 대기 처리 ==========
+const showWaitlistModal = ref(false);
+const waitReason = ref('노쇼/일정변경');
+const waitMemo = ref('');
+
+const openWaitlistModal = (r: any) => {
+  selectedReservation.value = r;
+  waitReason.value = '노쇼/일정변경';
+  waitMemo.value = '';
+  showWaitlistModal.value = true;
+};
+
+const confirmMoveToWaitlist = async () => {
+  if (!selectedReservation.value) return;
+  const currentNotes = selectedReservation.value.notes || '';
+  const newNotes = `[대기:${waitReason.value}] ${waitMemo.value ? waitMemo.value : ''}${currentNotes ? '\n---\n' + currentNotes : ''}`;
+  
+  try {
+    const payload = {
+      ...selectedReservation.value,
+      status: '대기',
+      notes: newNotes.trim()
+    };
+    await reservationApi.update(selectedReservation.value.id, payload);
+    showWaitlistModal.value = false;
+    await fetchReservations();
+  } catch (err: any) {
+    alert('대기 처리 실패: ' + (err.response?.data?.message || err.message));
+  }
+};
+
+// ========== 재예약 처리 ==========
+const showRebookModal = ref(false);
+const rebookForm = ref({
+  visit_date_only: '',
+  visit_time: ''
+});
+
+const openRebookModal = (r: any) => {
+  selectedReservation.value = r;
+  rebookForm.value = {
+    visit_date_only: '',
+    visit_time: ''
+  };
+  showRebookModal.value = true;
+};
+
+const confirmRebook = async () => {
+  if (!rebookForm.value.visit_date_only || !rebookForm.value.visit_time) {
+    alert('새 방문일시를 모두 선택해주세요.');
+    return;
+  }
+  
+  if (!selectedReservation.value) return;
+  
+  const visitDateTime = `${rebookForm.value.visit_date_only}T${rebookForm.value.visit_time}:00.000Z`;
+  
+  try {
+    const payload = {
+      ...selectedReservation.value,
+      visit_date: visitDateTime,
+      status: '예약' // 상태를 다시 예약으로 돌림
+    };
+    await reservationApi.update(selectedReservation.value.id, payload);
+    
+    // 재발송할 수 있도록 상태 맵 초기화
+    sendStatusMap.value[selectedReservation.value.id] = '';
+    
+    showRebookModal.value = false;
+    activeTab.value = 'reservations'; // 예약 탭으로 자동 이동
+    await fetchReservations();
+    alert('일정이 저장되고 예약 명단으로 이동되었습니다. 발송 버튼을 눌러 안내톡을 보내주세요.');
+  } catch (err: any) {
+    alert('재예약 처리 실패: ' + (err.response?.data?.message || err.message));
+  }
+};
 const enrollStudent = async (r: any) => {
   // 모달을 열어 반 배정 가능하도록 처리
   selectedReservation.value = r;

@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS public.reservations (
   parent_phone text,
   recent_english_score text,
   notes text,
-  status text default '예약' check (status in ('예약', '방문완료', '취소', '입학')),
+  status text default '예약' check (status in ('예약', '방문완료', '취소', '입학', '대기')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

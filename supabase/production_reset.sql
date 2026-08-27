@@ -207,7 +207,7 @@ CREATE TABLE public.reservations (
   parent_phone text,
   recent_english_score text,
   notes text,
-  status text DEFAULT '예약' CHECK (status IN ('예약', '방문완료', '취소', '입학')),
+  status text DEFAULT '예약' CHECK (status IN ('예약', '방문완료', '취소', '입학', '대기')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
