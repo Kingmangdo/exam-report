@@ -446,7 +446,7 @@
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">선생님 선택</option>
-                <option value="댄T">댄T</option>
+                <option value="제임스T">제임스T</option>
                 <option value="마이크T">마이크T</option>
                 <option value="첼시원장">첼시원장</option>
               </select>
@@ -574,7 +574,7 @@
                 class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">선생님 선택</option>
-                <option value="댄T">댄T</option>
+                <option value="제임스T">제임스T</option>
                 <option value="마이크T">마이크T</option>
                 <option value="첼시원장">첼시원장</option>
               </select>

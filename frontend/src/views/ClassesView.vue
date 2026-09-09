@@ -474,7 +474,12 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">담임 선생님</label>
-            <input v-model="classForm.teacher_name" type="text" class="w-full px-4 py-2 border rounded-lg" placeholder="선생님 이름" />
+            <select v-model="classForm.teacher_name" class="w-full px-4 py-2 border rounded-lg bg-white">
+              <option value="">담임 미지정</option>
+              <option value="첼시원장">첼시원장</option>
+              <option value="제임스T">제임스T</option>
+              <option value="마이크T">마이크T</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">수업 요일</label>

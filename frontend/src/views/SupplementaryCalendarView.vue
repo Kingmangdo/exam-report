@@ -492,7 +492,7 @@ const dashboardStats = computed(() => {
 
   return {
     teachers: Object.entries(teacherStats)
-      .filter(([name]) => ['첼시원장', '댄T', '마이크T'].includes(name))
+      .filter(([name]) => ['첼시원장', '제임스T', '마이크T'].includes(name))
       .map(([name, mins]) => ({ name, hours: formatHours(mins) }))
       .sort((a, b) => Number(b.hours) - Number(a.hours)),
     classes: Object.entries(classStats)
@@ -753,7 +753,7 @@ const selectedStudentIds = ref<number[]>([]);
 
 // 담임 선생님 목록 (기본 리스트 + 모든 반에서 teacher_name 모아서 사용)
 const teacherOptions = computed(() => {
-  const baseTeachers = ['첼시원장', '댄T', '마이크T'];
+  const baseTeachers = ['첼시원장', '제임스T', '마이크T'];
   return baseTeachers;
 });
 

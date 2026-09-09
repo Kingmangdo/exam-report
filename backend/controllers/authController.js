@@ -68,7 +68,7 @@ export const createFirstAdmin = async (req, res) => {
       await User.create({
         username: 'teacher1',
         password: 'teacher-pass-1',
-        name: '댄T',
+        name: '제임스T',
         role: 'instructor'
       });
       created.push('teacher1');

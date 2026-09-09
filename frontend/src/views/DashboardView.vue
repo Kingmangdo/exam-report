@@ -373,7 +373,7 @@ const classOverview = computed(() => {
 const userJson = localStorage.getItem('user');
 const user = userJson ? JSON.parse(userJson) : null;
 const alertItems = ref<any[]>([]);
-const teachersList = ref(['댄T', '마이크T', '첼시원장']);
+const teachersList = ref(['제임스T', '마이크T', '첼시원장']);
 
 const instructorWarnings = computed(() => {
   if (!user || user.role === 'admin') return [];
