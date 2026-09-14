@@ -214,33 +214,50 @@
             <button type="button" @click="showAppendModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
           </div>
         <form @submit.prevent="saveAppendItem" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">대상 반 <span class="text-red-500">*</span></label>
-            <select v-model="appendForm.class_id" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white">
-              <option value="" disabled>반을 선택하세요</option>
-              <option v-for="cls in allClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">내용 <span class="text-red-500">*</span></label>
-            <textarea v-model="appendForm.content" rows="3" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="예: [제] 리딩 교재 pg 35~52 (unit4 끝까지)"></textarea>
-          </div>
           <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">대상 반 <span class="text-red-500">*</span></label>
+              <select v-model="appendForm.class_id" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+                <option value="" disabled>반을 선택하세요</option>
+                <option v-for="cls in allClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+              </select>
+            </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 기록 날짜 <span class="text-xs text-gray-400">(보통 오늘)</span>
               </label>
               <input v-model="appendForm.log_date" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                검사 마감일 <span class="text-xs text-gray-400">(데일리보드에 뜨는 날)</span> <span class="text-red-500">*</span>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-sm font-medium text-gray-700">
+                추가할 내용 <span class="text-red-500">*</span>
               </label>
-              <input v-model="appendForm.deadline" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+              <button type="button" @click="addAppendItem" class="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 font-medium transition-colors">
+                + 추가
+              </button>
+            </div>
+            
+            <div v-for="(item, index) in appendForm.items" :key="index" class="flex gap-2 mb-2 items-center">
+              <span class="text-gray-400 text-sm font-bold w-4 text-center">{{ index + 1 }}</span>
+              <input v-model="item.content" type="text" :placeholder="appendType === 'rt' ? 'RT 내용 입력' : '숙제 내용 입력'" required class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm" />
+              <div class="flex items-center gap-2 border border-red-200 rounded-lg px-2 py-1 bg-white focus-within:ring-2 focus-within:ring-red-100">
+                <span class="text-xs text-red-500 font-medium whitespace-nowrap">검사일:</span>
+                <input v-model="item.deadline" type="date" required class="w-28 text-sm outline-none text-gray-700" />
+              </div>
+              <button v-if="appendForm.items.length > 1" type="button" @click="removeAppendItem(index)" class="text-gray-400 hover:text-red-500 px-2 text-lg">
+                &times;
+              </button>
+            </div>
+            <div v-if="appendForm.items.length === 0" class="text-sm text-gray-500 py-4 text-center border border-dashed rounded-lg bg-gray-50">
+              우측 상단의 (+ 추가) 버튼을 눌러 내용을 입력하세요.
             </div>
           </div>
+
           <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
-            💡 검사 마감일을 지정하시면, 해당 날짜의 데일리 보드에 이 내용이 표시됩니다.
+            💡 검사일을 지정하시면, 해당 날짜의 데일리 보드에 이 내용이 표시됩니다.
           </div>
           <div class="flex justify-end space-x-3 mt-6">
             <button type="button" @click="showAppendModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold">취소</button>
@@ -356,9 +373,8 @@ const isAppending = ref(false);
 const allClasses = ref<any[]>([]);
 const appendForm = ref({
   class_id: '',
-  content: '',
   log_date: '',
-  deadline: ''
+  items: [] as { content: string; deadline: string }[]
 });
 
 const openAppendModal = async (type: 'homework' | 'rt') => {
@@ -373,29 +389,54 @@ const openAppendModal = async (type: 'homework' | 'rt') => {
   appendType.value = type;
   appendForm.value = {
     class_id: '',
-    content: '',
     log_date: getTodayFull(), // 기록 날짜는 보통 오늘
-    deadline: selectedDate.value // 데일리보드 해당 날짜에 뜨게 마감일을 기본 세팅
+    items: [{ content: '', deadline: selectedDate.value }] // 기본 1개 세팅
   };
   showAppendModal.value = true;
 };
 
+const addAppendItem = () => {
+  appendForm.value.items.push({
+    content: '',
+    deadline: selectedDate.value
+  });
+};
+
+const removeAppendItem = (index: number) => {
+  appendForm.value.items.splice(index, 1);
+};
+
 const saveAppendItem = async () => {
-  if (!appendForm.value.class_id || !appendForm.value.content || !appendForm.value.deadline) {
-    alert('필수 값을 모두 입력하세요.');
+  if (!appendForm.value.class_id) {
+    alert('반을 선택해주세요.');
     return;
   }
+  if (appendForm.value.items.length === 0) {
+    alert('최소 1개의 항목을 추가해주세요.');
+    return;
+  }
+  
+  for (const item of appendForm.value.items) {
+    if (!item.content.trim() || !item.deadline) {
+      alert('모든 내용과 마감일을 입력해주세요.');
+      return;
+    }
+  }
+
   isAppending.value = true;
   try {
+    const homework_items = appendForm.value.items.map(item => ({
+      type: appendType.value,
+      content: item.content,
+      deadline: item.deadline,
+      completed: false
+    }));
+
     const payload = {
       log_date: appendForm.value.log_date,
-      homework_item: {
-        type: appendType.value,
-        content: appendForm.value.content,
-        deadline: appendForm.value.deadline,
-        completed: false
-      }
+      homework_items
     };
+
     const res = await classApi.appendHomeworkToLog(Number(appendForm.value.class_id), payload);
     if (res.data.success) {
       alert('저장되었습니다.');

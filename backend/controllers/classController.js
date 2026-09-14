@@ -74,9 +74,9 @@ export const getLearningLog = async (req, res) => {
 export const appendHomeworkToLog = async (req, res) => {
   try {
     const { id } = req.params; // class_id
-    const { log_date, homework_item } = req.body;
+    const { log_date, homework_item, homework_items } = req.body;
     
-    if (!log_date || !homework_item) {
+    if (!log_date || (!homework_item && (!homework_items || homework_items.length === 0))) {
       return res.status(400).json({ success: false, message: '날짜와 과제/RT 정보가 필요합니다.' });
     }
 
@@ -94,7 +94,11 @@ export const appendHomeworkToLog = async (req, res) => {
     }
 
     // 2. 새 숙제/RT 추가
-    parsedHomeworks.push(homework_item);
+    if (homework_items && Array.isArray(homework_items)) {
+      parsedHomeworks.push(...homework_items);
+    } else if (homework_item) {
+      parsedHomeworks.push(homework_item);
+    }
 
     // 3. homework 배열 중 가장 빠른 마감일을 homework_deadline으로 설정 (기존 로직 동일)
     let earliestDeadline = null;
