@@ -141,6 +141,9 @@ export const classApi = {
   saveLearningLog: (id: number, data: any) => {
     return api.post<ApiResponse<any>>(`/classes/${id}/learning-log`, data);
   },
+  appendHomeworkToLog: (id: number, data: any) => {
+    return api.post<ApiResponse<any>>(`/classes/${id}/homework-append`, data);
+  },
   getAllLogs: (id: number) => {
     return api.get<ApiResponse<any[]>>(`/classes/${id}/learning-logs`);
   },

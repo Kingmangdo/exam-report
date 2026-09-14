@@ -124,10 +124,13 @@
         
         <!-- 오늘의 과제 검사 -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-          <div class="bg-blue-50 px-5 py-3 border-b border-blue-100">
+          <div class="bg-blue-50 px-5 py-3 border-b border-blue-100 flex justify-between items-center">
             <h3 class="font-bold text-blue-800 flex items-center gap-2">
               <span>📚</span> 오늘의 과제 검사
             </h3>
+            <button v-if="isAdmin" @click="openAppendModal('homework')" class="px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 transition">
+              + 과제 추가
+            </button>
           </div>
           <div class="p-4 flex-1 overflow-y-auto max-h-[600px]">
             <div v-if="homeworkList.length === 0" class="text-center py-10 text-gray-500 text-sm">
@@ -154,10 +157,13 @@
 
         <!-- 오늘의 RT -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-          <div class="bg-purple-50 px-5 py-3 border-b border-purple-100">
+          <div class="bg-purple-50 px-5 py-3 border-b border-purple-100 flex justify-between items-center">
             <h3 class="font-bold text-purple-800 flex items-center gap-2">
               <span>🎯</span> 오늘의 RT 진행
             </h3>
+            <button v-if="isAdmin" @click="openAppendModal('rt')" class="px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded hover:bg-purple-700 transition">
+              + RT 추가
+            </button>
           </div>
           <div class="p-4 flex-1 overflow-y-auto max-h-[600px]">
             <div v-if="rtList.length === 0" class="text-center py-10 text-gray-500 text-sm">
@@ -195,6 +201,54 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 추가 모달 (Admin 전용) -->
+    <div v-if="showAppendModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">
+            {{ appendType === 'rt' ? '🎯 RT 추가 (원장님용)' : '📚 과제 추가 (원장님용)' }}
+          </h3>
+          <button @click="showAppendModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <form @submit.prevent="saveAppendItem" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">대상 반 <span class="text-red-500">*</span></label>
+            <select v-model="appendForm.class_id" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="" disabled>반을 선택하세요</option>
+              <option v-for="cls in allClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">내용 <span class="text-red-500">*</span></label>
+            <input v-model="appendForm.content" type="text" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="예: 추가 테스트, 과제 범위 등" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                기록 날짜 <span class="text-xs text-gray-400">(보통 오늘)</span>
+              </label>
+              <input v-model="appendForm.log_date" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                검사 마감일 <span class="text-xs text-gray-400">(데일리보드에 뜨는 날)</span> <span class="text-red-500">*</span>
+              </label>
+              <input v-model="appendForm.deadline" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+          </div>
+          <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+            💡 검사 마감일을 지정하시면, 해당 날짜의 데일리 보드에 이 내용이 표시됩니다.
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" @click="showAppendModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold">취소</button>
+            <button type="submit" :disabled="isAppending" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-sm disabled:opacity-50">
+              {{ isAppending ? '저장 중...' : '저장' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -294,6 +348,66 @@ const rtByClass = computed(() => {
   });
   return grouped;
 });
+
+// ========== Admin 과제/RT 추가 로직 ==========
+const showAppendModal = ref(false);
+const appendType = ref<'homework' | 'rt'>('homework');
+const isAppending = ref(false);
+const allClasses = ref<any[]>([]);
+const appendForm = ref({
+  class_id: '',
+  content: '',
+  log_date: '',
+  deadline: ''
+});
+
+const openAppendModal = async (type: 'homework' | 'rt') => {
+  if (allClasses.value.length === 0) {
+    try {
+      const res = await classApi.getAll();
+      if (res.data.success) {
+        allClasses.value = res.data.data;
+      }
+    } catch (e) { console.error('반 목록 로드 실패', e); }
+  }
+  appendType.value = type;
+  appendForm.value = {
+    class_id: '',
+    content: '',
+    log_date: getTodayFull(), // 기록 날짜는 보통 오늘
+    deadline: selectedDate.value // 데일리보드 해당 날짜에 뜨게 마감일을 기본 세팅
+  };
+  showAppendModal.value = true;
+};
+
+const saveAppendItem = async () => {
+  if (!appendForm.value.class_id || !appendForm.value.content || !appendForm.value.deadline) {
+    alert('필수 값을 모두 입력하세요.');
+    return;
+  }
+  isAppending.value = true;
+  try {
+    const payload = {
+      log_date: appendForm.value.log_date,
+      homework_item: {
+        type: appendType.value,
+        content: appendForm.value.content,
+        deadline: appendForm.value.deadline,
+        completed: false
+      }
+    };
+    const res = await classApi.appendHomeworkToLog(Number(appendForm.value.class_id), payload);
+    if (res.data.success) {
+      alert('저장되었습니다.');
+      showAppendModal.value = false;
+      await fetchBoardData(); // 현재 보고 있는 데일리 보드 다시 불러오기 (마감일 기준)
+    }
+  } catch (err: any) {
+    alert('저장에 실패했습니다: ' + (err.response?.data?.message || err.message));
+  } finally {
+    isAppending.value = false;
+  }
+};
 
 const fetchBoardData = async () => {
   isLoading.value = true;

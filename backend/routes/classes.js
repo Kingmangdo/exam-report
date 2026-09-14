@@ -15,6 +15,7 @@ router.post('/assign-students', classController.assignStudentsToClass);
 router.get('/homework-due', classController.getHomeworkDue);
 router.get('/:id/learning-log', classController.getLearningLog);
 router.post('/:id/learning-log', classController.saveLearningLog);
+router.post('/:id/homework-append', classController.appendHomeworkToLog);
 router.get('/:id/learning-logs', classController.getAllLearningLogs);
 router.get('/:id/learning-log/recent-dates', classController.getRecentLogDates);
 

@@ -71,6 +71,61 @@ export const getLearningLog = async (req, res) => {
   }
 };
 
+export const appendHomeworkToLog = async (req, res) => {
+  try {
+    const { id } = req.params; // class_id
+    const { log_date, homework_item } = req.body;
+    
+    if (!log_date || !homework_item) {
+      return res.status(400).json({ success: false, message: '날짜와 과제/RT 정보가 필요합니다.' });
+    }
+
+    // 1. 기존 로그 조회
+    const existingLog = await Class.getLearningLog(id, log_date);
+    
+    let parsedHomeworks = [];
+    if (existingLog && existingLog.homework) {
+      try {
+        parsedHomeworks = JSON.parse(existingLog.homework);
+        if (!Array.isArray(parsedHomeworks)) parsedHomeworks = [];
+      } catch (e) {
+        parsedHomeworks = [];
+      }
+    }
+
+    // 2. 새 숙제/RT 추가
+    parsedHomeworks.push(homework_item);
+
+    // 3. homework 배열 중 가장 빠른 마감일을 homework_deadline으로 설정 (기존 로직 동일)
+    let earliestDeadline = null;
+    parsedHomeworks.forEach(h => {
+      if (h.deadline) {
+        if (!earliestDeadline || h.deadline < earliestDeadline) {
+          earliestDeadline = h.deadline;
+        }
+      }
+    });
+
+    const homeworkString = JSON.stringify(parsedHomeworks);
+    
+    // 4. 저장 (upsert)
+    const logData = {
+      class_id: id,
+      log_date,
+      progress: existingLog ? existingLog.progress : '',
+      textbook: existingLog ? existingLog.textbook : '',
+      homework: homeworkString,
+      homework_deadline: earliestDeadline,
+      created_by: existingLog ? existingLog.created_by : (req.user?.name || '알 수 없음')
+    };
+
+    const savedLog = await Class.saveLearningLog(logData);
+    res.json({ success: true, data: savedLog });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const saveLearningLog = async (req, res) => {
   try {
     const { id } = req.params;
