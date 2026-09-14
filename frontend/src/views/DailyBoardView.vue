@@ -207,23 +207,23 @@
     <!-- 추가 모달 (Admin 전용) -->
     <div v-if="showAppendModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800">
-            {{ appendType === 'rt' ? '🎯 RT 추가 (원장님용)' : '📚 과제 추가 (원장님용)' }}
-          </h3>
-          <button @click="showAppendModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-        </div>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-800">
+              {{ appendType === 'rt' ? '🎯 RT 추가 (원장님용)' : '📚 과제 추가 (원장님용)' }}
+            </h3>
+            <button type="button" @click="showAppendModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+          </div>
         <form @submit.prevent="saveAppendItem" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">대상 반 <span class="text-red-500">*</span></label>
-            <select v-model="appendForm.class_id" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select v-model="appendForm.class_id" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white">
               <option value="" disabled>반을 선택하세요</option>
               <option v-for="cls in allClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">내용 <span class="text-red-500">*</span></label>
-            <input v-model="appendForm.content" type="text" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="예: 추가 테스트, 과제 범위 등" />
+            <textarea v-model="appendForm.content" rows="3" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="예: [제] 리딩 교재 pg 35~52 (unit4 끝까지)"></textarea>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -257,7 +257,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { dailyBoardApi, supplementaryApi } from '../services/api';
+import { dailyBoardApi, classApi, supplementaryApi } from '../services/api';
 import * as XLSX from 'xlsx';
 
 import { getTodayFull } from '../utils/date';
