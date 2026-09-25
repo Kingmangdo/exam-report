@@ -62,6 +62,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/ScoreNewView.vue')
       },
       {
+        path: 'scores/standalone/new',
+        name: 'standalone-score-new',
+        component: () => import('../views/StandaloneScoreNewView.vue')
+      },
+      {
         path: 'scores/bimonthly/new',
         name: 'bimonthly-score-new',
         component: () => import('../views/BimonthlyScoreNewView.vue')

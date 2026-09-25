@@ -167,6 +167,7 @@ export class Score {
 
       const rtScores = [];
       rt_details.forEach(rt => {
+        if (rt.exempt) return; // 해당없음 제외
         if (rt.type === 'pf') {
           // PF의 경우 평균 점수 자체에서는 제외하지만, 로직 호환성을 위해 우선 계산
         } else {
@@ -185,8 +186,11 @@ export class Score {
 
     let wordScore = 0;
     if (word_details && word_details.length > 0) {
-      const wordPercentages = word_details.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
-      wordScore = wordPercentages.reduce((a, b) => a + b, 0) / word_details.length;
+      const validWords = word_details.filter(w => !w.exempt);
+      if (validWords.length > 0) {
+        const wordPercentages = validWords.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
+        wordScore = wordPercentages.reduce((a, b) => a + b, 0) / validWords.length;
+      }
     } else {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
     }
@@ -210,7 +214,7 @@ export class Score {
       .single();
     if (studentError || !student) throw new Error('학생을 찾을 수 없습니다.');
 
-    const targetClassName = class_name || (student.class_name ? student.class_name.split(',')[0].trim() : null);
+    const targetClassName = data.is_standalone ? null : (class_name || (student.class_name ? student.class_name.split(',')[0].trim() : null));
     const existing = await this.getByStudentAndDate(Number(student_id), exam_date, targetClassName);
 
     // 반평균은 저장 후 일괄 계산하므로 임시로 0 저장
@@ -229,7 +233,7 @@ export class Score {
       assignment_score: Number(assignment_score) || 0,
       total_score: finalTotal,
       average_score: finalAverage,
-      class_average: 0, // 임시값, 저장 후 재계산
+      class_average: data.is_standalone ? null : 0, // 단독 성적은 반평균 null
       comment: comment || '',
       updated_at: new Date().toISOString()
     };
@@ -250,7 +254,7 @@ export class Score {
     }
 
     // 저장 후 정확한 반평균 계산 및 일괄 업데이트
-    if (targetClassName) {
+    if (targetClassName && !data.is_standalone) {
       const classAverage = await this.calculateClassAverage(targetClassName, exam_date);
       // 해당 반/날짜의 모든 성적 레코드의 반평균을 동일하게 업데이트
       const { error: updateError } = await supabase
@@ -322,8 +326,11 @@ export class Score {
 
     let wordScore = 0;
     if (word_details && word_details.length > 0) {
-      const wordPercentages = word_details.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
-      wordScore = wordPercentages.reduce((a, b) => a + b, 0) / word_details.length;
+      const validWords = word_details.filter(w => !w.exempt);
+      if (validWords.length > 0) {
+        const wordPercentages = validWords.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
+        wordScore = wordPercentages.reduce((a, b) => a + b, 0) / validWords.length;
+      }
     } else {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
     }

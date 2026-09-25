@@ -22,12 +22,29 @@
         
         <!-- 필터 -->
         <div class="p-3 border-b bg-white space-y-3">
-          <div>
-            <label class="block text-xs font-bold text-gray-500 mb-1">반 선택</label>
-            <select v-model="selectedClass" @change="handleClassChange" class="w-full px-3 py-2 border rounded text-sm focus:ring-2 focus:ring-primary outline-none">
-              <option value="">전체 학생</option>
-              <option v-for="cls in classes" :key="cls.id" :value="cls.name">{{ cls.name }}</option>
-            </select>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold text-gray-500">반 다중 선택</label>
+            <button @click="clearSelection" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition">전체 초기화</button>
+          </div>
+          <div class="relative">
+            <button 
+              type="button" 
+              @click="showClassDropdown = !showClassDropdown" 
+              class="w-full px-3 py-2 border rounded text-sm text-left flex justify-between items-center bg-white"
+            >
+              <span class="truncate">{{ selectedClasses.length > 0 ? `${selectedClasses.length}개 반 선택됨` : '전체 학생 (반 미지정 포함)' }}</span>
+              <span class="text-gray-400">▼</span>
+            </button>
+            <div v-if="showClassDropdown" class="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer border-b">
+                <input type="checkbox" :checked="selectedClasses.length === 0" @change="selectAllClasses" class="w-4 h-4 text-primary rounded border-gray-300 mr-2" />
+                <span class="text-sm font-bold">전체 선택 해제 (모든 반)</span>
+              </label>
+              <label v-for="cls in classes" :key="cls.id" class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                <input type="checkbox" :value="cls.name" v-model="selectedClasses" @change="handleClassChange" class="w-4 h-4 text-primary rounded border-gray-300 mr-2" />
+                <span class="text-sm">{{ cls.name }}</span>
+              </label>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 mb-1">이름 검색</label>
@@ -345,9 +362,24 @@ const getToday = () => {
 
 const students = ref<any[]>([]);
 const classes = ref<any[]>([]);
-const selectedClass = ref('');
+const selectedClasses = ref<string[]>([]);
+const showClassDropdown = ref(false);
 const searchQuery = ref('');
 const selectedStudents = ref<any[]>([]);
+
+const clearSelection = () => {
+  selectedClasses.value = [];
+  searchQuery.value = '';
+  selectedStudents.value = [];
+  manualForm.value = { name: '', phone: '' };
+  showClassDropdown.value = false;
+};
+
+const selectAllClasses = () => {
+  selectedClasses.value = [];
+  handleClassChange();
+  showClassDropdown.value = false;
+};
 
 const selectedTemplate = ref('UK_3821');
 const composeMode = ref<'student' | 'manual'>('student');
@@ -441,7 +473,15 @@ const fetchClasses = async () => {
 
 const filteredStudents = computed(() => {
   return students.value.filter(s => {
-    const matchClass = selectedClass.value ? s.class_name?.includes(selectedClass.value) : true;
+    let matchClass = true;
+    if (selectedClasses.value.length > 0) {
+      if (!s.class_name) {
+        matchClass = false;
+      } else {
+        const studentClasses = s.class_name.split(',').map((c: string) => c.trim());
+        matchClass = selectedClasses.value.some(cls => studentClasses.includes(cls));
+      }
+    }
     const matchName = searchQuery.value ? s.name?.includes(searchQuery.value) : true;
     return matchClass && matchName;
   });

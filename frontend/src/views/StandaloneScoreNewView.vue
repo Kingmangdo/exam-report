@@ -1,22 +1,48 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">성적 입력</h2>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">단독 성적 입력 (보강/혼합)</h2>
+    </div>
 
-    <!-- 반 선택 및 날짜, 공통 설정 -->
+    <!-- 반 선택 대신 학생 검색 및 추가 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- 반 및 날짜 -->
+        <!-- 대상 학생 추가 및 날짜 -->
         <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">반 선택 <span class="text-red-500">*</span></label>
-            <select v-model="selectedClass" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="onClassChange">
-              <option value="">반을 선택하세요</option>
-              <option v-for="className in classList" :key="className" :value="className">{{ className }}</option>
-            </select>
-          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">시험일자 <span class="text-red-500">*</span></label>
             <input v-model="examDateInput" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">학생 검색 및 추가</label>
+            <div class="flex gap-2">
+              <div class="relative flex-1">
+                <input 
+                  v-model="searchQuery" 
+                  @focus="showSearchDropdown = true"
+                  type="text" 
+                  placeholder="이름으로 학생 검색" 
+                  class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <div v-if="showSearchDropdown && filteredAllStudents.length > 0" class="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
+                  <div 
+                    v-for="student in filteredAllStudents" 
+                    :key="student.id" 
+                    @click="addStudent(student)"
+                    class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  >
+                    <span class="font-bold">{{ student.name }}</span>
+                    <span class="text-xs text-gray-500">{{ student.class_name || '미배정' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="classStudents.length > 0" class="flex flex-wrap gap-2 mt-2">
+            <div v-for="(student, idx) in classStudents" :key="student.id" class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium border border-blue-200">
+              {{ student.name }}
+              <button @click="removeStudent(idx)" class="text-blue-400 hover:text-blue-600 font-bold">&times;</button>
+            </div>
           </div>
         </div>
 
@@ -52,10 +78,10 @@
     </div>
 
     <!-- 성적 입력 테이블 -->
-    <div v-if="selectedClass && classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+    <div v-if="classStudents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
       <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-800">
-          {{ selectedClass }} 성적 입력 ({{ classStudents.length }}명)
+          단독 성적 입력 대상자 ({{ classStudents.length }}명)
         </h3>
       </div>
 
@@ -165,22 +191,16 @@
       <div class="p-4 border-t bg-gray-50 flex justify-end items-center">
         <div class="flex gap-2">
           <button @click="resetAllScores" class="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">전체 초기화</button>
-          <button @click="saveDraftAll" class="px-4 py-2 text-sm bg-orange-100 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-200 transition">임시저장</button>
           <button @click="saveAllScores" :disabled="savingAll" class="px-8 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50">
-            {{ savingAll ? '생성 중...' : '성적표 생성' }}
+            {{ savingAll ? '생성 중...' : '성적 저장' }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 반 선택 안내 -->
-    <div v-else-if="!selectedClass" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-      반을 선택하면 해당 반 학생들의 성적을 입력할 수 있습니다.
-    </div>
-
-    <!-- 학생 없음 -->
-    <div v-else class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-      선택한 반에 등록된 학생이 없습니다.
+    <!-- 학생 없음 안내 -->
+    <div v-if="classStudents.length === 0" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+      학생을 검색하여 추가하면 성적을 입력할 수 있습니다.
     </div>
 
     <!-- 알림 메시지 -->
@@ -224,7 +244,55 @@ import { getToday } from '../utils/date';
 import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
 
-const selectedClass = ref<string>('');
+const selectedClass = ref<string>(''); // 더이상 반 선택은 안 하지만 기존 로직 호환 위해 둠
+const searchQuery = ref('');
+const showSearchDropdown = ref(false);
+
+const filteredAllStudents = computed(() => {
+  if (!searchQuery.value) return [];
+  const query = searchQuery.value.toLowerCase();
+  return allStudents.value.filter(s => 
+    !classStudents.value.find(cs => cs.id === s.id) && // 이미 추가된 학생 제외
+    s.name?.toLowerCase().includes(query)
+  );
+});
+
+const addStudent = (student: Student) => {
+  classStudents.value.push(student);
+  scoreForms.value.push({
+    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: t.total, exempt: false })),
+    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
+    assignment_grade: '',
+    assignment_score: 0,
+    comment: '',
+    commentManuallyEdited: false,
+    absent: false
+  });
+  calculatedScores.value.push({ total: 0, average: 0, rtScore: 0, wordScore: 0 });
+  
+  searchQuery.value = '';
+  showSearchDropdown.value = false;
+};
+
+const removeStudent = (idx: number) => {
+  classStudents.value.splice(idx, 1);
+  scoreForms.value.splice(idx, 1);
+  calculatedScores.value.splice(idx, 1);
+  savingSingle.value = {};
+  savedSingle.value = {};
+};
+
+// ... clicking outside dropdown to close ...
+const handleClickOutside = (e: MouseEvent) => {
+  const el = e.target as HTMLElement;
+  if (!el.closest('.relative')) {
+    showSearchDropdown.value = false;
+  }
+};
+onMounted(() => {
+  fetchStudents();
+  document.addEventListener('click', handleClickOutside);
+});
 const examDate = ref<string>(getToday());
 const retestComment = '단어 테스트 점수 미흡으로 남아서 응시 후 귀가 예정입니다.';
 const clinicComment = '오늘 우리 학생은 Review Test 오답 보완을 위해 Clinic을 진행했습니다. 밀착 감독하에 틀린 문제를 스스로 다시 풀며 취약한 오답 요인을 꼼꼼하게 정리해 Clear했습니다.';
@@ -485,15 +553,14 @@ const onClassChange = () => {
   loadExistingScores();
 };
 
-  const loadExistingScores = async () => {
-    // 테스트 종류 초기화 (기본값으로)
-    rtTestTypes.value = [{ name: 'RT 1', type: 'pf' }];
-    wordTestTypes.value = [{ name: '단어 1', total: null }];
+const loadExistingScores = () => {
+  // 단독 성적 입력은 기존 데이터를 불러오지 않고 날짜 변경 시 폼만 초기화합니다.
+  rtTestTypes.value = [{ name: 'RT 1', type: 'pf' }];
+  wordTestTypes.value = [{ name: '단어 1', total: null }];
 
-  // 상태 초기화 (시험일자 변경 시 기본값으로)
-    scoreForms.value = classStudents.value.map(() => ({
-      rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: 100, exempt: false })),
-      word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
+  scoreForms.value = classStudents.value.map(() => ({
+    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: 100, exempt: false })),
+    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
     assignment_grade: '',
     assignment_score: 0,
     comment: '',
@@ -506,127 +573,10 @@ const onClassChange = () => {
     total: 0, 
     average: 0 
   }));
-
-  const draftKey = `scoreDraft:${selectedClass.value}:${examDate.value}`;
-
-  // 서버 데이터 확인 (서버 데이터 우선)
-  try {
-    const res = await scoreApi.getAll({ class_name: selectedClass.value, exam_date: examDate.value });
-    if (res.data.success && res.data.data.length > 0) {
-      const data = res.data.data;
-      
-      // 첫 번째 성적 데이터에서 테스트 종류 복원 (있다면)
-      const firstScore = data[0];
-        if (firstScore.rt_details?.length) {
-          rtTestTypes.value = firstScore.rt_details.map((d: any, i: number) => ({ 
-            name: d.name || `RT ${i+1}`,
-            type: d.type || 'score'
-          }));
-        }
-      if (firstScore.word_details?.length) {
-        wordTestTypes.value = firstScore.word_details.map((d: any, i: number) => ({ 
-          name: d.name || `단어 ${i+1}`, 
-          total: d.total !== undefined ? d.total : null
-        }));
-      }
-
-      classStudents.value.forEach((student, sIdx) => {
-        const score = data.find((s: any) => s.student_id === student.id);
-        if (score) {
-          // average_score가 0이면 결석으로 간주 (단, 출석했는데 0점인 경우 제외)
-          const isAbsent = (score.average_score === 0 || score.average_score === null) && !score.rt_details?.some((d: any) => d.correct > 0 || d.correct === 'P' || d.correct === 'F') && !score.word_details?.some((d: any) => d.correct > 0) && score.assignment_score === 0;
-          scoreForms.value[sIdx] = {
-            rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100, exempt: false })),
-            word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false, exempt: false })),
-            assignment_score: score.assignment_score || 0,
-            assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
-            comment: score.comment || '',
-            commentManuallyEdited: true,  // 서버에서 불러온 데이터는 항상 수동편집 취급 (자동 덮어쓰기 방지)
-            absent: isAbsent
-          };
-          calculateScore(sIdx);
-        }
-      });
-      return;
-    }
-  } catch (err) {
-    console.error('기존 성적 로드 실패', err);
-  }
-
-  // 서버에 데이터가 없을 때만 임시저장 확인
-  try {
-    const draftRes = await scoreApi.getDraft(selectedClass.value, examDate.value);
-    if (draftRes.data.success && draftRes.data.data) {
-      const draft = draftRes.data.data;
-      const parsed = draft.draft_data;
-      
-      // 현재 사용자와 마지막 수정자가 다르면 경고 표시
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      if (draft.last_modified_by && draft.last_modified_by !== currentUser.name) {
-        const dateStr = new Date(draft.updated_at).toLocaleString();
-        alert(`⚠️ [${draft.last_modified_by}]님이 ${dateStr}에 임시저장한 내역이 있습니다.\n확인 후 작업해주세요.`);
-      }
-      
-      if (parsed.rtTestTypes) rtTestTypes.value = parsed.rtTestTypes;
-      if (parsed.wordTestTypes) wordTestTypes.value = parsed.wordTestTypes;
-      if (parsed.scoreForms) {
-        if (parsed.scoreForms.length === classStudents.value.length) {
-          scoreForms.value = parsed.scoreForms;
-        }
-      }
-        scoreForms.value.forEach((form, i) => {
-          while (form.rt_details.length < rtTestTypes.value.length) {
-            form.rt_details.push({ correct: 0, name: '', type: 'pf', total: 100, exempt: false });
-          }
-        if (form.rt_details.length > rtTestTypes.value.length) form.rt_details.splice(rtTestTypes.value.length);
-        while (form.word_details.length < wordTestTypes.value.length) {
-          form.word_details.push({ correct: 0, retest: false, name: '', total: 0, exempt: false });
-        }
-        if (form.word_details.length > wordTestTypes.value.length) form.word_details.splice(wordTestTypes.value.length);
-        calculateScore(i);
-      });
-    }
-  } catch (e) {
-    console.error('임시저장 데이터 로드 실패:', e);
-  }
 };
 
 const saveDraftAll = async () => {
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  
-  // 기존 임시저장 내역 확인 (다른 사람이 수정한 경우 경고)
-  try {
-    const draftRes = await scoreApi.getDraft(selectedClass.value, examDate.value);
-    if (draftRes.data.success && draftRes.data.data) {
-      const draft = draftRes.data.data;
-      if (draft.last_modified_by && draft.last_modified_by !== currentUser.name) {
-        if (!confirm(`⚠️ [${draft.last_modified_by}]님이 작업 중인 내용입니다.\n정말 덮어쓰시겠습니까?`)) {
-          return;
-        }
-      }
-    }
-  } catch (e) {
-    console.error('임시저장 확인 실패:', e);
-  }
-
-  const draftData = {
-    rtTestTypes: rtTestTypes.value,
-    wordTestTypes: wordTestTypes.value,
-    scoreForms: scoreForms.value
-  };
-
-  try {
-    await scoreApi.saveDraft({
-      class_name: selectedClass.value,
-      exam_date: examDate.value,
-      draft_data: draftData,
-      last_modified_by: currentUser.name || '알 수 없음'
-    });
-    showToast('임시저장 되었습니다.');
-  } catch (err: any) {
-    console.error('임시저장 실패:', err);
-    alert(`임시저장 실패: ${err.response?.data?.message || err.message}`);
-  }
+  // 단독 성적 입력은 임시 저장을 지원하지 않습니다.
 };
 
 const warningMessages = ref<string[]>([]);
@@ -665,7 +615,7 @@ const saveSingleScore = async (sIdx: number) => {
       const payload = {
         student_id: student.id,
         exam_date: examDate.value,
-        class_name: selectedClass.value,
+        class_name: null, // 단독 보강
         rt_total: rtTestTypes.value.length * 100,
         rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
@@ -680,18 +630,13 @@ const saveSingleScore = async (sIdx: number) => {
         word_details: finalWordDetails,
         assignment_score: Number(form.assignment_score) || 0,
         comment: form.comment || '',
-        is_absent: form.absent // 개별 저장 시에도 결석 여부 전송
+        is_absent: form.absent,
+        is_standalone: true // 단독 보강 플래그
       };
 
     await scoreApi.create(payload);
     
-    try {
-      await scoreApi.deleteDraft(selectedClass.value, examDate.value);
-    } catch (e) {
-      console.error('임시저장 삭제 실패:', e);
-    }
-    
-      savedSingle.value[sIdx] = true;
+// Draft delete skip
       
       // 비동기 계산을 위해 백엔드가 경고를 생성할 시간을 약간 줍니다 (1.5초)
       setTimeout(async () => {
@@ -759,7 +704,7 @@ const saveAllScores = async () => {
       const payload = {
         student_id: student.id,
         exam_date: examDate.value,
-        class_name: selectedClass.value,
+        class_name: null,
         rt_total: rtTestTypes.value.length * 100,
         rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
@@ -774,18 +719,15 @@ const saveAllScores = async () => {
         word_details: finalWordDetails,
         assignment_score: Number(form.assignment_score) || 0,
         comment: form.comment || '',
-        is_absent: form.absent // 결석 여부 명시적 전송
+        is_absent: form.absent, // 결석 여부 명시적 전송
+        is_standalone: true
       };
       
       console.log('저장 시도 데이터:', payload);
       await scoreApi.create(payload);
     }
     
-    try {
-      await scoreApi.deleteDraft(selectedClass.value, examDate.value);
-    } catch (e) {
-      console.error('임시저장 삭제 실패:', e);
-    }
+// Delete draft skip
     
     // 전체 저장 완료 후 1.5초 대기 후 경고 체크
     setTimeout(async () => {
@@ -826,20 +768,15 @@ const saveAllScores = async () => {
   }
 };
 
+// delete draft functionality
 const resetAllScores = async () => {
   if (!confirm('정말 초기화하시겠습니까? 입력 중인 모든 데이터가 삭제됩니다.')) return;
-  
-  try {
-    await scoreApi.deleteDraft(selectedClass.value, examDate.value);
-  } catch (e) {
-    console.error('임시저장 삭제 실패:', e);
-  }
   
     // 테스트 종류 초기화
     rtTestTypes.value = [{ name: 'RT 1', type: 'pf' }];
     wordTestTypes.value = [{ name: '단어 1', total: null }];
 
-    // 입력 폼 및 계산 결과 초기화
+  // 입력 폼 및 계산 결과 초기화
     scoreForms.value = classStudents.value.map(() => ({
       rt_details: rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100, exempt: false })),
       word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false, exempt: false })),

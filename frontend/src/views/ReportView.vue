@@ -81,17 +81,11 @@
           </div>
         </div>
 
-        <!-- 평균 및 반 평균 (상단으로 이동) -->
+        <!-- 평균 (상단으로 이동) -->
         <div class="mx-6 mt-6 p-6 bg-primary text-white rounded-lg shadow-md">
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <p class="text-sm opacity-90">평균 점수</p>
-              <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
-            </div>
-            <div>
-              <p class="text-sm opacity-90">반 평균</p>
-              <p class="text-3xl font-bold">{{ reportData.score.class_average !== null && reportData.score.class_average !== undefined ? reportData.score.class_average.toFixed(1) + '점' : '-' }}</p>
-            </div>
+          <div class="text-center">
+            <p class="text-sm opacity-90">평균 점수</p>
+            <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
           </div>
         </div>
 
@@ -224,57 +218,18 @@
                 최근 성적 데이터가 부족합니다.
               </div>
 
-              <div v-if="trendScores.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div v-if="trendScores.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                 <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">최고 평균</p>
+                  <p class="text-xs text-gray-500">3주내 나의 최고성적</p>
                   <p class="text-lg font-bold text-gray-800">{{ threeWeekHigh.toFixed(1) }}점</p>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">최저 평균</p>
+                  <p class="text-xs text-gray-500">3주내 나의 최저성적</p>
                   <p class="text-lg font-bold text-gray-800">{{ threeWeekLow.toFixed(1) }}점</p>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg">
                   <p class="text-xs text-gray-500">이번 평균</p>
                   <p class="text-lg font-bold text-gray-800">{{ reportData.score.average.toFixed(1) }}점</p>
-                </div>
-                <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">변화(직전 대비)</p>
-                  <p class="text-lg font-bold" :class="trendColor(averageDelta.trend)">
-                    {{ formatDelta(averageDelta.diff) }}
-                  </p>
-                </div>
-              </div>
-
-              <div v-if="trendScores.length > 1" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">RT 점수</p>
-                  <p class="text-base font-semibold" :class="trendColor(rtDelta.trend)">
-                    {{ formatDelta(rtDelta.diff) }}
-                  </p>
-                </div>
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">단어 점수</p>
-                  <p class="text-base font-semibold" :class="trendColor(wordDelta.trend)">
-                    {{ formatDelta(wordDelta.diff) }}
-                  </p>
-                </div>
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">과제 점수</p>
-                  <p class="text-base font-semibold" :class="trendColor(assignmentDelta.trend)">
-                    {{ formatDelta(assignmentDelta.diff) }}
-                  </p>
-                </div>
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">총점</p>
-                  <p class="text-base font-semibold" :class="trendColor(totalDelta.trend)">
-                    {{ formatDelta(totalDelta.diff) }}
-                  </p>
-                </div>
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">평균</p>
-                  <p class="text-base font-semibold" :class="trendColor(averageDelta.trend)">
-                    {{ formatDelta(averageDelta.diff) }}
-                  </p>
                 </div>
               </div>
             </div>
@@ -391,49 +346,6 @@ const threeWeekLow = computed(() => {
   return Math.min(...trendScores.value.map(item => item.average_score || 0));
 });
 
-const getDelta = (current: number, previous: number) => {
-  const diff = Math.round((current - previous) * 10) / 10;
-  const trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'stable';
-  return { diff, trend };
-};
-
-const latestPair = computed(() => {
-  if (trendScores.value.length < 2) return null;
-  const previous = trendScores.value[trendScores.value.length - 2];
-  const current = trendScores.value[trendScores.value.length - 1];
-  return { previous, current };
-});
-
-const rtDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.rt_score, latestPair.value.previous.rt_score);
-});
-
-const wordDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.word_score, latestPair.value.previous.word_score);
-});
-
-const assignmentDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.assignment_score, latestPair.value.previous.assignment_score);
-});
-
-const attitudeDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.attitude_score, latestPair.value.previous.attitude_score);
-});
-
-const totalDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.total_score, latestPair.value.previous.total_score);
-});
-
-const averageDelta = computed(() => {
-  if (!latestPair.value) return { diff: 0, trend: 'stable' as const };
-  return getDelta(latestPair.value.current.average_score, latestPair.value.previous.average_score);
-});
-
 const trendChartData = computed(() => ({
   labels: trendScores.value.map(item => item.exam_date),
   datasets: [
@@ -445,53 +357,38 @@ const trendChartData = computed(() => ({
       tension: 0.35,
       fill: true,
       pointRadius: 3
-    },
-    {
-      label: '반 평균',
-      data: trendScores.value.map(item => item.class_average || 0),
-      borderColor: '#10b981',
-      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-      tension: 0.35,
-      fill: false,
-      pointRadius: 2
     }
   ]
 }));
 
-const trendChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      labels: {
-        boxWidth: 12,
-        boxHeight: 12
+const trendChartOptions = computed(() => {
+  const minScore = Math.min(
+    ...trendScores.value.map(item => item.average_score || 0)
+  );
+  
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          boxWidth: 12,
+          boxHeight: 12
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: minScore < 50 ? Math.max(0, Math.floor(minScore / 10) * 10) : 50,
+        max: 100,
+        ticks: {
+          stepSize: 10
+        }
       }
     }
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      max: 100,
-      ticks: {
-        stepSize: 10
-      }
-    }
-  }
-};
-
-const trendColor = (trend: 'up' | 'down' | 'stable') => {
-  if (trend === 'up') return 'text-green-600';
-  if (trend === 'down') return 'text-red-600';
-  return 'text-gray-600';
-};
-
-const formatDelta = (diff: number) => {
-  if (diff > 0) return `▲ +${diff.toFixed(1)}점`;
-  if (diff < 0) return `▼ ${diff.toFixed(1)}점`;
-  return '— 0.0점';
-};
+  };
+});
 
 const verifyAccess = async () => {
   try {

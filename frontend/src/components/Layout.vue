@@ -176,7 +176,8 @@ const navItems = ref([
     path: '/manage-scores', 
     adminOnly: false,
     children: [
-      { name: '성적 입력 (Daily)', path: '/scores/new', adminOnly: false },
+      { name: '성적 입력 (단체)', path: '/scores/new', adminOnly: false },
+      { name: '성적 입력 (단독/보강)', path: '/scores/standalone/new', adminOnly: false },
       { name: '성적 입력 (성취)', path: '/scores/bimonthly/new', adminOnly: false },
       { name: '성적 발송 (Daily)', path: '/scores', adminOnly: false },
       { name: '성적 발송 (성취)', path: '/scores/bimonthly', adminOnly: false }
