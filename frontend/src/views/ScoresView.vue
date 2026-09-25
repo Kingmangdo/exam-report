@@ -121,7 +121,7 @@
             </template>
             <th v-else class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">단어</th>
 
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제+태도</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">평균</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">발송 상태</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">성적 미리보기</th>
@@ -261,17 +261,11 @@
               </div>
             </div>
 
-            <!-- 평균 및 반 평균 (상단으로 이동) -->
+                <!-- 평균 (상단으로 이동) -->
             <div class="p-6 bg-primary text-white rounded-lg mb-6 shadow-md">
-              <div class="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p class="text-sm opacity-90">평균 점수</p>
-                  <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
-                </div>
-                <div>
-                  <p class="text-sm opacity-90">반 평균</p>
-                  <p class="text-3xl font-bold">{{ reportData.score.class_average !== null && reportData.score.class_average !== undefined ? reportData.score.class_average.toFixed(1) + '점' : '-' }}</p>
-                </div>
+              <div class="text-center">
+                <p class="text-sm opacity-90">평균 점수</p>
+                <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
               </div>
             </div>
 
@@ -382,9 +376,9 @@
                 </p>
               </div>
 
-              <!-- 과제점수 -->
+              <!-- 과제+태도점수 -->
               <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <p class="font-semibold text-gray-800">과제점수</p>
+                <p class="font-semibold text-gray-800">과제+태도점수</p>
                 <p class="text-2xl font-bold text-primary">
                   {{ reportData.score.assignment?.toFixed(1) || '0.0' }}점
                 </p>
@@ -411,24 +405,18 @@
                 최근 성적 데이터가 부족합니다.
               </div>
 
-              <div v-if="trendScores.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div v-if="trendScores.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                 <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">최고 평균</p>
+                  <p class="text-xs text-gray-500">3주내 나의 최고성적</p>
                   <p class="text-lg font-bold text-gray-800">{{ threeWeekHigh.toFixed(1) }}점</p>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">최저 평균</p>
+                  <p class="text-xs text-gray-500">3주내 나의 최저성적</p>
                   <p class="text-lg font-bold text-gray-800">{{ threeWeekLow.toFixed(1) }}점</p>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg">
                   <p class="text-xs text-gray-500">이번 평균</p>
                   <p class="text-lg font-bold text-gray-800">{{ reportData.score.average?.toFixed(1) || '0.0' }}점</p>
-                </div>
-                <div class="p-3 bg-gray-50 rounded-lg">
-                  <p class="text-xs text-gray-500">변화(직전 대비)</p>
-                  <p class="text-lg font-bold" :class="trendColor(averageDelta.trend)">
-                    {{ formatDelta(averageDelta.diff) }}
-                  </p>
                 </div>
               </div>
 
@@ -446,52 +434,15 @@
                   </p>
                 </div>
                 <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">총점</p>
-                  <p class="text-base font-semibold" :class="trendColor(totalDelta.trend)">
-                    {{ formatDelta(totalDelta.diff) }}
-                  </p>
-                </div>
-                <div class="p-3 bg-white border rounded-lg">
-                  <p class="text-xs text-gray-500">평균</p>
-                  <p class="text-base font-semibold" :class="trendColor(averageDelta.trend)">
-                    {{ formatDelta(averageDelta.diff) }}
+                  <p class="text-xs text-gray-500">과제+태도점수</p>
+                  <p class="text-base font-semibold" :class="trendColor(assignmentDelta.trend)">
+                    {{ formatDelta(assignmentDelta.diff) }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- 이전 성적 비교 -->
-            <div v-if="reportData.comparison" class="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h3 class="font-semibold text-gray-800 mb-2">이전 성적과 비교</h3>
-              <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-600">평균 점수:</span>
-                <span
-                  class="font-bold"
-                  :class="{
-                    'text-green-600': reportData.comparison.trend === 'up',
-                    'text-red-600': reportData.comparison.trend === 'down',
-                    'text-gray-600': reportData.comparison.trend === 'stable'
-                  }"
-                >
-                  {{ reportData.comparison.average_diff > 0 ? '+' : '' }}{{ reportData.comparison.average_diff?.toFixed(1) || '0.0' }}점
-                </span>
-                <span
-                  v-if="reportData.comparison.trend === 'up'"
-                  class="text-green-600 text-xl"
-                >
-                  ↑
-                </span>
-                <span
-                  v-else-if="reportData.comparison.trend === 'down'"
-                  class="text-red-600 text-xl"
-                >
-                  ↓
-                </span>
-                <span v-else class="text-gray-600 text-xl">→</span>
-              </div>
-            </div>
-
-            <!-- 코멘트 -->
+            <!-- 코멘트 (이전 성적 비교 삭제됨) -->
             <div v-if="displayComment" class="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 class="font-semibold text-gray-800 mb-2">코멘트</h3>
               <p class="text-gray-700 whitespace-pre-wrap">{{ displayComment }}</p>
@@ -750,38 +701,40 @@ const trendChartData = computed(() => ({
       tension: 0.35,
       fill: true,
       pointRadius: 3
-    },
-    {
-      label: '반 평균',
-      data: trendScores.value.map(item => item.class_average || 0),
-      borderColor: '#10b981',
-      backgroundColor: 'rgba(16, 185, 129, 0.12)',
-      tension: 0.35,
-      fill: false,
-      pointRadius: 2
     }
   ]
 }));
 
-const trendChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      labels: {
-        boxWidth: 12,
-        boxHeight: 12
+const trendChartOptions = computed(() => {
+  let minScore = 50;
+  if (trendScores.value.length > 0) {
+    const actualMin = Math.min(...trendScores.value.map(item => item.average_score || 0));
+    minScore = actualMin < 50 ? Math.max(0, Math.floor(actualMin / 10) * 10) : 50;
+  }
+  
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          boxWidth: 12,
+          boxHeight: 12
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: minScore,
+        max: 100,
+        ticks: {
+          stepSize: 10
+        }
       }
     }
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      max: 100
-    }
-  }
-};
+  };
+});
 
 const trendColor = (trend: 'up' | 'down' | 'stable') => {
   if (trend === 'up') return 'text-green-600';
