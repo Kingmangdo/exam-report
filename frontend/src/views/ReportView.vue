@@ -191,9 +191,8 @@
                 </p>
               </div>
 
-              <!-- 과제점수 -->
               <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <p class="font-semibold text-gray-800">과제점수</p>
+                <p class="font-semibold text-gray-800">과제+태도점수</p>
                 <p class="text-2xl font-bold text-primary">{{ reportData.score.assignment.toFixed(1) }}점</p>
               </div>
             </div>
@@ -362,9 +361,11 @@ const trendChartData = computed(() => ({
 }));
 
 const trendChartOptions = computed(() => {
-  const minScore = Math.min(
-    ...trendScores.value.map(item => item.average_score || 0)
-  );
+  let minScore = 50;
+  if (trendScores.value.length > 0) {
+    const actualMin = Math.min(...trendScores.value.map(item => item.average_score || 0));
+    minScore = actualMin < 50 ? Math.max(0, Math.floor(actualMin / 10) * 10) : 50;
+  }
   
   return {
     responsive: true,
@@ -380,7 +381,7 @@ const trendChartOptions = computed(() => {
     },
     scales: {
       y: {
-        min: minScore < 50 ? Math.max(0, Math.floor(minScore / 10) * 10) : 50,
+        min: minScore,
         max: 100,
         ticks: {
           stepSize: 10

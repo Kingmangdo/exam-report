@@ -75,7 +75,7 @@
                 단어: {{ test.name || '미지정' }} ({{ test.total || 0 }})
               </th>
 
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제점수</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제+태도점수</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">평균</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">코멘트</th>
               <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">저장</th>

@@ -89,7 +89,7 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">학생명</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sticky left-0 bg-gray-50 z-10">학생명 및 반 선택</th>
               
               <!-- RT 테스트 컬럼들 -->
               <th v-for="(test, idx) in rtTestTypes" :key="'rt-h-'+idx" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
@@ -101,7 +101,7 @@
                 단어: {{ test.name || '미지정' }} ({{ test.total || 0 }})
               </th>
 
-              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제점수</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">과제+태도점수</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">평균</th>
               <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">코멘트</th>
               <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">저장</th>
@@ -109,13 +109,17 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="(student, sIdx) in classStudents" :key="student.id" :class="scoreForms[sIdx]?.absent ? 'bg-gray-100 opacity-60' : 'hover:bg-gray-50'">
-              <!-- 학생명 -->
+              <!-- 학생명 및 반 선택 -->
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-2">
                   <span>{{ student.name || '이름없음' }} <span v-if="student.school" class="text-xs text-gray-500 font-normal">({{ student.school }})</span></span>
+                  <select v-model="scoreForms[sIdx].selected_class" class="text-xs px-2 py-1 border rounded focus:ring-1 focus:ring-primary w-32" :disabled="scoreForms[sIdx]?.absent">
+                    <option value="">(반을 선택하세요)</option>
+                    <option v-for="cls in getStudentClasses(student)" :key="cls" :value="cls">{{ cls }}</option>
+                  </select>
                   <button 
                     @click="toggleAbsent(sIdx)" 
-                    class="text-[10px] px-2 py-1 rounded border transition w-fit"
+                    class="text-[10px] px-2 py-1 rounded border transition w-fit mt-1"
                     :class="scoreForms[sIdx]?.absent ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-400 border-gray-200 hover:border-red-300'"
                   >
                     결석
@@ -259,6 +263,9 @@ const filteredAllStudents = computed(() => {
 
 const addStudent = (student: Student) => {
   classStudents.value.push(student);
+  const studentClasses = getStudentClasses(student);
+  const defaultClass = studentClasses.length === 1 ? studentClasses[0] : '';
+  
   scoreForms.value.push({
     rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: t.total, exempt: false })),
     word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
@@ -266,12 +273,18 @@ const addStudent = (student: Student) => {
     assignment_score: 0,
     comment: '',
     commentManuallyEdited: false,
-    absent: false
+    absent: false,
+    selected_class: defaultClass
   });
   calculatedScores.value.push({ total: 0, average: 0, rtScore: 0, wordScore: 0 });
   
   searchQuery.value = '';
   showSearchDropdown.value = false;
+};
+
+const getStudentClasses = (student: Student) => {
+  if (!student.class_name) return [];
+  return student.class_name.split(',').map(c => c.trim()).filter(c => c);
 };
 
 const removeStudent = (idx: number) => {
@@ -593,6 +606,11 @@ const copyWarnings = async () => {
 };
 
 const saveSingleScore = async (sIdx: number) => {
+  if (!scoreForms.value[sIdx].selected_class) {
+    alert('저장하려는 학생의 반을 선택해주세요.');
+    return;
+  }
+  
   savingSingle.value[sIdx] = true;
   savedSingle.value[sIdx] = false;
   try {
@@ -615,7 +633,7 @@ const saveSingleScore = async (sIdx: number) => {
       const payload = {
         student_id: student.id,
         exam_date: examDate.value,
-        class_name: null, // 단독 보강
+        class_name: form.selected_class || null, // 단독 보강시에도 선택한 반 전송
         rt_total: rtTestTypes.value.length * 100,
         rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
@@ -678,6 +696,13 @@ const saveSingleScore = async (sIdx: number) => {
 };
 
 const saveAllScores = async () => {
+  for (let i = 0; i < classStudents.value.length; i++) {
+    if (!scoreForms.value[i].selected_class) {
+      alert(`${classStudents.value[i].name} 학생의 반을 선택해주세요.`);
+      return;
+    }
+  }
+
   if (!confirm('모든 학생의 성적표를 생성하시겠습니까?')) return;
   savingAll.value = true;
   try {
@@ -704,7 +729,7 @@ const saveAllScores = async () => {
       const payload = {
         student_id: student.id,
         exam_date: examDate.value,
-        class_name: null,
+        class_name: form.selected_class || null,
         rt_total: rtTestTypes.value.length * 100,
         rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
