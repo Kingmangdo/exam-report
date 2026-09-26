@@ -733,7 +733,10 @@ const saveSingleScore = async (sIdx: number) => {
         word_total: wordTestTypes.value.reduce((acc, t, idx) => form.word_details[idx]?.exempt ? acc : acc + (Number(t.total) || 0), 0),
         word_correct: Math.round(form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0)),
         rt_details: finalRtDetails,
-        word_details: finalWordDetails,
+        word_details: finalWordDetails.map((d: any) => ({
+          ...d,
+          retest: d.exempt ? false : d.retest // 해당없음이면 재시험 무조건 해제
+        })),
         assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
         assignment_exempt: form.assignment_exempt,
         comment: form.comment || '',
@@ -826,15 +829,18 @@ const saveAllScores = async () => {
           if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } 
           return acc + (Number(d.correct) || 0); 
         }, 0)),
-        rt_all_pf: calculatedScores.value[i]?.rtAllPf || false, // 백엔드에서 평균 산출 시 사용
+        rt_all_pf: calculatedScores.value[i]?.rtAllPf || false,
         word_total: wordTestTypes.value.reduce((acc, t, idx) => form.word_details[idx]?.exempt ? acc : acc + (Number(t.total) || 0), 0),
         word_correct: Math.round(form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0)),
         rt_details: finalRtDetails,
-        word_details: finalWordDetails,
+        word_details: finalWordDetails.map((d: any) => ({
+          ...d,
+          retest: d.exempt ? false : d.retest // 해당없음이면 재시험 무조건 해제
+        })),
         assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
         assignment_exempt: form.assignment_exempt,
         comment: form.comment || '',
-        is_absent: form.absent, // 결석 여부 명시적 전송
+        is_absent: form.absent,
         is_standalone: true
       };
       

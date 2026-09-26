@@ -165,11 +165,14 @@
             <!-- 단어 상세 점수 -->
             <template v-if="maxWordCount > 0">
               <td v-for="n in maxWordCount" :key="'word-d-'+score.id+'-'+n" class="px-4 py-4 whitespace-nowrap text-sm text-center"
-                :class="score.word_details && score.word_details[n-1] && (score.word_details[n-1].retest || (score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100 <= 84) ? 'text-red-600 font-bold' : 'text-gray-500'"
+                :class="score.word_details && score.word_details[n-1] && score.word_details[n-1].exempt ? 'text-gray-400' : (score.word_details && score.word_details[n-1] && (score.word_details[n-1].retest || (score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100 <= 84) ? 'text-red-600 font-bold' : 'text-gray-500')"
               >
                 <template v-if="score.word_details && score.word_details[n-1]">
-                  {{ ((score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100).toFixed(1) }}
-                  <span v-if="score.word_details[n-1].retest || (score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100 <= 84" class="text-[10px] block">(재시험)</span>
+                  <template v-if="score.word_details[n-1].exempt">해당없음</template>
+                  <template v-else>
+                    {{ ((score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100).toFixed(1) }}
+                    <span v-if="score.word_details[n-1].retest || (score.word_details[n-1].correct / (score.word_details[n-1].total || 50)) * 100 <= 84" class="text-[10px] block">(재시험)</span>
+                  </template>
                 </template>
                 <template v-else>-</template>
               </td>
@@ -316,13 +319,13 @@
               </div>
 
               <!-- 단어시험 상세 -->
-              <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
+              <div v-if="reportData.score.word_details && reportData.score.word_details.filter(w => !w.exempt).length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
                   <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word?.score?.toFixed(1) || '0.0' }}점</p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                  <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
+                  <div v-for="(word, idx) in reportData.score.word_details.filter(w => !w.exempt)" :key="'word-'+idx" 
                     class="flex justify-between items-center p-3 rounded-lg border"
                     :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'"
                   >
@@ -345,8 +348,8 @@
                   </p>
                 </div>
               </div>
-              <!-- 단어 합산 (상세가 없을 경우 대비) -->
-              <div v-else
+              <!-- 단어 합산 (상세가 없을 경우 대비, 단 모두 해당없음인 경우는 제외) -->
+              <div v-else-if="!reportData.score.word_details || reportData.score.word_details.length === 0"
                 class="flex justify-between items-center p-4 rounded-lg"
                 :class="reportData.score.word?.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'"
               >
@@ -370,7 +373,7 @@
                 </p>
               </div>
               <!-- 누적 정답수 표시 (상세가 없을 경우) -->
-              <div v-if="!reportData.score.word_details || reportData.score.word_details.length === 0" class="mt-3 p-3 bg-yellow-100 rounded-lg border border-yellow-200">
+              <div v-if="!reportData.score.word_details || reportData.score.word_details.filter(w => !w.exempt).length === 0" class="mt-3 p-3 bg-yellow-100 rounded-lg border border-yellow-200">
                 <p class="text-sm font-bold text-gray-800 text-center" style="font-size: 1.1rem;">
                   {{ reportData.student.name }} 학생이 독강영어와 암기한 단어: 총 {{ reportData.score.word?.cumulative_correct || 0 }}개 ✏️
                 </p>
@@ -901,9 +904,13 @@ const downloadExcel = () => {
     if (maxWordCount.value > 0) {
       for (let i = 0; i < maxWordCount.value; i++) {
         if (score.word_details && score.word_details[i]) {
-          const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
-          const isRetest = score.word_details[i].retest || Number(pct) <= 84;
-          row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+          if (score.word_details[i].exempt) {
+            row[`단어 ${i + 1}`] = '해당없음';
+          } else {
+            const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
+            const isRetest = score.word_details[i].retest || Number(pct) <= 84;
+            row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+          }
         } else {
           row[`단어 ${i + 1}`] = '-';
         }
@@ -1009,9 +1016,13 @@ const downloadMonthlyExcel = async () => {
         if (maxWordCount.value > 0) {
           for (let i = 0; i < maxWordCount.value; i++) {
             if (score.word_details && score.word_details[i]) {
-              const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
-              const isRetest = score.word_details[i].retest || Number(pct) <= 84;
-              row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+              if (score.word_details[i].exempt) {
+                row[`단어 ${i + 1}`] = '해당없음';
+              } else {
+                const pct = ((score.word_details[i].correct / (score.word_details[i].total || 50)) * 100).toFixed(1);
+                const isRetest = score.word_details[i].retest || Number(pct) <= 84;
+                row[`단어 ${i + 1}`] = `${pct}%${isRetest ? ' (재시험)' : ''}`;
+              }
             } else {
               row[`단어 ${i + 1}`] = '-';
             }

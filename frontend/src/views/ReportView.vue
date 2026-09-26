@@ -140,24 +140,24 @@
               </div>
 
               <!-- 단어 테스트 상세 -->
-              <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
+              <div v-if="validWordDetails.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
                   <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word.score.toFixed(1) }}점</p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                  <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
+                  <div v-for="(word, idx) in validWordDetails" :key="'word-'+idx" 
                     class="flex justify-between items-center p-4 rounded-lg border"
-                    :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'"
+                    :class="(word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100')"
                   >
                     <div>
-                      <p class="font-semibold" :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-gray-800'">
+                      <p class="font-semibold" :class="(word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-gray-800')">
                         {{ word.name || `단어 ${idx + 1}` }}
-                        <span v-if="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84)" class="ml-2 text-red-600 font-bold">(재시험)</span>
+                        <span v-if="(word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84))" class="ml-2 text-red-600 font-bold">(재시험)</span>
                       </p>
                       <p class="text-sm text-gray-500">{{ word.correct }} / {{ word.total || 50 }}</p>
                     </div>
-                    <p class="text-2xl font-bold" :class="word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-primary'">
+                    <p class="text-2xl font-bold" :class="(word.retest || ((Number(word.total) || 0) > 0 && (Number(word.correct) / Number(word.total)) * 100 <= 84) ? 'text-red-600' : 'text-primary')">
                       {{ (Number(word.total) || 0) > 0 ? ((Number(word.correct) / Number(word.total)) * 100).toFixed(1) : '0.0' }}점
                     </p>
                   </div>
@@ -169,8 +169,8 @@
                   </p>
                 </div>
               </div>
-              <!-- 단어 합산 (상세가 없을 경우 대비) -->
-              <div v-else class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
+              <!-- 단어 합산 (상세가 없을 경우 대비, 단 모두 해당없음인 경우는 제외) -->
+              <div v-else-if="!reportData.score.word_details || reportData.score.word_details.length === 0" class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
                 <div>
                   <p class="font-semibold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-gray-800'">
                     단어시험 (평균)
@@ -185,7 +185,7 @@
                 </p>
               </div>
               <!-- 누적 정답수 표시 (상세가 없을 경우) -->
-              <div v-if="!reportData.score.word_details || reportData.score.word_details.length === 0" class="mt-3 p-4 bg-yellow-100 rounded-lg border border-yellow-200">
+              <div v-if="validWordDetails.length === 0" class="mt-3 p-4 bg-yellow-100 rounded-lg border border-yellow-200">
                 <p class="text-base font-bold text-gray-800 text-center" style="font-size: 1.2rem;">
                   {{ reportData.student.name }} 학생이 독강영어와 암기한 단어: 총 {{ reportData.score.word?.cumulative_correct || 0 }}개 ✏️
                 </p>
@@ -327,6 +327,11 @@ const authForm = ref({
 const trendScores = computed(() => {
   const scores = reportData.value?.recent_scores ?? [];
   return [...scores].sort((a, b) => a.exam_date.localeCompare(b.exam_date));
+});
+
+const validWordDetails = computed(() => {
+  if (!reportData.value?.score?.word_details) return [];
+  return reportData.value.score.word_details.filter((w: any) => !w.exempt);
 });
 
 const threeWeekAverage = computed(() => {
