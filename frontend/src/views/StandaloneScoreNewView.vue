@@ -723,15 +723,15 @@ const saveSingleScore = async (sIdx: number) => {
         exam_date: examDate.value,
         class_name: form.selected_class || null, // 단독 보강시에도 선택한 반 전송
         rt_total: rtTestTypes.value.length * 100,
-        rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
+        rt_correct: Math.round(form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
           const test = rtTestTypes.value[idx]; 
           if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } 
           return acc + (Number(d.correct) || 0); 
-        }, 0),
+        }, 0)),
         rt_all_pf: calculatedScores.value[sIdx]?.rtAllPf || false,
         word_total: wordTestTypes.value.reduce((acc, t, idx) => form.word_details[idx]?.exempt ? acc : acc + (Number(t.total) || 0), 0),
-        word_correct: form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0),
+        word_correct: Math.round(form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0)),
         rt_details: finalRtDetails,
         word_details: finalWordDetails,
         assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
@@ -820,15 +820,15 @@ const saveAllScores = async () => {
         exam_date: examDate.value,
         class_name: form.selected_class || null,
         rt_total: rtTestTypes.value.length * 100,
-        rt_correct: form.rt_details.reduce((acc: number, d: any, idx: number) => { 
+        rt_correct: Math.round(form.rt_details.reduce((acc: number, d: any, idx: number) => { 
           if (d.exempt) return acc;
           const test = rtTestTypes.value[idx]; 
           if (test?.type === 'pf') { return acc + (d.correct === 'P' ? 100 : 0); } 
           return acc + (Number(d.correct) || 0); 
-        }, 0),
+        }, 0)),
         rt_all_pf: calculatedScores.value[i]?.rtAllPf || false, // 백엔드에서 평균 산출 시 사용
         word_total: wordTestTypes.value.reduce((acc, t, idx) => form.word_details[idx]?.exempt ? acc : acc + (Number(t.total) || 0), 0),
-        word_correct: form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0),
+        word_correct: Math.round(form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0)),
         rt_details: finalRtDetails,
         word_details: finalWordDetails,
         assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
