@@ -177,14 +177,14 @@
                 <template v-else>-</template>
               </td>
             </template>
-            <td v-else class="px-6 py-4 whitespace-nowrap text-sm" :class="score.word_score <= 84 ? 'text-red-600 font-bold' : 'text-gray-500'">
+            <td v-else class="px-6 py-4 whitespace-nowrap text-sm" :class="score.word_score <= 84 && score.word_details?.some(w => !w.exempt) ? 'text-red-600 font-bold' : 'text-gray-500'">
               {{ score.word_score !== null ? score.word_score.toFixed(1) : '-' }}
-              <span v-if="score.word_score <= 84" class="text-red-600">(재시험)</span>
+              <span v-if="score.word_score <= 84 && score.word_details?.some(w => !w.exempt)" class="text-red-600">(재시험)</span>
             </td>
 
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-' }}
-            </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{ score.assignment_exempt ? '해당없음' : (score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-') }}
+          </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-primary">
               {{ score.average_score !== null ? score.average_score.toFixed(1) : '-' }}
             </td>
@@ -322,7 +322,7 @@
               <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word?.score?.toFixed(1) || '0.0' }}점</p>
+                  <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word?.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점</p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
@@ -363,14 +363,14 @@
                     <span v-if="reportData.score.word?.retest" class="ml-2 text-red-600 font-bold">(재시험)</span>
                   </p>
                   <p class="text-sm text-gray-500">
-                    {{ reportData.score.word?.correct || '-' }} / {{ reportData.score.word?.total || '-' }}
+                    {{ reportData.score.word?.correct !== null ? reportData.score.word.correct : '-' }} / {{ reportData.score.word?.total !== null ? reportData.score.word.total : '-' }}
                   </p>
                 </div>
                 <p
                   class="text-2xl font-bold"
                   :class="reportData.score.word?.retest ? 'text-red-600' : 'text-primary'"
                 >
-                  {{ reportData.score.word?.score?.toFixed(1) || '0.0' }}점
+                  {{ reportData.score.word?.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점
                 </p>
               </div>
               <!-- 누적 정답수 표시 (상세가 없을 경우) -->
@@ -381,11 +381,15 @@
               </div>
 
               <!-- 과제+태도점수 -->
-              <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div v-if="!reportData.score.assignment_exempt" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                 <p class="font-semibold text-gray-800">과제+태도점수</p>
                 <p class="text-2xl font-bold text-primary">
                   {{ reportData.score.assignment?.toFixed(1) || '0.0' }}점
                 </p>
+              </div>
+              <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <p class="font-semibold text-gray-800">과제+태도점수</p>
+                <p class="text-2xl font-bold text-gray-400">해당없음</p>
               </div>
             </div>
 
@@ -917,10 +921,10 @@ const downloadExcel = () => {
         }
       }
     } else {
-      row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 ? ' (재시험)' : ''}` : '-';
+      row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 && score.word_details?.some(w => !w.exempt) ? ' (재시험)' : ''}` : '-';
     }
 
-    row['과제'] = score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-';
+    row['과제'] = score.assignment_exempt ? '해당없음' : (score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-');
     row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
     row['발송 상태'] = score.kakao_status === 'success' ? '발송완료' : (score.kakao_status === 'fail' ? '발송실패' : '미발송');
     
@@ -1029,10 +1033,10 @@ const downloadMonthlyExcel = async () => {
             }
           }
         } else {
-          row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 ? ' (재시험)' : ''}` : '-';
+          row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 && score.word_details?.some(w => !w.exempt) ? ' (재시험)' : ''}` : '-';
         }
 
-        row['과제'] = score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-';
+        row['과제'] = score.assignment_exempt ? '해당없음' : (score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-');
         row['평균'] = score.average_score !== null ? score.average_score.toFixed(1) : '-';
         row['발송 상태'] = score.kakao_status === 'success' ? '발송완료' : (score.kakao_status === 'fail' ? '발송실패' : '미발송');
         

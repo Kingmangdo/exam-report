@@ -143,7 +143,7 @@
               <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word.score.toFixed(1) }}점</p>
+                  <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점</p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
@@ -170,7 +170,7 @@
                   </p>
                 </div>
               </div>
-              <!-- 단어 합산 (상세가 없을 경우 대비, 단 모두 해당없음인 경우는 제외 안함) -->
+              <!-- 단어 합산 (상세가 없을 경우 대비) -->
               <div v-else-if="!reportData.score.word_details || reportData.score.word_details.length === 0" class="flex justify-between items-center p-4 rounded-lg" :class="reportData.score.word.retest ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50'">
                 <div>
                   <p class="font-semibold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-gray-800'">
@@ -178,11 +178,11 @@
                     <span v-if="reportData.score.word.retest" class="ml-2 text-red-600 font-bold">(재시험)</span>
                   </p>
                   <p class="text-sm text-gray-500">
-                    {{ reportData.score.word.correct }} / {{ reportData.score.word.total }}
+                    {{ reportData.score.word.correct !== null ? reportData.score.word.correct : '-' }} / {{ reportData.score.word.total !== null ? reportData.score.word.total : '-' }}
                   </p>
                 </div>
                 <p class="text-2xl font-bold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-primary'">
-                  {{ reportData.score.word.score.toFixed(1) }}점
+                  {{ reportData.score.word.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점
                 </p>
               </div>
               <!-- 누적 정답수 표시 (상세가 없을 경우) -->
@@ -192,10 +192,15 @@
                 </p>
               </div>
 
-              <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <p class="font-semibold text-gray-800">과제+태도점수</p>
-                <p class="text-2xl font-bold text-primary">{{ reportData.score.assignment.toFixed(1) }}점</p>
-              </div>
+            <!-- 과제+태도점수 -->
+            <div v-if="!reportData.score.assignment_exempt" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="font-semibold text-gray-800">과제+태도점수</p>
+              <p class="text-2xl font-bold text-primary">{{ reportData.score.assignment !== null ? reportData.score.assignment.toFixed(1) : '0.0' }}점</p>
+            </div>
+            <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <p class="font-semibold text-gray-800">과제+태도점수</p>
+              <p class="text-2xl font-bold text-gray-400">해당없음</p>
+            </div>
             </div>
 
             <!-- 최근 3주 트렌드 -->
