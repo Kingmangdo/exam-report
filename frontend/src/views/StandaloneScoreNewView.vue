@@ -46,13 +46,13 @@
         <div class="space-y-4 pt-0 md:border-l md:pl-8 border-gray-200">
           <label class="block text-sm font-bold text-gray-700 mb-2">2. 반 단위로 전체 불러오기</label>
           <div class="flex gap-2">
-            <select v-model="selectedClassIdForLoad" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select v-model="selectedClassForLoad" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="">불러올 반을 선택하세요</option>
-              <option v-for="cls in classes" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+              <option v-for="className in classList" :key="className" :value="className">{{ className }}</option>
             </select>
             <button 
               @click="loadStudentsByClass" 
-              :disabled="!selectedClassIdForLoad" 
+              :disabled="!selectedClassForLoad" 
               class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap"
             >
               불러오기
@@ -186,10 +186,16 @@
 
               <!-- 과제점수 (A, B, C, F) -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3 text-center">
-                <div class="flex gap-1 justify-center">
-                  <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
-                    {{ grade }}
-                  </button>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="flex gap-1 justify-center">
+                    <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" :disabled="scoreForms[sIdx]?.absent || scoreForms[sIdx].assignment_exempt" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
+                      {{ grade }}
+                    </button>
+                  </div>
+                  <label class="flex items-center gap-1 mt-1 cursor-pointer">
+                    <input type="checkbox" v-model="scoreForms[sIdx].assignment_exempt" @change="calculateScore(sIdx)" :disabled="scoreForms[sIdx]?.absent" class="w-3 h-3 text-gray-400 rounded focus:ring-0 cursor-pointer disabled:cursor-not-allowed" />
+                    <span class="text-[10px] text-gray-500" :class="{'font-bold text-gray-700': scoreForms[sIdx].assignment_exempt}">해당없음</span>
+                  </label>
                 </div>
               </td>
 
@@ -287,7 +293,7 @@ const filteredAllStudents = computed(() => {
   );
 });
 
-const selectedClassIdForLoad = ref<number | string>('');
+const selectedClassForLoad = ref<string>('');
 
 const createEmptyForm = (student: Student) => {
   const studentClasses = getStudentClasses(student);
@@ -298,6 +304,7 @@ const createEmptyForm = (student: Student) => {
     word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total || 0, exempt: false })),
     assignment_grade: '',
     assignment_score: 0,
+    assignment_exempt: false,
     comment: '',
     commentManuallyEdited: false,
     absent: false,
@@ -306,14 +313,12 @@ const createEmptyForm = (student: Student) => {
 };
 
 const loadStudentsByClass = () => {
-  if (!selectedClassIdForLoad.value) return;
-  const targetClass = classes.value.find(c => c.id === selectedClassIdForLoad.value);
-  if (!targetClass) return;
+  if (!selectedClassForLoad.value) return;
 
   // 해당 반 학생 필터링
   const studentsInClass = allStudents.value.filter(s => {
     if (!s.class_name) return false;
-    return s.class_name.split(',').map((cn: string) => cn.trim()).includes(targetClass.name);
+    return s.class_name.split(',').map((cn: string) => normalizeClassName(cn.trim())).includes(normalizeClassName(selectedClassForLoad.value));
   });
 
   if (studentsInClass.length === 0) {
@@ -437,6 +442,7 @@ const toggleAbsent = (sIdx: number) => {
     form.word_details.forEach((d: any) => { d.correct = 0; d.retest = false; d.exempt = false; });
     form.assignment_grade = '';
     form.assignment_score = 0;
+    form.assignment_exempt = false;
   }
   
   calculateScore(sIdx);
@@ -559,7 +565,7 @@ const calculateScore = (sIdx: number) => {
       }
     }
   });
-  const wordAvg = wordValidTestsCount > 0 ? wordSum / wordValidTestsCount : 0;
+  const wordAvg = wordValidTestsCount > 0 ? wordSum / wordValidTestsCount : null;
 
   // 85점 미만인 경우 및 RT Clinic인 경우 코멘트 자동 추가 (수동 편집하지 않은 경우에만)
   if (!form.commentManuallyEdited) {
@@ -587,19 +593,28 @@ const calculateScore = (sIdx: number) => {
     form.comment = currentComment;
   }
 
-  // 총점 및 평균 (RT가 null인 경우 분모를 2로 조정)
-  let total = wordAvg + (form.assignment_score || 0);
-  let average = 0;
+  // 총점 및 평균 (평가 대상 개수에 따라 분모 조정)
+  let total = 0;
+  let count = 0;
+  
   if (rtAvg !== null) {
     total += rtAvg;
-    average = total / 3;
-  } else {
-    average = total / 2;
+    count++;
   }
+  if (wordAvg !== null) {
+    total += wordAvg;
+    count++;
+  }
+  if (!form.assignment_exempt) {
+    total += (form.assignment_score || 0);
+    count++;
+  }
+
+  const average = count > 0 ? total / count : 0;
 
   calculatedScores.value[sIdx] = {
     rtScore: rtAvg === null ? null : rtAvg,
-    wordScore: wordAvg,
+    wordScore: wordAvg === null ? 0 : wordAvg,
     total: Math.round(total * 100) / 100,
     average: Math.round(average * 100) / 100,
     rtAllPf: rtAllPf,
@@ -719,7 +734,8 @@ const saveSingleScore = async (sIdx: number) => {
         word_correct: form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0),
         rt_details: finalRtDetails,
         word_details: finalWordDetails,
-        assignment_score: Number(form.assignment_score) || 0,
+        assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
+        assignment_exempt: form.assignment_exempt,
         comment: form.comment || '',
         is_absent: form.absent,
         is_standalone: true // 단독 보강 플래그
@@ -815,7 +831,8 @@ const saveAllScores = async () => {
         word_correct: form.word_details.reduce((acc: number, d: any) => d.exempt ? acc : acc + (Number(d.correct) || 0), 0),
         rt_details: finalRtDetails,
         word_details: finalWordDetails,
-        assignment_score: Number(form.assignment_score) || 0,
+        assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
+        assignment_exempt: form.assignment_exempt,
         comment: form.comment || '',
         is_absent: form.absent, // 결석 여부 명시적 전송
         is_standalone: true
