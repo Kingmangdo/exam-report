@@ -126,12 +126,18 @@
                 </div>
               </td>
 
-              <!-- 과제점수 (A, B, C, F) -->
+              <!-- 과제점수 (A, B, C, F, 해당없음) -->
               <td v-if="scoreForms[sIdx]" class="px-2 py-3 text-center">
-                <div class="flex gap-1 justify-center">
-                  <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" :disabled="scoreForms[sIdx]?.absent" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
-                    {{ grade }}
-                  </button>
+                <div class="flex flex-col items-center gap-1">
+                  <div class="flex gap-1 justify-center">
+                    <button v-for="grade in ['A', 'B', 'C', 'F']" :key="grade" @click="setAssignmentGrade(sIdx, grade)" :disabled="scoreForms[sIdx]?.absent || scoreForms[sIdx].assignment_exempt" class="w-8 h-8 text-xs font-bold rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed" :class="scoreForms[sIdx].assignment_grade === grade ? 'bg-primary text-white border-primary' : 'bg-white text-gray-400 border-gray-200 hover:border-primary'">
+                      {{ grade }}
+                    </button>
+                  </div>
+                  <label class="flex items-center gap-1 mt-1 cursor-pointer">
+                    <input type="checkbox" v-model="scoreForms[sIdx].assignment_exempt" @change="calculateScore(sIdx)" :disabled="scoreForms[sIdx]?.absent" class="w-3 h-3 text-gray-400 rounded focus:ring-0 cursor-pointer disabled:cursor-not-allowed" />
+                    <span class="text-[10px] text-gray-500" :class="{'font-bold text-gray-700': scoreForms[sIdx].assignment_exempt}">해당없음</span>
+                  </label>
                 </div>
               </td>
 
@@ -289,6 +295,7 @@ const toggleAbsent = (sIdx: number) => {
     form.word_details.forEach((d: any) => { d.correct = 0; d.retest = false; d.exempt = false; });
     form.assignment_grade = '';
     form.assignment_score = 0;
+    form.assignment_exempt = false;
   }
   
   calculateScore(sIdx);
@@ -297,6 +304,7 @@ const toggleAbsent = (sIdx: number) => {
   const setAssignmentGrade = (sIdx: number, grade: string) => {
     scoreForms.value[sIdx].assignment_grade = grade;
     scoreForms.value[sIdx].assignment_score = assignmentMap[grade];
+    scoreForms.value[sIdx].assignment_exempt = false;
     calculateScore(sIdx);
   };
 
@@ -433,15 +441,18 @@ const calculateScore = (sIdx: number) => {
     form.comment = currentComment;
   }
 
-  // 총점 및 평균 (RT가 null인 경우 분모를 2로 조정)
-  let total = wordAvg + (form.assignment_score || 0);
-  let average = 0;
+  // 총점 및 평균
+  let total = wordAvg;
+  let divider = 1;
   if (rtAvg !== null) {
     total += rtAvg;
-    average = total / 3;
-  } else {
-    average = total / 2;
+    divider++;
   }
+  if (!form.assignment_exempt) {
+    total += (form.assignment_score || 0);
+    divider++;
+  }
+  let average = divider > 0 ? total / divider : 0;
 
   calculatedScores.value[sIdx] = {
     rtScore: rtAvg === null ? null : rtAvg,
@@ -476,6 +487,7 @@ const onClassChange = () => {
       word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
     assignment_grade: '',
     assignment_score: 0,
+    assignment_exempt: false,
     comment: '',
     commentManuallyEdited: false,
     absent: false
@@ -496,6 +508,7 @@ const onClassChange = () => {
       word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
     assignment_grade: '',
     assignment_score: 0,
+    assignment_exempt: false,
     comment: '',
     commentManuallyEdited: false,
     absent: false
@@ -539,6 +552,7 @@ const onClassChange = () => {
             rt_details: score.rt_details?.length ? score.rt_details : rtTestTypes.value.map(t => ({ correct: 0, type: t.type, total: 100, exempt: false })),
             word_details: score.word_details?.length ? score.word_details : wordTestTypes.value.map(() => ({ correct: 0, retest: false, exempt: false })),
             assignment_score: score.assignment_score || 0,
+            assignment_exempt: score.assignment_exempt || false,
             assignment_grade: Object.keys(assignmentMap).find(k => assignmentMap[k] === score.assignment_score) || '',
             comment: score.comment || '',
             commentManuallyEdited: true,  // 서버에서 불러온 데이터는 항상 수동편집 취급 (자동 덮어쓰기 방지)
@@ -681,7 +695,8 @@ const saveSingleScore = async (sIdx: number) => {
           ...d,
           retest: d.exempt ? false : d.retest // 해당없음이면 재시험 무조건 해제
         })),
-        assignment_score: Number(form.assignment_score) || 0,
+        assignment_score: form.assignment_exempt ? null : (Number(form.assignment_score) || 0),
+        assignment_exempt: form.assignment_exempt,
         comment: form.comment || '',
         is_absent: form.absent // 개별 저장 시에도 결석 여부 전송
       };
@@ -852,6 +867,7 @@ const resetAllScores = async () => {
       word_details: wordTestTypes.value.map(() => ({ correct: 0, retest: false, exempt: false })),
     assignment_grade: '',
     assignment_score: 0,
+    assignment_exempt: false,
     comment: '',
     commentManuallyEdited: false,
     absent: false

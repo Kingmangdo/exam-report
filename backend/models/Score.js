@@ -43,6 +43,7 @@ export class Score {
 
       return {
         ...score,
+        assignment_exempt: score.assignment_score === null,
         student_name: students?.name,
         student_class_name: students?.class_name,
         grade: students?.grade,
@@ -66,6 +67,7 @@ export class Score {
     const { students, ...score } = data;
     return {
       ...score,
+      assignment_exempt: score.assignment_score === null,
       student_name: students?.name,
       student_class_name: students?.class_name,
       grade: students?.grade
@@ -82,6 +84,9 @@ export class Score {
     }
     const { data, error } = await query;
     if (error) throw new Error(error.message);
+    if (data) {
+      data.assignment_exempt = data.assignment_score === null;
+    }
     return data || null;
   }
 
@@ -99,15 +104,19 @@ export class Score {
     const s2 = Number(wordScore) || 0;
     const s3 = Number(assignmentScore) || 0;
     
-    // 만약 rtScore가 null 이면 단어와 과제 2개 항목으로만 평균 산출
-    let total = s2 + s3;
-    let average = 0;
+    let total = s2;
+    let divider = 1;
+    
     if (rtScore !== null) {
       total += s1;
-      average = total / 3;
-    } else {
-      average = total / 2;
+      divider++;
     }
+    if (assignmentScore !== null) {
+      total += s3;
+      divider++;
+    }
+    
+    let average = divider > 0 ? (total / divider) : 0;
 
     return {
       total: Math.round(total * 100) / 100,
@@ -230,7 +239,7 @@ export class Score {
       word_score: wordScore,
       rt_details: rt_details || [],
       word_details: word_details || [],
-      assignment_score: Number(assignment_score) || 0,
+      assignment_score: data.assignment_exempt ? null : (assignment_score !== null && assignment_score !== undefined ? Number(assignment_score) : 0),
       total_score: finalTotal,
       average_score: finalAverage,
       class_average: data.is_standalone ? null : 0, // 단독 성적은 반평균 null
@@ -354,7 +363,7 @@ export class Score {
         word_score: wordScore,
         rt_details: rt_details || [],
         word_details: word_details || [],
-        assignment_score: assignment_score || 0,
+        assignment_score: data.assignment_exempt ? null : (assignment_score !== null && assignment_score !== undefined ? Number(assignment_score) : 0),
         total_score: total,
         average_score: average,
         class_average: 0, // 임시값, 업데이트 후 재계산
@@ -443,6 +452,11 @@ export class Score {
     }
     const { data, error } = await query;
     if (error) throw new Error(error.message);
+    if (data) {
+      data.forEach(d => {
+        d.assignment_exempt = d.assignment_score === null;
+      });
+    }
     return data || [];
   }
 

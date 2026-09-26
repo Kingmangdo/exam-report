@@ -66,6 +66,7 @@ export const createScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
+      assignment_exempt,
       comment
     } = req.body;
 
@@ -85,7 +86,7 @@ export const createScore = async (req, res) => {
     }
 
     // 점수 범위 검증
-    if (assignment_score < 0 || assignment_score > 100) {
+    if (assignment_score !== null && assignment_score !== undefined && (assignment_score < 0 || assignment_score > 100)) {
       return res.status(400).json({
         success: false,
         message: '과제점수는 0-100점 사이여야 합니다.'
@@ -115,7 +116,8 @@ export const createScore = async (req, res) => {
       word_correct: Number(word_correct) || 0,
       rt_details: req.body.rt_details || [],
       word_details: req.body.word_details || [],
-      assignment_score: Number(assignment_score) || 0,
+      assignment_score: assignment_exempt ? null : (assignment_score !== null && assignment_score !== undefined ? Number(assignment_score) : 0),
+      assignment_exempt: assignment_exempt,
       comment: comment || ''
     });
 
@@ -146,6 +148,7 @@ export const updateScore = async (req, res) => {
       word_total,
       word_correct,
       assignment_score,
+      assignment_exempt,
       comment
     } = req.body;
 
@@ -164,7 +167,8 @@ export const updateScore = async (req, res) => {
       word_correct: Number(word_correct) || 0,
       rt_details: req.body.rt_details || [],
       word_details: req.body.word_details || [],
-      assignment_score: Number(assignment_score) || 0,
+      assignment_score: assignment_exempt ? null : (assignment_score !== null && assignment_score !== undefined ? Number(assignment_score) : 0),
+      assignment_exempt: assignment_exempt,
       comment: comment || ''
     });
 
