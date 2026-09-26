@@ -269,7 +269,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { studentApi, scoreApi, warningApi } from '../services/api';
+import { studentApi, scoreApi, warningApi, classApi } from '../services/api';
 import { getToday } from '../utils/date';
 import { normalizeClassName } from '../utils/string';
 import type { Student } from '../types';
@@ -379,6 +379,7 @@ const clinicComment = '오늘 우리 학생은 Review Test 오답 보완을 위�
 const rtTestTypes = ref<Array<{ name: string; type: 'score' | 'pf' }>>([{ name: 'RT 1', type: 'pf' }]);
 const wordTestTypes = ref<Array<{ name: string; total: number | null }>>([{ name: '단어 1', total: null }]);
 
+const classes = ref<any[]>([]);
 const allStudents = ref<Student[]>([]);
 const classStudents = ref<Student[]>([]);
 const scoreForms = ref<any[]>([]);
@@ -901,10 +902,18 @@ const showToast = (msg: string) => {
 
 const fetchStudents = async () => {
   try {
-    const res = await studentApi.getAll({ status: 'active' });
-    if (res.data.success) allStudents.value = res.data.data;
+    const [resStudents, resClasses] = await Promise.all([
+      studentApi.getAll({ status: 'active' }),
+      classApi.getAll()
+    ]);
+    if (resStudents.data.success) {
+      allStudents.value = resStudents.data.data;
+    }
+    if (resClasses.data.success) {
+      classes.value = resClasses.data.data;
+    }
   } catch (err) {
-    console.error('학생 목록 로드 실패:', err);
+    console.error('데이터 로드 실패:', err);
     allStudents.value = [];
   }
 };
