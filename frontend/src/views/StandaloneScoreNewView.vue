@@ -4,17 +4,18 @@
       <h2 class="text-2xl font-bold text-gray-800">단독 성적 입력 (보강/혼합)</h2>
     </div>
 
-    <!-- 반 선택 대신 학생 검색 및 추가 -->
+    <!-- 학생 추가 영역 -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- 대상 학생 추가 및 날짜 -->
-        <div class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- 왼쪽: 시험일자 및 개별 검색 -->
+        <div class="space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">시험일자 <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-bold text-gray-700 mb-2">시험일자 <span class="text-red-500">*</span></label>
             <input v-model="examDateInput" type="date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">학생 검색 및 추가</label>
+            <label class="block text-sm font-bold text-gray-700 mb-2">1. 이름으로 개별 추가</label>
             <div class="flex gap-2">
               <div class="relative flex-1">
                 <input 
@@ -37,14 +38,36 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div v-if="classStudents.length > 0" class="flex flex-wrap gap-2 mt-2">
-            <div v-for="(student, idx) in classStudents" :key="student.id" class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium border border-blue-200">
-              {{ student.name }}
-              <button @click="removeStudent(idx)" class="text-blue-400 hover:text-blue-600 font-bold">&times;</button>
-            </div>
+            <p class="text-xs text-gray-500 mt-2">반에 구애받지 않고 특정 학생을 개별적으로 추가할 수 있습니다.</p>
           </div>
         </div>
+
+        <!-- 오른쪽: 반 단위로 불러오기 -->
+        <div class="space-y-4 pt-0 md:border-l md:pl-8 border-gray-200">
+          <label class="block text-sm font-bold text-gray-700 mb-2">2. 반 단위로 전체 불러오기</label>
+          <div class="flex gap-2">
+            <select v-model="selectedClassIdForLoad" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">불러올 반을 선택하세요</option>
+              <option v-for="cls in classes" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+            </select>
+            <button 
+              @click="loadStudentsByClass" 
+              :disabled="!selectedClassIdForLoad" 
+              class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 whitespace-nowrap"
+            >
+              불러오기
+            </button>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 mt-4 space-y-1">
+            <p><strong class="text-gray-800">💡 보강 입력 권장 순서</strong></p>
+            <p>① 위에서 보강할 <span class="font-bold text-blue-600">반 전체를 불러옵니다.</span></p>
+            <p>② 목록에서 <span class="font-bold text-red-500">보강 미해당 학생의 [X]를 눌러 제외</span>합니다.</p>
+            <p>③ 남은 학생들의 성적을 입력하고 저장합니다.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
         <!-- 테스트 종류 관리 (RT, 단어) -->
         <div class="space-y-4 border-l pl-6">
@@ -71,7 +94,6 @@
               <input v-model="test.name" type="text" placeholder="테스트명" class="flex-1 px-2 py-1 text-xs border rounded" />
               <input v-model.number="test.total" type="number" placeholder="총 문제" class="w-16 px-2 py-1 text-xs border rounded" @input="updateGlobalTotals" />
               <button @click="removeTestType('word', idx)" class="text-red-500 text-xs">삭제</button>
-            </div>
           </div>
         </div>
       </div>
@@ -83,6 +105,9 @@
         <h3 class="text-lg font-semibold text-gray-800">
           단독 성적 입력 대상자 ({{ classStudents.length }}명)
         </h3>
+        <button @click="classStudents = []; scoreForms = []" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border rounded hover:bg-gray-50 transition">
+          목록 비우기
+        </button>
       </div>
 
       <div class="overflow-x-auto">
@@ -112,7 +137,10 @@
               <!-- 학생명 및 반 선택 -->
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white z-10">
                 <div class="flex flex-col gap-2">
-                  <span>{{ student.name || '이름없음' }} <span v-if="student.school" class="text-xs text-gray-500 font-normal">({{ student.school }})</span></span>
+                  <div class="flex justify-between items-center">
+                    <span>{{ student.name || '이름없음' }} <span v-if="student.school" class="text-xs text-gray-500 font-normal">({{ student.school }})</span></span>
+                    <button @click="removeStudentItem(sIdx)" class="text-gray-400 hover:text-red-500 text-lg leading-none" title="목록에서 제외">&times;</button>
+                  </div>
                   <select v-model="scoreForms[sIdx].selected_class" class="text-xs px-2 py-1 border rounded focus:ring-1 focus:ring-primary w-32" :disabled="scoreForms[sIdx]?.absent">
                     <option value="">(반을 선택하세요)</option>
                     <option v-for="cls in getStudentClasses(student)" :key="cls" :value="cls">{{ cls }}</option>
@@ -204,7 +232,7 @@
 
     <!-- 학생 없음 안내 -->
     <div v-if="classStudents.length === 0" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-      학생을 검색하여 추가하면 성적을 입력할 수 있습니다.
+      학생을 검색하여 추가하거나 반 전체를 불러오면 성적을 입력할 수 있습니다.
     </div>
 
     <!-- 알림 메시지 -->
@@ -237,8 +265,6 @@
         </div>
       </div>
     </div>
-
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -260,6 +286,40 @@ const filteredAllStudents = computed(() => {
     s.name?.toLowerCase().includes(query)
   );
 });
+
+const selectedClassIdForLoad = ref<number | string>('');
+const loadStudentsByClass = () => {
+  if (!selectedClassIdForLoad.value) return;
+  const targetClass = classes.value.find(c => c.id === selectedClassIdForLoad.value);
+  if (!targetClass) return;
+
+  // 해당 반 학생 필터링
+  const studentsInClass = allStudents.value.filter(s => {
+    if (!s.class_name) return false;
+    return s.class_name.split(',').map((cn: string) => cn.trim()).includes(targetClass.name);
+  });
+
+  if (studentsInClass.length === 0) {
+    alert('해당 반에 등록된 학생이 없습니다.');
+    return;
+  }
+
+  // 기존 목록에 없는 학생만 추가
+  let addedCount = 0;
+  studentsInClass.forEach(student => {
+    if (!classStudents.value.some(cs => cs.id === student.id)) {
+      classStudents.value.push(student);
+      scoreForms.value.push(createEmptyForm(student));
+      addedCount++;
+    }
+  });
+
+  if (addedCount > 0) {
+    alert(`해당 반 학생 ${addedCount}명이 명단에 추가되었습니다.\n아래 명단에서 보강 미해당 학생을 [X] 버튼으로 제외하세요.`);
+  } else {
+    alert('이미 명단에 모두 추가된 학생들입니다.');
+  }
+};
 
 const addStudent = (student: Student) => {
   classStudents.value.push(student);
@@ -373,6 +433,12 @@ const toggleAbsent = (sIdx: number) => {
   }
   
   calculateScore(sIdx);
+};
+
+// 학생 완전 제외 버튼 (X)
+const removeStudentItem = (sIdx: number) => {
+  classStudents.value.splice(sIdx, 1);
+  scoreForms.value.splice(sIdx, 1);
 };
 
   const setAssignmentGrade = (sIdx: number, grade: string) => {

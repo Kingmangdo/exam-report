@@ -210,8 +210,8 @@
           <div class="flex items-center gap-2">
             <label class="text-sm font-bold text-gray-600">반 필터</label>
             <select v-model="adminClassFilter" class="px-3 py-2 border rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-primary">
-              <option value="">전체</option>
-              <option v-for="cls in todayClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
+              <option value="">전체 (해당일 기본목록)</option>
+              <option v-for="cls in allClasses" :key="cls.id" :value="cls.id">{{ cls.name }}</option>
             </select>
           </div>
           <div class="flex items-center gap-2">
@@ -565,13 +565,39 @@ const todayClasses = computed(() => {
 
 const filteredAdminStudents = computed(() => {
   let list = adminStudentList.value;
-  if (adminClassFilter.value) {
-    list = list.filter(s => s.classId === parseInt(adminClassFilter.value as string));
-  }
+
   if (adminSearch.value) {
+    // 1. 검색어가 있는 경우: 요일, 반 필터 무시하고 모든 학생 중에서 검색
     const q = adminSearch.value.toLowerCase();
     list = list.filter(s => s.studentName.toLowerCase().includes(q));
+  } else if (adminClassFilter.value) {
+    // 2. 반 필터가 선택된 경우: 요일 무시하고 해당 반 학생 모두 표시
+    list = list.filter(s => s.classId === parseInt(adminClassFilter.value as string));
+  } else {
+    // 3. 검색어나 반 필터가 없는 경우 (기본): 오늘 요일에 해당하는 반 + 이미 오늘 출결이 기록된 학생만 표시
+    if (adminDate.value) {
+      const d = new Date(adminDate.value + 'T00:00:00');
+      const dayOfWeek = d.getDay();
+      const dayMap: Record<number, string[]> = {
+        0: ['일'], 1: ['월'], 2: ['화'], 3: ['수'], 4: ['목'], 5: ['금'], 6: ['토']
+      };
+      const todayChars = dayMap[dayOfWeek] || [];
+      
+      list = list.filter(s => {
+        // 이미 출결이 입력된 경우 무조건 표시 (보강 등으로 온 경우)
+        if (s.status !== '') return true;
+        
+        // 반 정보가 없으면 표시 안함 (출결 없는 미배정)
+        if (!s.classId) return false;
+        
+        // 해당 반이 오늘 요일에 해당하는지 확인
+        const cls = allClasses.value.find(c => c.id === s.classId);
+        if (!cls || !cls.weekdays) return true; // 요일 지정 안된 반은 표시
+        return todayChars.some(ch => cls.weekdays.includes(ch));
+      });
+    }
   }
+
   return list;
 });
 
@@ -600,21 +626,9 @@ const fetchAdminAttendance = async () => {
       attMap[`${a.class_id}-${a.student_id}`] = a;
     });
 
-    // 오늘 수업이 있는 반 필터링
-    const d = new Date(adminDate.value + 'T00:00:00');
-    const dayOfWeek = d.getDay();
-    const dayMap: Record<number, string[]> = {
-      0: ['일'], 1: ['월'], 2: ['화'], 3: ['수'], 4: ['목'], 5: ['금'], 6: ['토']
-    };
-    const todayChars = dayMap[dayOfWeek] || [];
-    
-    const classesToShow = classes.filter((cls: any) => {
-      if (!cls.weekdays) return true;
-      return todayChars.some(ch => cls.weekdays.includes(ch));
-    });
-
+    // 전체 학생에 대해 출결 리스트를 만듭니다 (검색 대비)
     const list: any[] = [];
-    classesToShow.forEach((cls: any) => {
+    classes.forEach((cls: any) => {
       // 해당 반 학생 필터링
       const classStudents = students.filter((s: any) => {
         if (!s.class_name) return false;
@@ -635,6 +649,26 @@ const fetchAdminAttendance = async () => {
           departure_time: att?.departure_time || ''
         });
       });
+    });
+
+    // 튜터링/보강 등 반 미배정 상태이지만 오늘 출결이 있는 학생들 추가
+    students.forEach((stu: any) => {
+      if (!stu.class_name) {
+        const key = `null-${stu.id}`;
+        const att = attMap[key];
+        if (att) {
+          list.push({
+            classId: null,
+            className: '반 미배정',
+            studentId: stu.id,
+            studentName: stu.name,
+            school: stu.school,
+            status: att?.status || '',
+            arrival_time: att?.arrival_time || '',
+            departure_time: att?.departure_time || ''
+          });
+        }
+      }
     });
 
     adminStudentList.value = list;
