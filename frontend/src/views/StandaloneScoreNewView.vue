@@ -288,6 +288,23 @@ const filteredAllStudents = computed(() => {
 });
 
 const selectedClassIdForLoad = ref<number | string>('');
+
+const createEmptyForm = (student: Student) => {
+  const studentClasses = getStudentClasses(student);
+  const defaultClass = studentClasses.length === 1 ? studentClasses[0] : '';
+  
+  return {
+    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: 100, exempt: false })),
+    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total || 0, exempt: false })),
+    assignment_grade: '',
+    assignment_score: 0,
+    comment: '',
+    commentManuallyEdited: false,
+    absent: false,
+    selected_class: defaultClass
+  };
+};
+
 const loadStudentsByClass = () => {
   if (!selectedClassIdForLoad.value) return;
   const targetClass = classes.value.find(c => c.id === selectedClassIdForLoad.value);
@@ -310,6 +327,7 @@ const loadStudentsByClass = () => {
     if (!classStudents.value.some(cs => cs.id === student.id)) {
       classStudents.value.push(student);
       scoreForms.value.push(createEmptyForm(student));
+      calculatedScores.value.push({ total: 0, average: 0, rtScore: 0, wordScore: 0 });
       addedCount++;
     }
   });
@@ -323,19 +341,7 @@ const loadStudentsByClass = () => {
 
 const addStudent = (student: Student) => {
   classStudents.value.push(student);
-  const studentClasses = getStudentClasses(student);
-  const defaultClass = studentClasses.length === 1 ? studentClasses[0] : '';
-  
-  scoreForms.value.push({
-    rt_details: rtTestTypes.value.map(t => ({ correct: 0, name: t.name, type: t.type, total: t.total, exempt: false })),
-    word_details: wordTestTypes.value.map(t => ({ correct: 0, retest: false, name: t.name, total: t.total, exempt: false })),
-    assignment_grade: '',
-    assignment_score: 0,
-    comment: '',
-    commentManuallyEdited: false,
-    absent: false,
-    selected_class: defaultClass
-  });
+  scoreForms.value.push(createEmptyForm(student));
   calculatedScores.value.push({ total: 0, average: 0, rtScore: 0, wordScore: 0 });
   
   searchQuery.value = '';
