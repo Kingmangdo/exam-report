@@ -143,7 +143,11 @@
               <div v-if="reportData.score.word_details && reportData.score.word_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">단어 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">단어 평균: {{ reportData.score.word.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점</p>
+                  <p class="text-sm font-bold text-primary">단어 평균: 
+                    <template v-if="reportData.score.word.score !== null">{{ reportData.score.word.score.toFixed(1) }}점</template>
+                    <template v-else-if="reportData.score.word_details.every(w => w.exempt)">해당없음</template>
+                    <template v-else>-</template>
+                  </p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <div v-for="(word, idx) in reportData.score.word_details" :key="'word-'+idx" 
@@ -182,7 +186,8 @@
                   </p>
                 </div>
                 <p class="text-2xl font-bold" :class="reportData.score.word.retest ? 'text-red-600' : 'text-primary'">
-                  {{ reportData.score.word.score !== null ? reportData.score.word.score.toFixed(1) : '0.0' }}점
+                  <template v-if="reportData.score.word.score !== null">{{ reportData.score.word.score.toFixed(1) }}점</template>
+                  <template v-else>-</template>
                 </p>
               </div>
               <!-- 누적 정답수 표시 (상세가 없을 경우) -->
@@ -234,7 +239,7 @@
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg">
                   <p class="text-xs text-gray-500">이번 평균</p>
-                  <p class="text-lg font-bold text-gray-800">{{ reportData.score.average.toFixed(1) }}점</p>
+                  <p class="text-lg font-bold text-gray-800">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
                 </div>
               </div>
             </div>

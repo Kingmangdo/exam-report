@@ -104,11 +104,15 @@ export class Score {
     const s2 = Number(wordScore) || 0;
     const s3 = Number(assignmentScore) || 0;
     
-    let total = s2;
-    let divider = 1;
+    let total = 0;
+    let divider = 0;
     
     if (rtScore !== null) {
       total += s1;
+      divider++;
+    }
+    if (wordScore !== null) {
+      total += s2;
       divider++;
     }
     if (assignmentScore !== null) {
@@ -199,6 +203,8 @@ export class Score {
       if (validWords.length > 0) {
         const wordPercentages = validWords.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
         wordScore = wordPercentages.reduce((a, b) => a + b, 0) / validWords.length;
+      } else {
+        wordScore = null;
       }
     } else {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
@@ -339,6 +345,8 @@ export class Score {
       if (validWords.length > 0) {
         const wordPercentages = validWords.map(word => (word.total > 0 ? (word.correct / word.total) * 100 : 0));
         wordScore = wordPercentages.reduce((a, b) => a + b, 0) / validWords.length;
+      } else {
+        wordScore = null;
       }
     } else {
       wordScore = word_total > 0 ? (word_correct / word_total) * 100 : 0;
