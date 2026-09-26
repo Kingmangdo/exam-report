@@ -121,7 +121,7 @@
             </template>
             <th v-else class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">단어</th>
 
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제+태도</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">과제점수</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">평균</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">발송 상태</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">성적 미리보기</th>
@@ -380,15 +380,15 @@
                 </p>
               </div>
 
-              <!-- 과제+태도점수 -->
+              <!-- 과제점수 -->
               <div v-if="!reportData.score.assignment_exempt" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <p class="font-semibold text-gray-800">과제+태도점수</p>
+                <p class="font-semibold text-gray-800">과제점수</p>
                 <p class="text-2xl font-bold text-primary">
                   {{ reportData.score.assignment?.toFixed(1) || '0.0' }}점
                 </p>
               </div>
               <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <p class="font-semibold text-gray-800">과제+태도점수</p>
+                <p class="font-semibold text-gray-800">과제점수</p>
                 <p class="text-2xl font-bold text-gray-400">해당없음</p>
               </div>
             </div>

@@ -192,13 +192,13 @@
                 </p>
               </div>
 
-            <!-- 과제+태도점수 -->
+            <!-- 과제점수 -->
             <div v-if="!reportData.score.assignment_exempt" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <p class="font-semibold text-gray-800">과제+태도점수</p>
+              <p class="font-semibold text-gray-800">과제점수</p>
               <p class="text-2xl font-bold text-primary">{{ reportData.score.assignment !== null ? reportData.score.assignment.toFixed(1) : '0.0' }}점</p>
             </div>
             <div v-else class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <p class="font-semibold text-gray-800">과제+태도점수</p>
+              <p class="font-semibold text-gray-800">과제점수</p>
               <p class="text-2xl font-bold text-gray-400">해당없음</p>
             </div>
             </div>
