@@ -614,7 +614,7 @@ const calculateScore = (sIdx: number) => {
 
   calculatedScores.value[sIdx] = {
     rtScore: rtAvg === null ? null : rtAvg,
-    wordScore: wordAvg === null ? 0 : wordAvg,
+    wordScore: wordAvg,
     total: Math.round(total * 100) / 100,
     average: Math.round(average * 100) / 100,
     rtAllPf: rtAllPf,

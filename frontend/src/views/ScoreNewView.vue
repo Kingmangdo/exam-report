@@ -442,8 +442,19 @@ const calculateScore = (sIdx: number) => {
   }
 
   // 총점 및 평균
-  let total = wordAvg;
-  let divider = 1;
+  let total = 0;
+  let divider = 0;
+  
+  const isWordAllExempt = form.word_details.length > 0 && form.word_details.every((d: any) => d.exempt);
+  let finalWordScore: number | null = wordAvg;
+
+  if (!isWordAllExempt) {
+    total += wordAvg;
+    divider++;
+  } else {
+    finalWordScore = null;
+  }
+
   if (rtAvg !== null) {
     total += rtAvg;
     divider++;
@@ -456,7 +467,7 @@ const calculateScore = (sIdx: number) => {
 
   calculatedScores.value[sIdx] = {
     rtScore: rtAvg === null ? null : rtAvg,
-    wordScore: wordAvg,
+    wordScore: finalWordScore,
     total: Math.round(total * 100) / 100,
     average: Math.round(average * 100) / 100,
     rtAllPf: rtAllPf,

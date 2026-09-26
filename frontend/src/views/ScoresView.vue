@@ -146,10 +146,14 @@
 
             <!-- RT 상세 점수 -->
             <template v-if="maxRtCount > 0">
-              <td v-for="n in maxRtCount" :key="'rt-d-'+score.id+'-'+n" class="px-4 py-4 whitespace-nowrap text-sm text-center" :class="score.rt_details && score.rt_details[n-1] && (score.rt_details[n-1].correct === 'F' || (score.rt_details[n-1].type === 'pf' && score.rt_details[n-1].correct === 'F')) ? 'text-red-600 font-bold' : 'text-gray-500'">
+              <td v-for="n in maxRtCount" :key="'rt-d-'+score.id+'-'+n" class="px-4 py-4 whitespace-nowrap text-sm text-center" :class="score.rt_details && score.rt_details[n-1] && score.rt_details[n-1].exempt ? 'text-gray-400' : (score.rt_details && score.rt_details[n-1] && (score.rt_details[n-1].correct === 'F' || (score.rt_details[n-1].type === 'pf' && score.rt_details[n-1].correct === 'F')) ? 'text-red-600 font-bold' : 'text-gray-500')">
                 <template v-if="score.rt_details && score.rt_details[n-1]">
-                  <template v-if="score.rt_details[n-1].correct === 'P' || score.rt_details[n-1].correct === 'F'">
+                  <template v-if="score.rt_details[n-1].exempt">해당없음</template>
+                  <template v-else-if="score.rt_details[n-1].correct === 'P' || score.rt_details[n-1].correct === 'F'">
                     {{ score.rt_details[n-1].correct === 'P' ? 'Clear' : 'Clinic' }}
+                  </template>
+                  <template v-else-if="score.rt_details[n-1].correct === 'Clear' || score.rt_details[n-1].correct === 'Clinic'">
+                    {{ score.rt_details[n-1].correct }}
                   </template>
                   <template v-else>
                     {{ ((score.rt_details[n-1].correct / (score.rt_details[n-1].total || 10)) * 100).toFixed(1) }}
@@ -159,7 +163,8 @@
               </td>
             </template>
             <td v-else class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ score.rt_score !== null ? score.rt_score.toFixed(1) : '-' }}
+              <template v-if="score.rt_details && score.rt_details.length > 0 && score.rt_details.every(r => r.exempt)">해당없음</template>
+              <template v-else>{{ score.rt_score !== null ? score.rt_score.toFixed(1) : '-' }}</template>
             </td>
 
             <!-- 단어 상세 점수 -->
@@ -281,16 +286,21 @@
               <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">RT 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">RT 평균: <template v-if="reportData.score.rt?.score === null || isNaN(reportData.score.rt?.score)">-</template><template v-else>{{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점</template></p>
+                  <p class="text-sm font-bold text-primary">RT 평균: 
+                    <template v-if="reportData.score.rt?.score !== null && !isNaN(reportData.score.rt?.score)">{{ reportData.score.rt?.score?.toFixed(1) || '0.0' }}점</template>
+                    <template v-else-if="reportData.score.rt_details && reportData.score.rt_details.every(r => r.exempt)">해당없음</template>
+                    <template v-else>-</template>
+                  </p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                  <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                  <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-3 rounded-lg border" :class="rt.exempt ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100'">
                     <div>
-                      <p class="font-semibold text-gray-800 text-sm">{{ rt.name || `RT ${idx + 1}` }}</p>
-                      <p class="text-xs text-gray-500" v-if="rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf' && rt.correct !== 'Clear' && rt.correct !== 'Clinic'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                      <p class="font-semibold text-sm" :class="rt.exempt ? 'text-gray-400' : 'text-gray-800'">{{ rt.name || `RT ${idx + 1}` }}</p>
+                      <p class="text-xs text-gray-500" v-if="!rt.exempt && rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf' && rt.correct !== 'Clear' && rt.correct !== 'Clinic'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
                     </div>
-                    <p class="text-lg font-bold" :class="rt.correct === 'F' || rt.correct === 'Clinic' ? 'text-red-600' : 'text-primary'">
-                      <template v-if="rt.correct === 'P' || rt.correct === 'F'">
+                    <p class="text-lg font-bold" :class="rt.exempt ? 'text-gray-400' : (rt.correct === 'F' || rt.correct === 'Clinic' ? 'text-red-600' : 'text-primary')">
+                      <template v-if="rt.exempt">해당없음</template>
+                      <template v-else-if="rt.correct === 'P' || rt.correct === 'F'">
                         {{ rt.correct === 'P' ? 'Clear' : 'Clinic' }}
                       </template>
                       <template v-else-if="rt.correct === 'Clear' || rt.correct === 'Clinic'">
@@ -899,7 +909,9 @@ const downloadExcel = () => {
       for (let i = 0; i < maxRtCount.value; i++) {
         if (score.rt_details && score.rt_details[i]) {
           const detail = score.rt_details[i];
-          if (detail.correct === 'P' || detail.correct === 'F' || detail.type === 'pf') {
+          if (detail.exempt) {
+            row[`RT ${i + 1}`] = '해당없음';
+          } else if (detail.correct === 'P' || detail.correct === 'F' || detail.type === 'pf') {
             row[`RT ${i + 1}`] = detail.correct === 'P' ? 'Clear' : (detail.correct === 'F' ? 'Clinic' : '-');
           } else {
             const pct = ((detail.correct / (detail.total || 10)) * 100).toFixed(1);
@@ -910,7 +922,8 @@ const downloadExcel = () => {
         }
       }
     } else {
-      row['RT'] = score.rt_score !== null ? score.rt_score.toFixed(1) : '-';
+      const isRtExempt = score.rt_details && score.rt_details.length > 0 && score.rt_details.every(r => r.exempt);
+      row['RT'] = isRtExempt ? '해당없음' : (score.rt_score !== null ? score.rt_score.toFixed(1) : '-');
     }
 
     // 단어 점수
@@ -1012,7 +1025,9 @@ const downloadMonthlyExcel = async () => {
           for (let i = 0; i < maxRtCount.value; i++) {
         if (score.rt_details && score.rt_details[i]) {
           const detail = score.rt_details[i];
-          if (detail.type === 'pf') {
+          if (detail.exempt) {
+            row[`RT ${i + 1}`] = '해당없음';
+          } else if (detail.type === 'pf' || detail.correct === 'P' || detail.correct === 'F') {
             row[`RT ${i + 1}`] = detail.correct === 'P' ? 'Clear' : (detail.correct === 'F' ? 'Clinic' : '-');
           } else {
             const pct = ((detail.correct / (detail.total || 10)) * 100).toFixed(1);
@@ -1023,7 +1038,8 @@ const downloadMonthlyExcel = async () => {
             }
           }
         } else {
-          row['RT'] = score.rt_score !== null ? score.rt_score.toFixed(1) : '-';
+          const isRtExempt = score.rt_details && score.rt_details.length > 0 && score.rt_details.every(r => r.exempt);
+          row['RT'] = isRtExempt ? '해당없음' : (score.rt_score !== null ? score.rt_score.toFixed(1) : '-');
         }
 
         // 단어 점수
@@ -1042,7 +1058,8 @@ const downloadMonthlyExcel = async () => {
             }
           }
         } else {
-          row['단어'] = score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 && score.word_details?.some(w => !w.exempt) ? ' (재시험)' : ''}` : '-';
+          const isWordExempt = score.word_details && score.word_details.length > 0 && score.word_details.every(w => w.exempt);
+          row['단어'] = isWordExempt ? '해당없음' : (score.word_score !== null ? `${score.word_score.toFixed(1)}${score.word_score <= 84 && score.word_details?.some(w => !w.exempt) ? ' (재시험)' : ''}` : '-');
         }
 
         row['과제'] = score.assignment_exempt ? '해당없음' : (score.assignment_score !== null ? score.assignment_score.toFixed(1) : '-');

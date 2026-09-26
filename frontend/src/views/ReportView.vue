@@ -99,16 +99,21 @@
               <div v-if="reportData.score.rt_details && reportData.score.rt_details.length > 0">
                 <div class="flex justify-between items-end mb-2">
                   <p class="text-sm font-bold text-gray-600">RT 테스트 상세</p>
-                  <p class="text-sm font-bold text-primary">RT 평균: <template v-if="reportData.score.rt.score === null || isNaN(reportData.score.rt.score)">-</template><template v-else>{{ reportData.score.rt.score.toFixed(1) }}점</template></p>
+                  <p class="text-sm font-bold text-primary">RT 평균: 
+                    <template v-if="reportData.score.rt.score !== null && !isNaN(reportData.score.rt.score)">{{ reportData.score.rt.score.toFixed(1) }}점</template>
+                    <template v-else-if="reportData.score.rt_details && reportData.score.rt_details.every(r => r.exempt)">해당없음</template>
+                    <template v-else>-</template>
+                  </p>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                  <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                  <div v-for="(rt, idx) in reportData.score.rt_details" :key="'rt-'+idx" class="flex justify-between items-center p-4 rounded-lg border" :class="rt.exempt ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100'">
                     <div>
-                      <p class="font-semibold text-gray-800">{{ rt.name || `RT ${idx + 1}` }}</p>
-                      <p class="text-sm text-gray-500" v-if="rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf' && rt.correct !== 'Clear' && rt.correct !== 'Clinic'">{{ rt.correct }} / {{ rt.total || 10 }}</p>
+                      <p class="font-semibold" :class="rt.exempt ? 'text-gray-400' : 'text-gray-800'">{{ rt.name || `RT ${idx + 1}` }}</p>
+                      <p v-if="!rt.exempt && rt.correct !== 'P' && rt.correct !== 'F' && rt.type !== 'pf' && rt.correct !== 'Clear' && rt.correct !== 'Clinic'" class="text-sm text-gray-500">{{ rt.correct }} / {{ rt.total || 10 }}</p>
                     </div>
-                    <p class="text-2xl font-bold" :class="rt.correct === 'F' || rt.correct === 'Clinic' ? 'text-red-600' : 'text-primary'">
-                      <template v-if="rt.correct === 'P' || rt.correct === 'F'">
+                    <p class="text-2xl font-bold" :class="rt.exempt ? 'text-gray-400' : (rt.correct === 'F' || rt.correct === 'Clinic' ? 'text-red-600' : 'text-primary')">
+                      <template v-if="rt.exempt">해당없음</template>
+                      <template v-else-if="rt.correct === 'P' || rt.correct === 'F'">
                         {{ rt.correct === 'P' ? 'Clear' : 'Clinic' }}
                       </template>
                       <template v-else-if="rt.correct === 'Clear' || rt.correct === 'Clinic'">
