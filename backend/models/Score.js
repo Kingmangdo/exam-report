@@ -120,11 +120,11 @@ export class Score {
       divider++;
     }
     
-    let average = divider > 0 ? (total / divider) : 0;
+    let average = divider > 0 ? (total / divider) : null;
 
     return {
       total: Math.round(total * 100) / 100,
-      average: Math.round(average * 100) / 100
+      average: average !== null ? Math.round(average * 100) / 100 : null
     };
   }
 
@@ -323,6 +323,7 @@ export class Score {
 
       const rtScores = [];
       rt_details.forEach(rt => {
+        if (rt.exempt) return;
         if (rt.type === 'pf') {
           // 제외
         } else {

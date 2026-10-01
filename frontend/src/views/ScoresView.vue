@@ -275,7 +275,7 @@
                 <!-- 평균 (상단으로 이동) -->
             <div class="p-6 bg-primary text-white rounded-lg mb-6 shadow-md">
               <div class="text-center">
-                <p class="text-sm opacity-90">평균 점수</p>
+                <p class="text-sm opacity-90">나의 평균점수</p>
                 <p class="text-3xl font-bold">{{ reportData.score.average !== null && reportData.score.average !== undefined ? reportData.score.average.toFixed(1) + '점' : '-' }}</p>
               </div>
             </div>
