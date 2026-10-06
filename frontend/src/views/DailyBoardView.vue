@@ -43,22 +43,55 @@
 
     <div v-else class="space-y-6">
       <!-- 1. 학원 전체 출결 및 특이사항 (공통 메모장) -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
         <div class="bg-yellow-50 px-5 py-3 border-b border-yellow-100 flex justify-between items-center">
           <h3 class="font-bold text-yellow-800 flex items-center gap-2">
             <span>📢</span> 학원 전체 출결 및 특이사항
           </h3>
-          <span v-if="boardData.last_modified_by" class="text-xs text-gray-500">
-            마지막 수정: {{ boardData.last_modified_by }}
+          <span class="text-xs font-bold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+            총 {{ boardData.memos.length }}건
           </span>
         </div>
-        <div class="p-4">
-          <textarea 
-            v-model="boardData.global_memo"
-            rows="4"
-            placeholder="오늘의 지각생, 결석생, 상담 필요 학생 등 학원 전체가 공유해야 할 특이사항을 적어주세요."
-            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none resize-y text-sm"
-          ></textarea>
+        
+        <!-- 메모 목록 영역 -->
+        <div class="p-4 overflow-y-auto max-h-[400px] space-y-3 bg-gray-50/50">
+          <div v-if="boardData.memos.length === 0" class="text-center py-10 text-gray-500 text-sm">
+            등록된 특이사항이 없습니다.
+          </div>
+          
+          <div v-for="(memo, idx) in boardData.memos" :key="memo.id || idx" class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative group">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-bold text-sm text-gray-800">{{ memo.author }}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-400">{{ formatMemoTime(memo.created_at) }}</span>
+                <button @click="removeMemo(idx)" class="text-gray-300 hover:text-red-500 transition-colors text-lg leading-none" title="삭제">
+                  &times;
+                </button>
+              </div>
+            </div>
+            <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ memo.content }}</p>
+          </div>
+        </div>
+
+        <!-- 메모 입력 영역 -->
+        <div class="p-4 bg-white border-t border-gray-100">
+          <div class="flex gap-2">
+            <textarea 
+              v-model="newMemoContent"
+              rows="2"
+              placeholder="오늘의 지각생, 결석생, 상담 필요 학생 등 학원 전체가 공유해야 할 특이사항을 적어주세요."
+              class="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none resize-none text-sm bg-gray-50"
+              @keydown.enter.exact.prevent="addMemo"
+            ></textarea>
+            <button 
+              @click="addMemo"
+              class="px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition disabled:opacity-50 whitespace-nowrap"
+              :disabled="!newMemoContent.trim()"
+            >
+              추가
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-400 mt-1">💡 엔터(Enter) 키로 추가, 줄바꿈은 Shift+Enter. (추가 시 자동 저장됩니다)</p>
         </div>
       </div>
 
@@ -307,9 +340,48 @@ const goToToday = () => {
 
 const boardData = ref({
   global_memo: '',
+  memos: [] as any[],
   rt_notes: {} as Record<string, string>,
   last_modified_by: ''
 });
+
+const newMemoContent = ref('');
+
+const addMemo = async () => {
+  if (!newMemoContent.value.trim()) return;
+  
+  let username = '알 수 없음';
+  if (user) {
+    username = user.name || user.username || '사용자';
+  }
+
+  boardData.value.memos.push({
+    id: Date.now(),
+    content: newMemoContent.value.trim(),
+    author: username,
+    created_at: new Date().toISOString()
+  });
+  
+  newMemoContent.value = '';
+  await saveBoardData(true);
+};
+
+const removeMemo = async (index: number) => {
+  if (confirm('이 메모를 삭제하시겠습니까?')) {
+    boardData.value.memos.splice(index, 1);
+    await saveBoardData(true);
+  }
+};
+
+const formatMemoTime = (isoString: string) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${m}/${day} ${h}:${min}`;
+};
 
 const dueList = ref<any[]>([]);
 const suppSessions = ref<any[]>([]); // 보강 현황 데이터
@@ -459,9 +531,36 @@ const fetchBoardData = async () => {
       const data = res.data.data;
       boardData.value = {
         global_memo: data.board.global_memo || '',
+        memos: [],
         rt_notes: data.board.rt_notes || {},
         last_modified_by: data.board.last_modified_by || ''
       };
+      
+      // Parse memos
+      const rawMemo = data.board.global_memo || '';
+      try {
+        if (rawMemo.trim().startsWith('[')) {
+          boardData.value.memos = JSON.parse(rawMemo);
+        } else if (rawMemo.trim()) {
+          // Legacy plain text handling
+          boardData.value.memos = [{
+            id: Date.now(),
+            content: rawMemo,
+            author: '이전 메모',
+            created_at: new Date().toISOString()
+          }];
+        }
+      } catch (e) {
+        if (rawMemo.trim()) {
+          boardData.value.memos = [{
+            id: Date.now(),
+            content: rawMemo,
+            author: '이전 메모',
+            created_at: new Date().toISOString()
+          }];
+        }
+      }
+
       dueList.value = data.dueList || [];
       
       // rt_notes에 없는 반은 빈 문자열로 초기화
@@ -504,7 +603,7 @@ const updateSuppAttendance = async (sessionId: number, studentId: number, status
   }
 };
 
-const saveBoardData = async () => {
+const saveBoardData = async (isSilent = false) => {
   isSaving.value = true;
   try {
     const userStr = localStorage.getItem('user');
@@ -517,7 +616,7 @@ const saveBoardData = async () => {
     }
 
     const payload = {
-      global_memo: boardData.value.global_memo,
+      global_memo: JSON.stringify(boardData.value.memos),
       rt_notes: boardData.value.rt_notes,
       last_modified_by: username
     };
@@ -525,11 +624,15 @@ const saveBoardData = async () => {
     const res = await dailyBoardApi.saveBoard(selectedDate.value, payload);
     if (res.data.success) {
       boardData.value.last_modified_by = username;
-      alert('저장되었습니다.');
+      if (isSilent !== true) {
+        alert('저장되었습니다.');
+      }
     }
   } catch (error) {
     console.error('저장 실패:', error);
-    alert('저장에 실패했습니다.');
+    if (isSilent !== true) {
+      alert('저장에 실패했습니다.');
+    }
   } finally {
     isSaving.value = false;
   }
@@ -560,10 +663,20 @@ const downloadMonthlyExcel = async () => {
             .map(([className, note]) => `[${className}] ${note}`)
             .join('\n');
         }
+        
+        let globalMemoStr = board.global_memo || '';
+        try {
+          if (globalMemoStr.trim().startsWith('[')) {
+            const parsed = JSON.parse(globalMemoStr);
+            if (Array.isArray(parsed)) {
+              globalMemoStr = parsed.map(m => `[${m.author}] ${m.content}`).join('\n\n');
+            }
+          }
+        } catch (e) {}
 
         return {
           '날짜': board.target_date,
-          '학원 전체 특이사항': board.global_memo || '',
+          '학원 전체 특이사항': globalMemoStr,
           '반별 RT 주의사항': rtNotesStr,
           '마지막 작성자': board.last_modified_by || ''
         };
