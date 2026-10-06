@@ -61,7 +61,13 @@
           
           <div v-for="(memo, idx) in boardData.memos" :key="memo.id || idx" class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative group">
             <div class="flex justify-between items-start mb-1">
-              <span class="font-bold text-sm text-gray-800">{{ memo.author }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-gray-800">{{ memo.author }}</span>
+                <span v-if="memo.role" class="text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap"
+                      :class="memo.role === '원장' ? 'bg-purple-100 text-purple-700' : (memo.role === '조교' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700')">
+                  {{ memo.role }}
+                </span>
+              </div>
               <div class="flex items-center gap-2">
                 <span class="text-[10px] text-gray-400">{{ formatMemoTime(memo.created_at) }}</span>
                 <button @click="removeMemo(idx)" class="text-gray-300 hover:text-red-500 transition-colors text-lg leading-none" title="삭제">
@@ -351,14 +357,24 @@ const addMemo = async () => {
   if (!newMemoContent.value.trim()) return;
   
   let username = '알 수 없음';
+  let roleName = '';
+  
   if (user) {
     username = user.name || user.username || '사용자';
+    if (user.role === 'admin') {
+      roleName = '원장';
+    } else if (user.username && user.username.startsWith('staff')) {
+      roleName = '조교';
+    } else {
+      roleName = '강사';
+    }
   }
 
   boardData.value.memos.push({
     id: Date.now(),
     content: newMemoContent.value.trim(),
     author: username,
+    role: roleName,
     created_at: new Date().toISOString()
   });
   
@@ -669,7 +685,10 @@ const downloadMonthlyExcel = async () => {
           if (globalMemoStr.trim().startsWith('[')) {
             const parsed = JSON.parse(globalMemoStr);
             if (Array.isArray(parsed)) {
-              globalMemoStr = parsed.map(m => `[${m.author}] ${m.content}`).join('\n\n');
+              globalMemoStr = parsed.map(m => {
+                const roleText = m.role ? ` (${m.role})` : '';
+                return `[${m.author}${roleText}] ${m.content}`;
+              }).join('\n\n');
             }
           }
         } catch (e) {}
