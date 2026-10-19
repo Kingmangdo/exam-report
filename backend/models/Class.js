@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 
 export class Class {
   // 모든 반 조회 (학생 수 포함 - 성능 최적화)
-  static async getAll() {
+  static async getAll(date) {
     const { data: classes, error: classError } = await supabase
       .from('classes')
       .select('*')
@@ -28,9 +28,33 @@ export class Class {
       }
     });
 
+    let todayLogsMap = {};
+    if (date) {
+      const { data: logs, error: logsError } = await supabase
+        .from('class_learning_logs')
+        .select('class_id, created_by, updated_by, progress, homework')
+        .eq('log_date', date);
+        
+      if (!logsError && logs) {
+        logs.forEach(log => {
+          // 작성된 내용이 실제로 있는지 확인 (progress나 homework가 있는지)
+          const hasContent = (log.progress && log.progress.trim() !== '') || 
+                             (log.homework && log.homework !== '[]' && log.homework.trim() !== '');
+          if (hasContent) {
+            todayLogsMap[log.class_id] = {
+               has_log: true,
+               teacher: log.created_by || log.updated_by || '선생님 미상'
+            };
+          }
+        });
+      }
+    }
+
     return (classes || []).map(c => ({
       ...c,
-      student_count: classCountMap[c.name] || 0
+      student_count: classCountMap[c.name] || 0,
+      has_today_log: date ? !!todayLogsMap[c.id] : undefined,
+      today_log_teacher: date && todayLogsMap[c.id] ? todayLogsMap[c.id].teacher : undefined
     }));
   }
 

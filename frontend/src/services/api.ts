@@ -114,8 +114,8 @@ export const counselingApi = {
 
 // �?�?�?API
 export const classApi = {
-  getAll: () => {
-    return api.get<ApiResponse<any[]>>('/classes');
+  getAll: (date?: string) => {
+    return api.get<ApiResponse<any[]>>('/classes', { params: { date } });
   },
   getStudents: (className: string) => {
     return api.get<ApiResponse<any[]>>(`/classes/${className}/students`);

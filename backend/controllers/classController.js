@@ -3,7 +3,16 @@ import { Student } from '../models/Student.js';
 
 export const getAllClasses = async (req, res) => {
   try {
-    const classes = await Class.getAll();
+    const { date } = req.query;
+    let targetDate = date;
+    if (!targetDate) {
+      // KST 기준으로 오늘 날짜 구하기
+      const now = new Date();
+      const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      targetDate = kstTime.toISOString().split('T')[0];
+    }
+    
+    const classes = await Class.getAll(targetDate);
     res.json({ success: true, data: classes });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -67,6 +67,46 @@
       </div>
     </div>
 
+    <!-- 오늘 수업일지 입력 현황 대시보드 -->
+    <div v-if="classesExpectedToday.length > 0" class="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col md:flex-row">
+      <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 border-b md:border-b-0 md:border-r border-indigo-100 w-full md:w-1/3 flex flex-col justify-center">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">✍️</span>
+          <h3 class="text-lg font-bold text-indigo-900">오늘 수업일지 입력 현황</h3>
+        </div>
+        <p class="text-sm text-indigo-700 mb-3">오늘({{ getTodayWeekday() }}요일) 수업 예정인 전체 반 기준</p>
+        <div class="flex gap-2">
+          <div class="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
+            <span class="block text-xs text-gray-500 font-medium">입력 완료</span>
+            <span class="block text-lg font-bold text-green-600">{{ completedTodayLogClasses.length }}개</span>
+          </div>
+          <div class="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
+            <span class="block text-xs text-gray-500 font-medium">미입력</span>
+            <span class="block text-lg font-bold" :class="missingTodayLogClasses.length > 0 ? 'text-red-500' : 'text-gray-400'">{{ missingTodayLogClasses.length }}개</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-4 w-full md:w-2/3 bg-gray-50">
+        <h4 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
+          <span v-if="missingTodayLogClasses.length > 0" class="text-red-500">🚨 미입력 반 리스트 (작성 요망)</span>
+          <span v-else class="text-green-600">✅ 모든 반의 수업일지가 입력되었습니다!</span>
+        </h4>
+        
+        <div v-if="missingTodayLogClasses.length > 0" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 pb-1">
+          <button 
+            v-for="c in missingTodayLogClasses" 
+            :key="c.id"
+            @click="selectClass(c)"
+            class="inline-flex items-center bg-white border border-red-200 text-red-700 text-sm px-3 py-1.5 rounded-full hover:bg-red-50 transition shadow-sm"
+          >
+            <span class="font-bold">{{ c.name }}</span>
+            <span class="ml-1 text-xs text-red-400">({{ c.teacher_name || '담임 미지정' }})</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 카테고리 탭 -->
     <div class="flex space-x-1 mb-6 border-b border-gray-200">
       <button
@@ -98,7 +138,7 @@
           📝
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 mb-2">
           <div>
             <h3 class="text-base font-bold text-gray-800">{{ item.name }}</h3>
             <p class="text-xs text-gray-500">{{ item.teacher_name ? `담임: ${item.teacher_name}` : '담임 미지정' }} · {{ item.student_count || 0 }}명</p>
@@ -111,6 +151,17 @@
               <span class="text-xs">삭제</span>
             </button>
           </div>
+        </div>
+        <!-- 오늘 일지 작성 상태 표시 -->
+        <div v-if="classesExpectedToday.some(c => c.id === item.id)" class="mt-1 pt-1 border-t border-gray-100 flex items-center justify-center">
+          <span v-if="item.has_today_log" class="text-[11px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            오늘 완료
+          </span>
+          <span v-else class="text-[11px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            오늘 미입력
+          </span>
         </div>
       </div>
       <div v-if="filteredClasses.length === 0" class="w-full py-8 text-center text-gray-400">
@@ -684,6 +735,27 @@ const recentLogDates = ref<any[]>([]);
 const todayDueHomeworks = ref<any[]>([]);
 const homeworkDueToday = ref<any[]>([]);
 
+const getTodayWeekday = () => {
+  const now = new Date();
+  return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now);
+};
+
+const classesExpectedToday = computed(() => {
+  const todayWeekday = getTodayWeekday();
+  return classes.value.filter(c => {
+    if (!c.weekdays || c.weekdays.length === 0) return true;
+    return c.weekdays.includes(todayWeekday);
+  });
+});
+
+const missingTodayLogClasses = computed(() => {
+  return classesExpectedToday.value.filter(c => !c.has_today_log);
+});
+
+const completedTodayLogClasses = computed(() => {
+  return classesExpectedToday.value.filter(c => c.has_today_log);
+});
+
 // 오늘 검사할 숙제 / RT 개수
 const todayHomeworkCount = computed(
   () => todayDueHomeworks.value.filter((h: any) => h.type !== 'rt').length
@@ -991,7 +1063,8 @@ const filteredAllStudentsForSearch = computed(() => {
 
 const fetchClasses = async () => {
   try {
-    const response = await classApi.getAll();
+    const today = getTodayFull();
+    const response = await classApi.getAll(today);
     if (response.data.success) {
       classes.value = response.data.data || [];
     }
@@ -1173,6 +1246,7 @@ const saveLearningLog = async () => {
     saveStatus.value = '저장 완료!';
     await fetchRecentLogs(); // 최근 기록 목록 갱신
     await fetchHomeworkDue(); // 배너 갱신
+    await fetchClasses(); // 클래스 카드 배지 및 상단 대시보드 갱신
     setTimeout(() => {
       saveStatus.value = '';
     }, 3000);
