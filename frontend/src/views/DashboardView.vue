@@ -11,6 +11,52 @@
     </div>
 
     <div v-else class="space-y-6">
+
+      <!-- 오늘 수업일지 입력 현황 대시보드 -->
+      <div v-if="classesExpectedToday.length > 0" class="bg-white border border-indigo-200 rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row">
+        <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-5 border-b md:border-b-0 md:border-r border-indigo-100 w-full md:w-1/3 flex flex-col justify-center">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-2xl">✍️</span>
+            <h3 class="text-lg font-bold text-indigo-900">오늘 수업일지 입력 현황</h3>
+          </div>
+          <p class="text-sm text-indigo-700 mb-4">오늘({{ getTodayWeekday() }}요일) 수업 예정인 전체 반 기준</p>
+          <div class="flex gap-3">
+            <div class="bg-white px-4 py-3 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
+              <span class="block text-xs text-gray-500 font-medium mb-1">입력 완료</span>
+              <span class="block text-2xl font-bold text-green-600">{{ completedTodayLogClasses.length }}</span>
+            </div>
+            <div class="bg-white px-4 py-3 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
+              <span class="block text-xs text-gray-500 font-medium mb-1">미입력</span>
+              <span class="block text-2xl font-bold" :class="missingTodayLogClasses.length > 0 ? 'text-red-500' : 'text-gray-400'">{{ missingTodayLogClasses.length }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-5 w-full md:w-2/3 bg-gray-50 flex flex-col justify-center">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-1">
+            <span v-if="missingTodayLogClasses.length > 0" class="text-red-500">🚨 미입력 반 리스트 (작성 요망)</span>
+            <span v-else class="text-green-600">✅ 모든 반의 수업일지가 입력되었습니다!</span>
+          </h4>
+          
+          <div v-if="missingTodayLogClasses.length > 0" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 pb-1">
+            <button 
+              v-for="c in missingTodayLogClasses" 
+              :key="c.id"
+              @click="goToClassLog(c)"
+              class="inline-flex items-center bg-white border border-red-200 text-red-700 text-sm px-4 py-2 rounded-full hover:bg-red-50 transition shadow-sm group"
+            >
+              <span class="font-bold">{{ c.name }}</span>
+              <span class="ml-1 text-xs text-red-400">({{ c.teacher_name || '담임 미지정' }})</span>
+              <svg class="w-3.5 h-3.5 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </button>
+          </div>
+          <p v-if="missingTodayLogClasses.length > 0" class="text-xs text-gray-500 mt-3 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            버튼을 클릭하면 반 관리의 해당 반 학습관리 화면으로 이동합니다.
+          </p>
+        </div>
+      </div>
+
       <!-- 특이사항 (학습 경고) - 최상단 배치 -->
       <div v-if="user?.role === 'admin'" class="bg-white rounded-xl shadow-sm border overflow-hidden ring-2 ring-red-500 ring-opacity-50">
         <div class="bg-red-50 px-5 py-3 border-b flex justify-between items-center">
@@ -264,8 +310,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { statisticsApi, attendanceApi, classApi, studentApi, dailyBoardApi, warningApi } from '../services/api';
 import type { Statistics } from '../types';
+
+const router = useRouter();
 
 const statistics = ref<Statistics | null>(null);
 const loading = ref(true);
@@ -456,6 +505,34 @@ const acknowledgeWarning = async (id: number) => {
   } catch (err) {
     console.error('경고 확인 처리 실패:', err);
   }
+};
+
+const getTodayWeekday = () => {
+  const now = new Date();
+  return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(now);
+};
+
+const classesExpectedToday = computed(() => {
+  const todayWeekday = getTodayWeekday();
+  return allClasses.value.filter(c => {
+    if (!c.weekdays || c.weekdays.length === 0) return true;
+    return c.weekdays.includes(todayWeekday);
+  });
+});
+
+const missingTodayLogClasses = computed(() => {
+  return classesExpectedToday.value.filter(c => !c.has_today_log);
+});
+
+const completedTodayLogClasses = computed(() => {
+  return classesExpectedToday.value.filter(c => c.has_today_log);
+});
+
+const goToClassLog = (cls: any) => {
+  // 반 관리 페이지로 이동하면서 해당 반을 선택하도록 처리 
+  // 실제 구현에서는 state나 query params를 통해 선택 처리를 할 수 있지만, 
+  // 우선 반 관리 탭으로 이동시킵니다.
+  router.push({ name: 'classes', query: { selectClassId: cls.id } });
 };
 
 onMounted(async () => {

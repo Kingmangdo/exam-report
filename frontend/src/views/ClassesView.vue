@@ -67,45 +67,6 @@
       </div>
     </div>
 
-    <!-- 오늘 수업일지 입력 현황 대시보드 -->
-    <div v-if="classesExpectedToday.length > 0" class="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col md:flex-row">
-      <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 border-b md:border-b-0 md:border-r border-indigo-100 w-full md:w-1/3 flex flex-col justify-center">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-2xl">✍️</span>
-          <h3 class="text-lg font-bold text-indigo-900">오늘 수업일지 입력 현황</h3>
-        </div>
-        <p class="text-sm text-indigo-700 mb-3">오늘({{ getTodayWeekday() }}요일) 수업 예정인 전체 반 기준</p>
-        <div class="flex gap-2">
-          <div class="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
-            <span class="block text-xs text-gray-500 font-medium">입력 완료</span>
-            <span class="block text-lg font-bold text-green-600">{{ completedTodayLogClasses.length }}개</span>
-          </div>
-          <div class="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 flex-1 text-center shadow-sm">
-            <span class="block text-xs text-gray-500 font-medium">미입력</span>
-            <span class="block text-lg font-bold" :class="missingTodayLogClasses.length > 0 ? 'text-red-500' : 'text-gray-400'">{{ missingTodayLogClasses.length }}개</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="p-4 w-full md:w-2/3 bg-gray-50">
-        <h4 class="text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
-          <span v-if="missingTodayLogClasses.length > 0" class="text-red-500">🚨 미입력 반 리스트 (작성 요망)</span>
-          <span v-else class="text-green-600">✅ 모든 반의 수업일지가 입력되었습니다!</span>
-        </h4>
-        
-        <div v-if="missingTodayLogClasses.length > 0" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 pb-1">
-          <button 
-            v-for="c in missingTodayLogClasses" 
-            :key="c.id"
-            @click="selectClass(c)"
-            class="inline-flex items-center bg-white border border-red-200 text-red-700 text-sm px-3 py-1.5 rounded-full hover:bg-red-50 transition shadow-sm"
-          >
-            <span class="font-bold">{{ c.name }}</span>
-            <span class="ml-1 text-xs text-red-400">({{ c.teacher_name || '담임 미지정' }})</span>
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- 카테고리 탭 -->
     <div class="flex space-x-1 mb-6 border-b border-gray-200">
@@ -1603,7 +1564,7 @@ const organizeWeeks = (sessions: any[], startDate: Date) => {
 
 // 라우트 쿼리(classId, tab, className)에 따라 자동으로 반 및 탭 선택
 const applyRouteSelection = async () => {
-  const initialClassId = route.query.classId ? Number(route.query.classId) : null;
+  const initialClassId = route.query.classId ? Number(route.query.classId) : (route.query.selectClassId ? Number(route.query.selectClassId) : null);
   const initialClassName = (route.query.className as string) || '';
   const initialTab = (route.query.tab as string) || '';
 
