@@ -180,18 +180,18 @@ const showNewInquiryPopup = ref(false);
 const newInquiries = ref<any[]>([]);
 
 const navItems = ref([
-  { name: '대시보드', path: '/', adminOnly: true },
-  { name: '독강 데일리 보드', path: '/daily-board', adminOnly: false },
-  { name: '출결 관리', path: '/attendance', adminOnly: false },
+  { name: '대시보드', path: '/admin', adminOnly: true },
+  { name: '독강 데일리 보드', path: '/admin/daily-board', adminOnly: false },
+  { name: '출결 관리', path: '/admin/attendance', adminOnly: false },
   {
     name: '학생/반 관리',
     path: '/manage-students',
     adminOnly: false,
     children: [
-      { name: '학생 관리', path: '/students', adminOnly: true },
-      { name: '반 관리', path: '/classes', adminOnly: false },
-      { name: '보강 관리', path: '/supplementary', adminOnly: false },
-      { name: '신입생 소프트랜딩', path: '/soft-landing', adminOnly: false, excludeStaff: true }
+      { name: '학생 관리', path: '/admin/students', adminOnly: true },
+      { name: '반 관리', path: '/admin/classes', adminOnly: false },
+      { name: '보강 관리', path: '/admin/supplementary', adminOnly: false },
+      { name: '신입생 소프트랜딩', path: '/admin/soft-landing', adminOnly: false, excludeStaff: true }
     ]
   },
   { 
@@ -199,11 +199,11 @@ const navItems = ref([
     path: '/manage-scores', 
     adminOnly: false,
     children: [
-      { name: '성적 입력 (단체)', path: '/scores/new', adminOnly: false },
-      { name: '성적 입력 (단독/보강)', path: '/scores/standalone/new', adminOnly: false },
-      { name: '성적 입력 (성취)', path: '/scores/bimonthly/new', adminOnly: false },
-      { name: '성적 발송 (Daily)', path: '/scores', adminOnly: false },
-      { name: '성적 발송 (성취)', path: '/scores/bimonthly', adminOnly: false }
+      { name: '성적 입력 (단체)', path: '/admin/scores/new', adminOnly: false },
+      { name: '성적 입력 (단독/보강)', path: '/admin/scores/standalone/new', adminOnly: false },
+      { name: '성적 입력 (성취)', path: '/admin/scores/bimonthly/new', adminOnly: false },
+      { name: '성적 발송 (Daily)', path: '/admin/scores', adminOnly: false },
+      { name: '성적 발송 (성취)', path: '/admin/scores/bimonthly', adminOnly: false }
     ]
   },
   {
@@ -211,11 +211,11 @@ const navItems = ref([
     path: '/manage-academy',
     adminOnly: true,
     children: [
-      { name: '예약 관리', path: '/reservations', adminOnly: true },
-      { name: '알림톡 발송', path: '/notification', adminOnly: true }
+      { name: '예약 관리', path: '/admin/reservations', adminOnly: true },
+      { name: '알림톡 발송', path: '/admin/notification', adminOnly: true }
     ]
   },
-  { name: '설정', path: '/settings', adminOnly: true }
+  { name: '설정', path: '/admin/settings', adminOnly: true }
 ]);
 
 const filteredNavItems = computed(() => {

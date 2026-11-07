@@ -149,6 +149,9 @@ router.beforeEach((to, from, next) => {
 
   // 로그인 안되어 있으면 로그인 페이지로
   if (!token) {
+    if (to.path.startsWith('/admin')) {
+      return next('/login');
+    }
     return next('/login');
   }
 
