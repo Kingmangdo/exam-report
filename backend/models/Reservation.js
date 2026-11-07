@@ -37,7 +37,7 @@ export class Reservation {
 
   // 생성
   static async create(data) {
-    const { name, visit_date, school, grade, recent_english_score, notes, student_phone, parent_phone } = data;
+    const { name, visit_date, school, grade, recent_english_score, notes, student_phone, parent_phone, status } = data;
     const { data: inserted, error } = await supabase
       .from('reservations')
       .insert({
@@ -49,7 +49,7 @@ export class Reservation {
         notes: notes || null,
         student_phone: student_phone || null,
         parent_phone: parent_phone || null,
-        status: '예약'
+        status: status || '예약'
       })
       .select('*')
       .single();

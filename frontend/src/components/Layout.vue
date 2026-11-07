@@ -128,15 +128,36 @@
             <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
               {{ rsv.time || '📋' }}
             </div>
-            <div class="flex-1">
-              <div class="font-bold text-sm text-gray-800">{{ rsv.student_name || rsv.name || '이름 없음' }}</div>
-              <div class="text-xs text-gray-500">{{ rsv.purpose || rsv.type || '상담' }} · {{ rsv.parent_phone || '' }}</div>
-            </div>
+              <div class="flex-1">
+                <div class="font-bold text-sm text-gray-800">{{ rsv.name || rsv.student_name || '이름 없음' }}</div>
+                <div class="text-xs text-gray-500">{{ rsv.grade || rsv.purpose || rsv.type || '상담' }} · {{ rsv.parent_phone || '' }}</div>
+              </div>
           </div>
         </div>
-        <div class="px-6 py-4 border-t bg-gray-50">
-          <button @click="showReservationPopup = false" class="w-full py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition">확인</button>
+        <div class="px-6 py-4 border-t bg-gray-50 flex gap-2">
+          <button @click="showReservationPopup = false" class="flex-1 py-3 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">닫기</button>
+          <button @click="router.push('/admin/reservations'); showReservationPopup = false" class="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition">예약 관리로 이동</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 신규 상담 문의 팝업 -->
+    <div v-if="showNewInquiryPopup" class="fixed bottom-6 right-6 z-[9999] animate-bounce">
+      <div class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-5 w-80 border-4 border-indigo-200 cursor-pointer hover:bg-indigo-700 transition relative overflow-hidden" @click="router.push('/admin/reservations'); showNewInquiryPopup = false">
+        <div class="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 bg-white opacity-10 rounded-full"></div>
+        <div class="flex items-start gap-4">
+          <div class="bg-white text-indigo-600 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 text-2xl shadow-inner">
+            📬
+          </div>
+          <div class="flex-1">
+            <h3 class="font-black text-lg mb-1">새로운 상담 문의!</h3>
+            <p class="text-indigo-100 text-sm leading-tight">홈페이지에서 <b class="text-yellow-300 text-base">{{ newInquiries.length }}건</b>의 신규 문의가 접수되었습니다.</p>
+            <p class="text-xs text-indigo-200 mt-2">클릭하여 예약 관리로 이동 ➔</p>
+          </div>
+        </div>
+        <button @click.stop="showNewInquiryPopup = false" class="absolute top-2 right-2 text-indigo-200 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -155,6 +176,10 @@ const activeDropdown = ref('');
 const isMobileMenuOpen = ref(false);
 const showReservationPopup = ref(false);
 const todayReservations = ref<any[]>([]);
+const showNewInquiryPopup = ref(false);
+const newInquiries = ref<any[]>([]);
+const showNewInquiryPopup = ref(false);
+const newInquiries = ref<any[]>([]);
 
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
@@ -246,17 +271,30 @@ const handleLogout = () => {
 const checkTodayReservations = async () => {
   if (!user || user.role !== 'admin') return;
   try {
-    const res = await reservationApi.getAll({ status: 'pending' });
-    if (res.data.success) {
+    const res = await reservationApi.getAll({ status: '예약' }); // existing check
+    // Actually we can just get all without status and filter them
+    const allRes = await reservationApi.getAll();
+    if (allRes.data.success) {
+      const allData = allRes.data.data || [];
+      
+      // 1. 오늘 예정된 방문/상담 예약 확인 (기존 기능)
       const kstNow = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
       const todayStr = kstNow.toISOString().split('T')[0];
-      const todays = (res.data.data || []).filter((r: any) => {
+      const todays = allData.filter((r: any) => {
+        if (r.status !== '예약') return false;
         const rDate = r.reservation_date || r.visit_date || '';
         return rDate.startsWith(todayStr);
       });
       if (todays.length > 0) {
         todayReservations.value = todays;
         showReservationPopup.value = true;
+      }
+
+      // 2. 새로운 상담 문의 (신규문의) 확인
+      const newInq = allData.filter((r: any) => r.status === '신규문의');
+      if (newInq.length > 0) {
+        newInquiries.value = newInq;
+        showNewInquiryPopup.value = true;
       }
     }
   } catch (e) { console.error(e); }

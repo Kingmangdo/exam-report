@@ -32,7 +32,8 @@
           <div v-if="activeTab === 'reservations'">
             <label class="block text-sm text-gray-500 mb-1">상태</label>
             <select v-model="filterStatus" class="text-base px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" @change="fetchReservations">
-              <option value="">전체</option>
+              <option value="">전체 (신규문의 포함)</option>
+              <option value="신규문의">신규문의 🆕</option>
               <option value="예약">예약</option>
               <option value="방문완료">방문완료</option>
               <option value="입학">입학</option>
@@ -99,15 +100,16 @@
               <td class="px-3 py-3 text-base text-gray-600 text-center">{{ r.recent_english_score || '-' }}</td>
               <td class="px-3 py-3 text-base text-gray-500 max-w-[180px] truncate">{{ r.notes || '-' }}</td>
               <td class="px-3 py-3 text-center">
-                <span class="px-2 py-1 text-sm rounded-full font-bold"
-                  :class="{
-                    'bg-blue-100 text-blue-700': r.status === '예약',
-                    'bg-green-100 text-green-700': r.status === '방문완료',
-                    'bg-purple-100 text-purple-700': r.status === '입학',
-                    'bg-gray-100 text-gray-500': r.status === '취소',
-                    'bg-orange-100 text-orange-700': r.status === '대기'
-                  }"
-                >{{ r.status }}</span>
+                    <span class="px-2 py-1 text-sm rounded-full font-bold"
+                      :class="{
+                        'bg-red-100 text-red-700 animate-pulse': r.status === '신규문의',
+                        'bg-blue-100 text-blue-700': r.status === '예약',
+                        'bg-green-100 text-green-700': r.status === '방문완료',
+                        'bg-purple-100 text-purple-700': r.status === '입학',
+                        'bg-gray-100 text-gray-500': r.status === '취소',
+                        'bg-orange-100 text-orange-700': r.status === '대기'
+                      }"
+                    >{{ r.status === '신규문의' ? '신규문의 🆕' : r.status }}</span>
               </td>
               <td class="px-3 py-3 text-center whitespace-nowrap">
                 <template v-if="getSendStatus(r.id) === 'success'">
@@ -207,14 +209,15 @@
             <textarea v-model="form.notes" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="특이사항, 메모 등"></textarea>
           </div>
           <div v-if="editingId && activeTab === 'reservations'">
-            <label class="block text-sm font-bold text-gray-700 mb-1">상태</label>
-            <select v-model="form.status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-              <option value="예약">예약</option>
-              <option value="방문완료">방문완료</option>
-              <option value="입학">입학</option>
-              <option value="취소">취소</option>
-              <option value="대기">대기</option>
-            </select>
+              <label class="block text-sm font-bold text-gray-700 mb-1">상태</label>
+              <select v-model="form.status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="신규문의">신규문의</option>
+                <option value="예약">예약</option>
+                <option value="방문완료">방문완료</option>
+                <option value="입학">입학</option>
+                <option value="취소">취소</option>
+                <option value="대기">대기</option>
+              </select>
           </div>
         </div>
         <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
