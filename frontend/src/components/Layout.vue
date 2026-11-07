@@ -128,10 +128,13 @@
             <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">
               {{ rsv.time || '📋' }}
             </div>
-              <div class="flex-1">
-                <div class="font-bold text-sm text-gray-800">{{ rsv.name || rsv.student_name || '이름 없음' }}</div>
-                <div class="text-xs text-gray-500">{{ rsv.grade || rsv.purpose || rsv.type || '상담' }} · {{ rsv.parent_phone || '' }}</div>
+            <div class="flex-1">
+              <div class="font-bold text-sm text-gray-800">
+                <span v-if="rsv.name && rsv.name.startsWith('[홈페이지]')" class="text-xs bg-red-100 text-red-600 px-1 rounded mr-1">NEW</span>
+                {{ rsv.name || rsv.student_name || '이름 없음' }}
               </div>
+              <div class="text-xs text-gray-500">{{ rsv.grade || rsv.purpose || rsv.type || '상담' }} · {{ rsv.parent_phone || '' }}</div>
+            </div>
           </div>
         </div>
         <div class="px-6 py-4 border-t bg-gray-50 flex gap-2">
@@ -288,8 +291,8 @@ const checkTodayReservations = async () => {
         showReservationPopup.value = true;
       }
 
-      // 2. 새로운 상담 문의 (신규문의) 확인
-      const newInq = allData.filter((r: any) => r.status === '신규문의');
+      // 2. 새로운 상담 문의 (신규문의) 확인: 이름이 '[홈페이지]'로 시작하는 예약들
+      const newInq = allData.filter((r: any) => r.name && r.name.startsWith('[홈페이지]'));
       if (newInq.length > 0) {
         newInquiries.value = newInq;
         showNewInquiryPopup.value = true;

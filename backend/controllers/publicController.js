@@ -16,16 +16,16 @@ export const submitPublicConsulting = async (req, res) => {
     
     // visit_date는 상담 후 정해지겠지만, DB에 NOT NULL일 수 있으니 현재 시간으로 우선 설정하고 notes에 랜딩페이지 신청임을 표기
     const visit_date = new Date().toISOString(); 
-    const notes = `[홈페이지 상담신청]\n문의내용: ${memo || '없음'}`;
+    const notes = `[신규문의]\n내용: ${memo || '없음'}`;
 
     const newReservation = await Reservation.create({
-      name: studentName,
+      name: `[홈페이지] ${studentName}`,
       visit_date: visit_date, 
       school: school || null,
       grade: grade || null,
       parent_phone: phone, // 학부모 연락처로 저장
       notes: notes,
-      status: '신규문의'
+      status: '예약' // DB 체크 제약조건을 피하기 위해 임시로 '예약' 사용, 대신 이름에 [신규문의] 태그를 붙임
     });
 
     res.status(201).json({
