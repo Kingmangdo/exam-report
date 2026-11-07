@@ -40,7 +40,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'classes',
         name: 'classes',
-        component: () => import('../views/ClassesView.vue')
+        component: () => import('../views/ClassesView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'supplementary',
@@ -226,7 +227,8 @@ router.beforeEach((to, from, next) => {
   // 관리자 전용 페이지 권한 확인
   if (to.meta.adminOnly && user?.role !== 'admin') {
     alert('관리자 권한이 필요합니다.');
-    return next('/admin/classes'); // 대시보드 대신 반 관리로 이동
+    const isStaffUser = user?.username?.startsWith('staff');
+    return next(isStaffUser ? '/admin' : '/admin/classes');
   }
 
   const isStaff = user?.username?.startsWith('staff');

@@ -191,7 +191,7 @@ const navItems = ref([
     path: '/manage-students',
     children: [
       { name: '학생 관리', path: '/admin/students', staffOrAdmin: true },
-      { name: '반 관리', path: '/admin/classes' },
+      { name: '반 관리', path: '/admin/classes', teacherOrAdmin: true },
       { name: '보강 관리', path: '/admin/supplementary', teacherOrAdmin: true },
       { name: '신입생 소프트랜딩', path: '/admin/soft-landing', teacherOrAdmin: true }
     ]
