@@ -183,14 +183,14 @@ const showNewInquiryPopup = ref(false);
 const newInquiries = ref<any[]>([]);
 
 const navItems = ref([
-  { name: '대시보드', path: '/admin', staffOrAdmin: true },
-  { name: '독강 데일리 보드', path: '/admin/daily-board', teacherOrAdmin: true },
+  { name: '대시보드', path: '/admin', adminOnly: true },
+  { name: '독강 데일리 보드', path: '/admin/daily-board' },
   { name: '출결 관리', path: '/admin/attendance' },
   {
     name: '학생/반 관리',
     path: '/manage-students',
     children: [
-      { name: '학생 관리', path: '/admin/students', staffOrAdmin: true },
+      { name: '학생 관리', path: '/admin/students', adminOnly: true },
       { name: '반 관리', path: '/admin/classes', teacherOrAdmin: true },
       { name: '보강 관리', path: '/admin/supplementary', teacherOrAdmin: true },
       { name: '신입생 소프트랜딩', path: '/admin/soft-landing', teacherOrAdmin: true }
@@ -199,22 +199,21 @@ const navItems = ref([
   { 
     name: '성적 관리', 
     path: '/manage-scores', 
-    teacherOrAdmin: true,
     children: [
-      { name: '성적 입력 (단체)', path: '/admin/scores/new', teacherOrAdmin: true },
-      { name: '성적 입력 (단독/보강)', path: '/admin/scores/standalone/new', teacherOrAdmin: true },
-      { name: '성적 입력 (성취)', path: '/admin/scores/bimonthly/new', teacherOrAdmin: true },
-      { name: '성적 발송 (Daily)', path: '/admin/scores', teacherOrAdmin: true },
-      { name: '성적 발송 (성취)', path: '/admin/scores/bimonthly', teacherOrAdmin: true }
+      { name: '성적 입력 (단체)', path: '/admin/scores/new' },
+      { name: '성적 입력 (단독/보강)', path: '/admin/scores/standalone/new' },
+      { name: '성적 입력 (성취)', path: '/admin/scores/bimonthly/new' },
+      { name: '성적 발송 (Daily)', path: '/admin/scores' },
+      { name: '성적 발송 (성취)', path: '/admin/scores/bimonthly' }
     ]
   },
   {
     name: '학원 관리',
     path: '/manage-academy',
-    staffOrAdmin: true,
+    adminOnly: true,
     children: [
-      { name: '예약 관리', path: '/admin/reservations', staffOrAdmin: true },
-      { name: '알림톡 발송', path: '/admin/notification', staffOrAdmin: true }
+      { name: '예약 관리', path: '/admin/reservations', adminOnly: true },
+      { name: '알림톡 발송', path: '/admin/notification', adminOnly: true }
     ]
   },
   { name: '설정', path: '/admin/settings', adminOnly: true }

@@ -4,9 +4,9 @@ import { authenticate, staffOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// 예약 관리 전체 staffOrAdmin 전용 (인증 먼저, 그 다음 권한 체크)
+// 예약 관리 전체 admin 전용 (인증 먼저, 그 다음 권한 체크)
 router.use(authenticate);
-router.use(staffOrAdmin);
+router.use(adminOnly);
 
 // 예약자 CRUD
 router.get('/', reservationController.getAllReservations);
