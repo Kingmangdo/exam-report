@@ -76,13 +76,10 @@ const handleLogin = async () => {
       localStorage.setItem('user', JSON.stringify(user));
       
       // 권한에 따른 초기 페이지 이동
-      const isStaff = user.username?.startsWith('staff');
       if (user.role === 'admin') {
         router.push('/admin');
-      } else if (isStaff) {
-        router.push('/admin/attendance');
       } else {
-        router.push('/admin/classes');
+        router.push('/admin/daily-board');
       }
     }
   } catch (err: any) {

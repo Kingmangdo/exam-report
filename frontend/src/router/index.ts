@@ -202,11 +202,10 @@ router.beforeEach((to, from, next) => {
   if (to.meta.public) {
     // 단, 로그인 된 상태에서 로그인 페이지 접근 시 관리자 페이지로 (권한에 따라)
     if (token && to.path === '/login') {
-      const isStaff = user?.username?.startsWith('staff');
-      if (user?.role === 'admin' || isStaff) {
+      if (user?.role === 'admin') {
         return next('/admin');
       }
-      return next('/admin/classes');
+      return next('/admin/daily-board');
     }
     return next();
   }
@@ -219,36 +218,31 @@ router.beforeEach((to, from, next) => {
     return next('/login');
   }
 
-  // 관리자 전용 페이지 권한 확인
-  if (to.meta.adminOnly && user?.role !== 'admin') {
-    alert('관리자 권한이 필요합니다.');
-    const isStaffUser = user?.username?.startsWith('staff');
-    return next(isStaffUser ? '/admin' : '/admin/classes');
-  }
-
   const isStaff = user?.username?.startsWith('staff');
   const isTeacher = user?.role !== 'admin' && !isStaff;
   const isAdmin = user?.role === 'admin';
 
+  // 관리자 전용 페이지 권한 확인
+  if (to.meta.adminOnly && !isAdmin) {
+    alert('관리자 권한이 필요합니다.');
+    return next('/admin/daily-board');
+  }
+
   // 스태프 전용 권한 확인 (강사 접근 불가)
   if (to.meta.staffOrAdmin && !isAdmin && !isStaff) {
     alert('접근 권한이 없습니다.');
-    return next('/admin/classes');
+    return next('/admin/daily-board');
   }
 
   // 강사 전용 권한 확인 (스태프 접근 불가)
   if ((to.meta.teacherOrAdmin || to.meta.excludeStaff) && !isAdmin && !isTeacher) {
     alert('접근 권한이 없습니다.');
-    return next(isAdmin || isStaff ? '/admin/attendance' : '/admin/classes');
+    return next('/admin/daily-board');
   }
 
   // 관리자가 아닌 사용자가 /admin (대시보드)으로 접근 시 권한에 따라 리다이렉트
   if (to.path === '/admin' && !isAdmin) {
-    if (isStaff) {
-      return next('/admin/attendance');
-    } else {
-      return next('/admin/classes');
-    }
+    return next('/admin/daily-board');
   }
 
   next();
