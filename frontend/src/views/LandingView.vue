@@ -313,8 +313,8 @@ const scrollToForm = () => {
 const submitConsulting = async () => {
   isSubmitting.value = true;
   try {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    await axios.post(`${apiUrl}/public/consulting`, {
+    // Use Vercel Serverless Function to bypass outdated remote backend constraint
+    await axios.post(`/api/direct-consulting`, {
       studentName: form.value.studentName,
       phone: form.value.phone,
       school: form.value.school,
