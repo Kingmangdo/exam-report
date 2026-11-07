@@ -1,6 +1,6 @@
 import express from 'express';
 import * as reservationController from '../controllers/reservationController.js';
-import { authenticate, staffOrAdmin } from '../middleware/auth.js';
+import { authenticate, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
