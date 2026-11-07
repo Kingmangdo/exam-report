@@ -76,10 +76,11 @@ const handleLogin = async () => {
       localStorage.setItem('user', JSON.stringify(user));
       
       // 권한에 따른 초기 페이지 이동
-      if (user.role === 'admin') {
-        router.push('/');
+      const isStaff = user.username?.startsWith('staff');
+      if (user.role === 'admin' || isStaff) {
+        router.push('/admin');
       } else {
-        router.push('/classes');
+        router.push('/admin/classes');
       }
     }
   } catch (err: any) {

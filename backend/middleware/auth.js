@@ -34,3 +34,15 @@ export const adminOnly = (req, res, next) => {
     res.status(403).json({ success: false, message: '관리자 권한이 필요합니다.' });
   }
 };
+
+// 스태프 또는 관리자 권한 확인 미들웨어
+export const staffOrAdmin = (req, res, next) => {
+  const isAdmin = req.user && req.user.role === 'admin';
+  const isStaff = req.user && req.user.username?.startsWith('staff');
+  
+  if (isAdmin || isStaff) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: '접근 권한이 없습니다.' });
+  }
+};

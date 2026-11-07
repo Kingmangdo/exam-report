@@ -23,19 +23,19 @@ const routes: RouteRecordRaw[] = [
           path: '',
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue'),
-          meta: { adminOnly: true }
+          meta: { staffOrAdmin: true }
         },
         {
           path: 'daily-board',
           name: 'dailyBoard',
           component: () => import('../views/DailyBoardView.vue'),
-          meta: { title: '독강 데일리 보드' }
+          meta: { title: '독강 데일리 보드', teacherOrAdmin: true }
         },
         {
           path: 'students',
         name: 'students',
         component: () => import('../views/StudentsView.vue'),
-        meta: { adminOnly: true }
+        meta: { staffOrAdmin: true }
       },
       {
         path: 'classes',
@@ -45,7 +45,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'supplementary',
         name: 'supplementary-dashboard',
-        component: () => import('../views/SupplementaryCalendarView.vue')
+        component: () => import('../views/SupplementaryCalendarView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'attendance',
@@ -55,43 +56,50 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'soft-landing',
         name: 'soft-landing',
-        component: () => import('../views/SoftLandingView.vue')
+        component: () => import('../views/SoftLandingView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'notification',
         name: 'notification',
-        component: () => import('../views/NotificationView.vue')
+        component: () => import('../views/NotificationView.vue'),
+        meta: { staffOrAdmin: true }
       },
       {
         path: 'scores/new',
         name: 'score-new',
-        component: () => import('../views/ScoreNewView.vue')
+        component: () => import('../views/ScoreNewView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'scores/standalone/new',
         name: 'standalone-score-new',
-        component: () => import('../views/StandaloneScoreNewView.vue')
+        component: () => import('../views/StandaloneScoreNewView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'scores/bimonthly/new',
         name: 'bimonthly-score-new',
-        component: () => import('../views/BimonthlyScoreNewView.vue')
+        component: () => import('../views/BimonthlyScoreNewView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'scores',
         name: 'scores',
-        component: () => import('../views/ScoresView.vue')
+        component: () => import('../views/ScoresView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'scores/bimonthly',
         name: 'bimonthly-scores',
-        component: () => import('../views/BimonthlyScoresView.vue')
+        component: () => import('../views/BimonthlyScoresView.vue'),
+        meta: { teacherOrAdmin: true }
       },
       {
         path: 'reservations',
         name: 'reservations',
         component: () => import('../views/ReservationsView.vue'),
-        meta: { adminOnly: true }
+        meta: { staffOrAdmin: true }
       },
       {
         path: 'settings',
@@ -198,10 +206,11 @@ router.beforeEach((to, from, next) => {
   if (to.meta.public) {
     // 단, 로그인 된 상태에서 로그인 페이지 접근 시 관리자 페이지로 (권한에 따라)
     if (token && to.path === '/login') {
-      if (user?.role !== 'admin') {
-        return next('/admin/classes');
+      const isStaff = user?.username?.startsWith('staff');
+      if (user?.role === 'admin' || isStaff) {
+        return next('/admin');
       }
-      return next('/admin');
+      return next('/admin/classes');
     }
     return next();
   }
@@ -220,8 +229,24 @@ router.beforeEach((to, from, next) => {
     return next('/admin/classes'); // 대시보드 대신 반 관리로 이동
   }
 
-  // 관리자가 아닌 사용자가 /admin (대시보드)으로 접근 시 /admin/classes 로 리다이렉트
-  if (to.path === '/admin' && user?.role !== 'admin') {
+  const isStaff = user?.username?.startsWith('staff');
+  const isTeacher = user?.role !== 'admin' && !isStaff;
+  const isAdmin = user?.role === 'admin';
+
+  // 스태프 및 관리자 전용 페이지 권한 확인 (강사 접근 불가)
+  if (to.meta.staffOrAdmin && !isAdmin && !isStaff) {
+    alert('접근 권한이 없습니다.');
+    return next('/admin/classes');
+  }
+
+  // 강사 및 관리자 전용 페이지 권한 확인 (스태프 접근 불가)
+  if ((to.meta.teacherOrAdmin || to.meta.excludeStaff) && !isAdmin && !isTeacher) {
+    alert('접근 권한이 없습니다.');
+    return next(isAdmin || isStaff ? '/admin' : '/admin/classes');
+  }
+
+  // 관리자가 아닌 사용자가 /admin (대시보드)으로 접근 시 권한에 따라 리다이렉트
+  if (to.path === '/admin' && !isAdmin && !isStaff) {
     return next('/admin/classes');
   }
 

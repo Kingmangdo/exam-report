@@ -109,9 +109,9 @@
     <!-- 메인 컨텐츠 -->
     <main class="container mx-auto px-4 py-8">
       <div v-if="user" class="mb-4 text-right">
-        <span class="text-sm text-gray-600 font-bold">
-          {{ user.name }}님 ({{ user.role === 'admin' ? '원장' : (user.username?.startsWith('staff') ? '조교' : '강사') }}) 환영합니다.
-        </span>
+          <span class="text-sm text-gray-600 font-bold">
+            {{ user.name }}님 ({{ user.role === 'admin' ? '원장' : (user.username?.startsWith('staff') ? '스태프' : '강사') }}) 환영합니다.
+          </span>
       </div>
       <RouterView />
     </main>
@@ -183,39 +183,38 @@ const showNewInquiryPopup = ref(false);
 const newInquiries = ref<any[]>([]);
 
 const navItems = ref([
-  { name: '대시보드', path: '/admin', adminOnly: true },
-  { name: '독강 데일리 보드', path: '/admin/daily-board', adminOnly: false },
-  { name: '출결 관리', path: '/admin/attendance', adminOnly: false },
+  { name: '대시보드', path: '/admin', staffOrAdmin: true },
+  { name: '독강 데일리 보드', path: '/admin/daily-board', teacherOrAdmin: true },
+  { name: '출결 관리', path: '/admin/attendance' },
   {
     name: '학생/반 관리',
     path: '/manage-students',
-    adminOnly: false,
     children: [
-      { name: '학생 관리', path: '/admin/students', adminOnly: true },
-      { name: '반 관리', path: '/admin/classes', adminOnly: false },
-      { name: '보강 관리', path: '/admin/supplementary', adminOnly: false },
-      { name: '신입생 소프트랜딩', path: '/admin/soft-landing', adminOnly: false, excludeStaff: true }
+      { name: '학생 관리', path: '/admin/students', staffOrAdmin: true },
+      { name: '반 관리', path: '/admin/classes' },
+      { name: '보강 관리', path: '/admin/supplementary', teacherOrAdmin: true },
+      { name: '신입생 소프트랜딩', path: '/admin/soft-landing', teacherOrAdmin: true }
     ]
   },
   { 
     name: '성적 관리', 
     path: '/manage-scores', 
-    adminOnly: false,
+    teacherOrAdmin: true,
     children: [
-      { name: '성적 입력 (단체)', path: '/admin/scores/new', adminOnly: false },
-      { name: '성적 입력 (단독/보강)', path: '/admin/scores/standalone/new', adminOnly: false },
-      { name: '성적 입력 (성취)', path: '/admin/scores/bimonthly/new', adminOnly: false },
-      { name: '성적 발송 (Daily)', path: '/admin/scores', adminOnly: false },
-      { name: '성적 발송 (성취)', path: '/admin/scores/bimonthly', adminOnly: false }
+      { name: '성적 입력 (단체)', path: '/admin/scores/new', teacherOrAdmin: true },
+      { name: '성적 입력 (단독/보강)', path: '/admin/scores/standalone/new', teacherOrAdmin: true },
+      { name: '성적 입력 (성취)', path: '/admin/scores/bimonthly/new', teacherOrAdmin: true },
+      { name: '성적 발송 (Daily)', path: '/admin/scores', teacherOrAdmin: true },
+      { name: '성적 발송 (성취)', path: '/admin/scores/bimonthly', teacherOrAdmin: true }
     ]
   },
   {
     name: '학원 관리',
     path: '/manage-academy',
-    adminOnly: true,
+    staffOrAdmin: true,
     children: [
-      { name: '예약 관리', path: '/admin/reservations', adminOnly: true },
-      { name: '알림톡 발송', path: '/admin/notification', adminOnly: true }
+      { name: '예약 관리', path: '/admin/reservations', staffOrAdmin: true },
+      { name: '알림톡 발송', path: '/admin/notification', staffOrAdmin: true }
     ]
   },
   { name: '설정', path: '/admin/settings', adminOnly: true }
@@ -225,6 +224,7 @@ const filteredNavItems = computed(() => {
   if (!user) return [];
   const isAdmin = user.role === 'admin';
   const isStaff = user.username?.startsWith('staff');
+  const isTeacher = user.role !== 'admin' && !isStaff;
 
   return navItems.value
     .map(item => {
@@ -232,7 +232,8 @@ const filteredNavItems = computed(() => {
       if (newItem.children) {
         newItem.children = newItem.children.filter(child => {
           if (child.adminOnly && !isAdmin) return false;
-          if (child.excludeStaff && isStaff) return false;
+          if (child.staffOrAdmin && !isAdmin && !isStaff) return false;
+          if ((child.teacherOrAdmin || child.excludeStaff) && !isAdmin && !isTeacher) return false;
           return true;
         });
       }
@@ -240,7 +241,8 @@ const filteredNavItems = computed(() => {
     })
     .filter(item => {
       if (item.adminOnly && !isAdmin) return false;
-      if (item.excludeStaff && isStaff) return false;
+      if (item.staffOrAdmin && !isAdmin && !isStaff) return false;
+      if ((item.teacherOrAdmin || item.excludeStaff) && !isAdmin && !isTeacher) return false;
       if (item.children && item.children.length === 0) return false;
       return true;
     });
@@ -270,7 +272,9 @@ const handleLogout = () => {
 };
 
 const checkTodayReservations = async () => {
-  if (!user || user.role !== 'admin') return;
+  const isAdmin = user?.role === 'admin';
+  const isStaff = user?.username?.startsWith('staff');
+  if (!user || (!isAdmin && !isStaff)) return;
   try {
     const res = await reservationApi.getAll({ status: '예약' }); // existing check
     // Actually we can just get all without status and filter them

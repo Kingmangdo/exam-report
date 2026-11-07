@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>독강영어 150명 도약 협의안</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.65; }
+  .page { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  .cover { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #3b82f6 100%); color: #fff; border-radius: 20px; padding: 44px 38px; position: relative; overflow: hidden; }
+  .cover .badge { display: inline-block; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+  .cover h1 { font-size: 32px; line-height: 1.3; margin-bottom: 10px; }
+  .cover p { opacity: .9; font-size: 14.5px; }
+  .cover .nums { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+  .num-card { background: #fff; color: #1e3a8a; border-radius: 14px; padding: 13px 18px; min-width: 150px; flex: 1; }
+  .num-card .label { font-size: 12px; color: #64748b; font-weight: 700; }
+  .num-card .value { font-size: 25px; font-weight: 900; }
+  .num-card .sub { font-size: 12px; color: #64748b; }
+  /* 커버 하단 흐름 도식 */
+  .flow { display: flex; align-items: stretch; gap: 0; margin-top: 22px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 14px; padding: 14px; }
+  .flow .f { flex: 1; text-align: center; background: #fff; color: #1e3a8a; border-radius: 10px; padding: 10px 6px; font-size: 12.5px; font-weight: 800; }
+  .flow .f small { display: block; font-size: 11px; color: #64748b; font-weight: 600; }
+  .flow .arr { align-self: center; padding: 0 8px; font-size: 18px; font-weight: 900; opacity: .9; }
+  .card { background: #fff; border-radius: 16px; padding: 26px; margin-top: 20px; box-shadow: 0 4px 18px rgba(30,58,138,.07); border: 1px solid #e2e8f0; }
+  .card h2 { font-size: 19px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .icon { width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .card h2 .pageno { margin-left: auto; font-size: 11px; color: #94a3b8; font-weight: 700; }
+  .desc { color: #64748b; font-size: 13.5px; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } .cover h1 { font-size: 25px; } .flow { flex-direction: column; gap: 8px; } .flow .arr { transform: rotate(90deg); } }
+  .pillar { border: 1px solid #e2e8f0; border-radius: 13px; padding: 15px 16px; background: #f8fafc; }
+  .pillar h3 { font-size: 15px; margin-bottom: 6px; }
+  .pillar ul { padding-left: 17px; font-size: 13px; }
+  .pillar li { margin-bottom: 4px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; margin-bottom: 7px; }
+  .tag.red { background: #fee2e2; color: #b91c1c; } .tag.blue { background: #dbeafe; color: #1d4ed8; }
+  .tag.green { background: #dcfce7; color: #15803d; } .tag.purple { background: #f3e8ff; color: #7e22ce; }
+  .tag.gray { background: #e2e8f0; color: #475569; } .tag.amber { background: #fef3c7; color: #b45309; }
+  /* 도식 공통 */
+  .diagram { border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; background: #f8fafc; }
+  .diagram .d-title { font-size: 12px; font-weight: 800; color: #475569; margin-bottom: 10px; text-align: center; }
+  .bucket { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .bucket .b { border-radius: 12px; padding: 10px 14px; text-align: center; min-width: 130px; }
+  .bucket .b.in { background: #dcfce7; border: 1.5px solid #86efac; }
+  .bucket .b.out { background: #fee2e2; border: 1.5px solid #fca5a5; }
+  .bucket .b.zero { background: #1e3a8a; color: #fff; border: 1.5px solid #1e3a8a; }
+  .bucket .b .n { font-size: 20px; font-weight: 900; }
+  .bucket .b .t { font-size: 11.5px; font-weight: 700; }
+  .bucket .op { font-size: 20px; font-weight: 900; color: #64748b; }
+  .pipe { display: flex; align-items: stretch; gap: 0; }
+  .pipe .p { flex: 1; text-align: center; border-radius: 10px; padding: 9px 4px; font-size: 12px; font-weight: 800; border: 1.5px solid; }
+  .pipe .p small { display: block; font-size: 10.5px; font-weight: 600; opacity: .75; }
+  .pipe .pa { align-self: center; padding: 0 5px; font-weight: 900; color: #64748b; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+  th { background: #f8fafc; font-size: 12.5px; color: #475569; }
+  .bar { height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-top: 6px; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, #1e3a8a, #3b82f6); border-radius: 99px; }
+  .waterfall { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin: 6px 0 2px; height: 130px; }
+  .waterfall .col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .waterfall .blk { width: 74px; border-radius: 8px 8px 4px 4px; display: flex; align-items: flex-start; justify-content: center; color: #fff; font-size: 11px; font-weight: 800; padding-top: 6px; }
+  .waterfall .cl { font-size: 11px; font-weight: 700; color: #475569; text-align: center; }
+  .roadmap { position: relative; padding-left: 26px; }
+  .roadmap::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 3px; background: #dbeafe; border-radius: 3px; }
+  .step { position: relative; margin-bottom: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; }
+  .step::before { content: ''; position: absolute; left: -24px; top: 14px; width: 13px; height: 13px; border-radius: 50%; background: #1e3a8a; border: 3px solid #bfdbfe; }
+  .step h4 { font-size: 14px; } .step h4 .when { font-size: 11px; background: #1e3a8a; color: #fff; border-radius: 99px; padding: 2px 9px; margin-left: 6px; }
+  .step p { font-size: 12.5px; color: #475569; }
+  .check-list { list-style: none; }
+  .check-list li { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 11px 14px 11px 44px; margin-bottom: 9px; font-size: 13px; position: relative; }
+  .check-list li::before { content: '☐'; position: absolute; left: 14px; top: 11px; font-size: 19px; color: #b45309; }
+  .check-list li strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+  @media (max-width: 640px) { .kpi { grid-template-columns: 1fr 1fr; } }
+  .kpi .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; }
+  .kpi .box .v { font-size: 21px; font-weight: 900; color: #1e3a8a; }
+  .kpi .box .l { font-size: 11.5px; color: #64748b; font-weight: 700; }
+  .donut-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .donut-box { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; background: #f8fafc; font-size: 12px; }
+  .ring { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #1e3a8a; }
+  .footer { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 24px; }
+  .print-btn { position: fixed; bottom: 22px; right: 22px; background: #1e3a8a; color: #fff; border: none; padding: 13px 20px; border-radius: 999px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 24px rgba(30,58,138,.4); font-size: 14px; }
+  .page-break { display: none; }
+  @page { size: A4; margin: 11mm 10mm; }
+  @media print {
+    .print-btn { display: none; }
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 12px; }
+    .page { padding: 0; max-width: none; }
+    .cover { border-radius: 12px; break-inside: avoid; page-break-inside: avoid; padding: 30px 28px; }
+    .card { box-shadow: none; padding: 18px; margin-top: 0; border-width: 1px; break-inside: auto; page-break-inside: auto; }
+    .card h2 { font-size: 17px; break-after: avoid; break-inside: avoid; }
+    .desc { font-size: 12px; margin-bottom: 10px; }
+    .pillar { padding: 11px 12px; } .pillar h3 { font-size: 13.5px; } .pillar ul { font-size: 12px; }
+    .diagram { padding: 10px 12px; margin-bottom: 10px; }
+    .step { padding: 9px 12px; margin-bottom: 9px; } .step h4 { font-size: 13px; } .step p { font-size: 11.5px; }
+    .check-list li { padding: 8px 12px 8px 38px; margin-bottom: 7px; font-size: 12px; }
+    .check-list li::before { top: 7px; left: 12px; font-size: 17px; }
+    .check-list li strong { font-size: 13px; }
+    table { font-size: 12px; } th, td { padding: 6px 8px; }
+    .pillar, .step, .check-list li, thead, tr, .kpi .box, .num-card, .donut-box { break-inside: avoid; page-break-inside: avoid; }
+    .page-break { display: block; height: 0; break-before: page; page-break-before: always; }
+    .waterfall { height: 110px; }
+    .footer { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 표지 = 1페이지 -->
+  <div class="cover">
+    <div class="badge">📋 원장님 보고용 협의안 · 코드 변경 없음</div>
+    <h1>독강영어 110명 → 150명<br>도약 계획안</h1>
+    <p>안정적 운영을 넘어, 소개와 재등록이 스스로 도는 학원으로.<br>작성일: 2026-10-06 · 현황 재원 약 110명 (역대 최대 117명) · 목표 150명+</p>
+    <div class="nums">
+      <div class="num-card"><div class="label">현재 재원</div><div class="value">약 110명</div><div class="sub">왔다갔다 정체 구간</div></div>
+      <div class="num-card"><div class="label">역대 최대</div><div class="value">117명</div><div class="sub">이 벽을 넘어야 함</div></div>
+      <div class="num-card"><div class="label">목표</div><div class="value">150명+</div><div class="sub">순증 +40명 필요</div></div>
+    </div>
+    <div class="flow">
+      <div class="f">🛡️ 지키기<small>퇴원 방어</small></div><div class="arr">→</div>
+      <div class="f">📣 자랑하기<small>소개 바이럴</small></div><div class="arr">→</div>
+      <div class="f">🤝 등록시키기<small>상담 전환</small></div><div class="arr">→</div>
+      <div class="f">🏫 담아내기<small>정원·증설</small></div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 1. 진단 = 2페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#fee2e2">🔍</span> 1. 진단 — 왜 110명에서 멈췄을까? <span class="pageno">p.2</span></h2>
+    <p class="desc">지금 시스템(데일리 성적표·알림톡·데일리보드·집중케어·보강·상담예약)은 "지키는 시스템"으로 훌륭합니다. 문제는 "새는 양동이" 구조입니다.</p>
+    <div class="diagram">
+      <div class="d-title">🪣 새는 양동이 구조 — 들어오는 만큼 새고 있다</div>
+      <div class="bucket">
+        <div class="b in"><div class="n">+4명</div><div class="t">월 신규 유입</div></div>
+        <div class="op">−</div>
+        <div class="b out"><div class="n">−4명</div><div class="t">월 조용한 퇴원</div></div>
+        <div class="op">=</div>
+        <div class="b zero"><div class="n">순증 0</div><div class="t">110명 정체</div></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="pillar"><span class="tag red">가설 1 · 퇴원</span><h3>🚪 나가는데 만큼 들어온다</h3><ul><li>월 3~4명 × 12개월 = 연간 40명 이탈</li><li>성적하락+결석+과제F 신호 없이 떠남</li></ul></div>
+      <div class="pillar"><span class="tag blue">가설 2 · 소개</span><h3>💬 만족하는데 소개는 안 나온다</h3><ul><li>신규의 60~70%는 소개·입소문</li><li>성적표가 선생님용이지 자랑용이 아님</li></ul></div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="pillar"><span class="tag green">가설 3 · 전환</span><h3>📝 상담은 오는데 등록이 안 된다</h3><ul><li>테스트→등록/미등록 추적이 기록용</li><li>미등록 사유를 모으면 전략이 보임</li></ul></div>
+      <div class="pillar"><span class="tag purple">가설 4 · 정원</span><h3>🪑 받을 반이 없어서 못 받는다</h3><ul><li>117명 max의 진짜 이유는 정원일 수 있음</li><li>정원율·대기가 안 보이면 증설을 놓침</li></ul></div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 2. 전략 = 3페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#dbeafe">🧭</span> 2. 도약 전략 — 4개 축 <span class="pageno">p.3</span></h2>
+    <p class="desc">순서가 곧 전략입니다. A부터 하면 돈 안 들이고 20명이 늘어납니다.</p>
+    <div class="diagram">
+      <div class="d-title">🔗 150명 파이프라인 — 네 단계가 맞물려 돌아간다</div>
+      <div class="pipe">
+        <div class="p" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b">A 지키기<small>비용 0원 · 최우선</small></div><div class="pa">▶</div>
+        <div class="p" style="background:#dbeafe;border-color:#93c5fd;color:#1e40af">B 자랑<small>가성비 1위</small></div><div class="pa">▶</div>
+        <div class="p" style="background:#dcfce7;border-color:#86efac;color:#166534">C 등록<small>전환 +15%p</small></div><div class="pa">▶</div>
+        <div class="p" style="background:#f3e8ff;border-color:#d8b4fe;color:#6b21a8">D 담기<small>정원·증설</small></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="pillar"><span class="tag red">A · 최우선</span><h3>🛡️ 퇴원 방어</h3><ul><li>빨간불 3개: 2주 연속 하락 / 결석2회 / 과제F 방치</li><li>나빠진 뒤가 아니라 먼저 "케어하겠습니다" 연락</li><li><b>효과: 월퇴원 4→2명 = 연간 +24명</b></li></ul></div>
+      <div class="pillar"><span class="tag blue">B · 가성비 1위</span><h3>📣 소개 바이럴</h3><ul><li>"누적 5,971개·▲+1.0점" 성장 스토리 전진 배치</li><li>반평균 제외(UL_9855) — 비교 대신 자랑</li><li><b>효과: 월 상담 5~6건</b></li></ul></div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="pillar"><span class="tag green">C · 병목 해결</span><h3>🤝 상담 전환율</h3><ul><li>예약→테스트→등록 한 보드 관리</li><li>결과지 = 3개월 로드맵 + 선배 사례</li><li><b>효과: 전환율 40%→55%</b></li></ul></div>
+      <div class="pillar"><span class="tag purple">D · 받을 준비</span><h3>🏫 운영 캐파</h3><ul><li>반별 정원율·마감임박·대기자 보드</li><li>"확인했어요" 체크로 실행 여부 확인</li><li><b>효과: 117명의 벽이 정원인지 확인</b></li></ul></div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 3. 숫자 = 4페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#dcfce7">📈</span> 3. 숫자 시뮬레이션 — 150명 가는 길 <span class="pageno">p.4</span></h2>
+    <p class="desc">모집을 2배로 늘릴 필요가 없습니다. 막대그래프처럼 쌓으면 됩니다.</p>
+    <div class="diagram">
+      <div class="d-title">🧱 110명에서 150명까지 쌓이는 블록 (12개월)</div>
+      <div class="waterfall">
+        <div class="col"><div class="blk" style="height:78px;background:#94a3b8">110</div><div class="cl">현재<br>110명</div></div>
+        <div class="col"><div style="font-weight:900;color:#15803d">+</div><div class="blk" style="height:34px;background:#22c55e">24</div><div class="cl">퇴원방어<br>+24명</div></div>
+        <div class="col"><div style="font-weight:900;color:#15803d">+</div><div class="blk" style="height:20px;background:#3b82f6">10</div><div class="cl">소개<br>+10명</div></div>
+        <div class="col"><div style="font-weight:900;color:#15803d">+</div><div class="blk" style="height:14px;background:#8b5cf6">6</div><div class="cl">전환율<br>+6명</div></div>
+        <div class="col"><div style="font-weight:900">=</div><div class="blk" style="height:96px;background:#1e3a8a">150</div><div class="cl"><b>목표<br>150명</b></div></div>
+      </div>
+    </div>
+    <table>
+      <tr><th>항목</th><th>현재(추정)</th><th>개선 후</th><th>연간 효과</th></tr>
+      <tr><td>월 평균 퇴원</td><td>4명</td><td><b>2명</b></td><td>+24명 유지</td></tr>
+      <tr><td>월 소개 상담</td><td>1~2건</td><td><b>5~6건</b></td><td>월 +2~3명 등록</td></tr>
+      <tr><td>상담→등록 전환율</td><td>약 40%</td><td><b>55%</b></td><td>같은 상담으로 +30%</td></tr>
+      <tr><td>12개월 후 재원</td><td>110명 유지</td><td><b>145~155명</b></td><td>목표 달성권</td></tr>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 4. 로드맵 = 5페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#fef3c7">🗓️</span> 4. 단계별 로드맵 <span class="pageno">p.5</span></h2>
+    <p class="desc">개발보다 합의가 먼저입니다. Phase 1은 내일 회의에서 바로 정할 수 있습니다.</p>
+    <div class="diagram">
+      <div class="d-title">⏳ 시간 흐름 — 2주 → 1개월 → 안정화</div>
+      <div class="pipe">
+        <div class="p" style="background:#fef3c7;border-color:#fcd34d;color:#92400e;flex:1.1">Phase 1<small>2주 · 운영으로</small></div><div class="pa">▶</div>
+        <div class="p" style="background:#dbeafe;border-color:#93c5fd;color:#1e40af;flex:1.3">Phase 2<small>1개월 · 업그레이드</small></div><div class="pa">▶</div>
+        <div class="p" style="background:#dcfce7;border-color:#86efac;color:#166534;flex:1">Phase 3<small>140명~ · 안정화</small></div>
+      </div>
+    </div>
+    <div class="roadmap">
+      <div class="step"><h4>Phase 1 — 지금 당장 <span class="when">2주 · 개발 없이</span></h4><p>① 이탈 빨간불 3개 합의 ② 알림톡 UL_9855 확정 ③ "어떻게 오셨어요?" 전수 기록 ④ 소개자 필드 쓰기 시작</p></div>
+      <div class="step"><h4>Phase 2 — 시스템 1순위 <span class="when">1개월</span></h4><p>① 이탈위험 → 선생님 액션카드 ② 공유용 성적표 분리(상세용 vs 자랑용) ③ 상담 파이프라인 보드</p></div>
+      <div class="step"><h4>Phase 3 — 140명 넘어서면 <span class="when">안정화</span></h4><p>① 정원율·대기자 관리 ② 리뷰 수집 → 블로그·맘카페 소재 ③ 케어 완료율과 인센티브 연결</p></div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 5. 결정요청 = 6페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#f3e8ff">✅</span> 5. 원장님께 결정 요청 5가지 <span class="pageno">p.6</span></h2>
+    <p class="desc">네모(☐)에 체크하면서 회의하세요. 여기만 정해지면 나머지는 실무안으로 진행됩니다.</p>
+    <ul class="check-list">
+      <li><strong>① 데일리 알림톡 반평균, 뺄까요?</strong>제안: UL_9855 확정. 비교는 불안, 성장은 자랑. 공유율이 오릅니다.</li>
+      <li><strong>② 이탈 빨간불 3개, 이렇게 가도 될까요?</strong>제안: 2주 연속 하락 / 월 결석·지각 2회 / 과제F 방치 → 담임 5분 면담 + 학부모 선제 연락.</li>
+      <li><strong>③ 소개 보상을 할까요?</strong>제안: 소개者に 간식 쿠폰 + "OO어머님 소개" 멘트. 월 1~2건만 터져도 모집비 0원.</li>
+      <li><strong>④ 신규 30일 원장님 전화, OK?</strong>제안: 등록 30일차 3분 전화. 퇴원율이 절반으로 떨어지는 구간입니다.</li>
+      <li><strong>⑤ 증설 기준을 정할까요?</strong>제안: 정원 15명 중 14명 찰 때 분반 검토. 117명의 벽이 정원이었는지 확인.</li>
+    </ul>
+  </div>
+
+  <div class="page-break"></div>
+  <!-- 6. 지표 = 7페이지 -->
+  <div class="card">
+    <h2><span class="icon" style="background:#e0e7ff">📌</span> 6. 매주 월요일 5분 지표 <span class="pageno">p.7</span></h2>
+    <p class="desc">엑셀 없이 대시보드 최상단에 이 4개만 박으면 흔들리지 않습니다.</p>
+    <div class="donut-row">
+      <div class="donut-box"><div class="ring" style="background:conic-gradient(#1e3a8a 0 70%, #e2e8f0 70% 100%)"><span style="background:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center">+?</span></div><b>주간 순증감</b><br>신규 − 퇴원</div>
+      <div class="donut-box"><div class="ring" style="background:conic-gradient(#22c55e 0 95%, #e2e8f0 95% 100%)"><span style="background:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center">95%</span></div><b>재등록률</b><br>목표선 (미만 경고)</div>
+      <div class="donut-box"><div class="ring" style="background:conic-gradient(#3b82f6 0 30%, #e2e8f0 30% 100%)"><span style="background:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center">30%</span></div><b>소개 비중</b><br>신규 중 소개</div>
+      <div class="donut-box"><div class="ring" style="background:conic-gradient(#8b5cf6 0 50%, #e2e8f0 50% 100%)"><span style="background:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center">50%</span></div><b>상담 전환율</b><br>상담→등록</div>
+    </div>
+    <div class="kpi">
+      <div class="box"><div class="l">주간 순증감</div><div class="v">+?</div><div class="l">신규 − 퇴원</div></div>
+      <div class="box"><div class="l">재등록률</div><div class="v">95%</div><div class="l">목표선 (미만 경고)</div></div>
+      <div class="box"><div class="l">소개 비중</div><div class="v">30%</div><div class="l">신규 중 소개 (목표선)</div></div>
+      <div class="box"><div class="l">상담 전환율</div><div class="v">50%</div><div class="l">상담→등록 (목표선)</div></div>
+    </div>
+    <p class="desc" style="margin-top:10px;margin-bottom:0">✔ 합의되면 다음 단계로 각 항목의 화면 기획안 + 알림톡 문구안을 뽑아드리겠습니다. (코드 변경은 합의 후 착수)</p>
+  </div>
+
+  <div class="footer">독강영어 150명 도약 협의안 · 개발 착수 전 협의용 문서입니다 (시스템 코드 변경 없음)</div>
+</div>
+<button class="print-btn" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+</body>
+</html>
