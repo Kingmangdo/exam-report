@@ -140,8 +140,11 @@ router.beforeEach((to, from, next) => {
 
   // 공용 페이지(랜딩, 로그인, 성적표 조회)는 통과
   if (to.meta.public) {
-    // 단, 로그인 된 상태에서 로그인 페이지 접근 시 관리자 페이지로
+    // 단, 로그인 된 상태에서 로그인 페이지 접근 시 관리자 페이지로 (권한에 따라)
     if (token && to.path === '/login') {
+      if (user?.role !== 'admin') {
+        return next('/admin/classes');
+      }
       return next('/admin');
     }
     return next();
@@ -159,6 +162,11 @@ router.beforeEach((to, from, next) => {
   if (to.meta.adminOnly && user?.role !== 'admin') {
     alert('관리자 권한이 필요합니다.');
     return next('/admin/classes'); // 대시보드 대신 반 관리로 이동
+  }
+
+  // 관리자가 아닌 사용자가 /admin (대시보드)으로 접근 시 /admin/classes 로 리다이렉트
+  if (to.path === '/admin' && user?.role !== 'admin') {
+    return next('/admin/classes');
   }
 
   next();
