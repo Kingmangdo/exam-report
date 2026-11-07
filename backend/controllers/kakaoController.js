@@ -69,7 +69,7 @@ ${reportUrl}
       receiver_1: student.parent_phone,
       subject_1: '성적표 안내',
       message_1: message,
-      tpl_code: process.env.ALIGO_TEMPLATE_CODE,
+      tpl_code: 'UL_9855', // process.env.ALIGO_TEMPLATE_CODE,
       button_1: {
         button: [
           {
