@@ -178,8 +178,6 @@ const showReservationPopup = ref(false);
 const todayReservations = ref<any[]>([]);
 const showNewInquiryPopup = ref(false);
 const newInquiries = ref<any[]>([]);
-const showNewInquiryPopup = ref(false);
-const newInquiries = ref<any[]>([]);
 
 const navItems = ref([
   { name: '대시보드', path: '/', adminOnly: true },
