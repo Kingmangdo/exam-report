@@ -36,7 +36,6 @@ export const sendScoreReport = async (req, res) => {
 
     // 3. 알림톡 메시지 구성 (공백/들여쓰기 절대 금지 - 템플릿과 100% 일치해야 함)
     const avgScore = score.average_score || 0;
-    const classAvgScore = score.class_average || 0;
     
     // 날짜 형식 (2026-02-10)
     let displayDate = score.exam_date;
@@ -54,8 +53,7 @@ export const sendScoreReport = async (req, res) => {
 자녀의 학습 성취도를 아래 링크에서 확인해 주세요.
 
 ▶ 시험일자: ${displayDate}
-▶ 평균점수: ${avgScore}점
-▶ 반 평균: ${classAvgScore}점
+▶ 나의 평균점수: ${avgScore}점
 
 [상세 성적표 확인하기]
 ${reportUrl}
@@ -63,7 +61,9 @@ ${reportUrl}
 ※ 링크 접속 시 학생 이름과 학부모님 연락처 뒷 4자리로 본인 인증이 필요합니다.
 
 오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.
-학생의 성장을 위해 최선을 다하겠습니다.`;
+
+문의는 학생 이름과 함께 
+문의주세요.`;
 
     const aligoData = {
       receiver_1: student.parent_phone,
