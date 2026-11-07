@@ -4,13 +4,19 @@ import Layout from '../components/Layout.vue'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/',
+    name: 'landing',
+    component: () => import('../views/LandingView.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue'),
     meta: { public: true }
   },
   {
-    path: '/',
+    path: '/admin',
     component: Layout,
       children: [
         {
@@ -132,8 +138,12 @@ router.beforeEach((to, from, next) => {
   const userJson = localStorage.getItem('user');
   const user = userJson ? JSON.parse(userJson) : null;
 
-  // 공용 페이지(로그인, 성적표 조회)는 통과
+  // 공용 페이지(랜딩, 로그인, 성적표 조회)는 통과
   if (to.meta.public) {
+    // 단, 로그인 된 상태에서 로그인 페이지 접근 시 관리자 페이지로
+    if (token && to.path === '/login') {
+      return next('/admin');
+    }
     return next();
   }
 
@@ -145,7 +155,7 @@ router.beforeEach((to, from, next) => {
   // 관리자 전용 페이지 권한 확인
   if (to.meta.adminOnly && user?.role !== 'admin') {
     alert('관리자 권한이 필요합니다.');
-    return next('/classes'); // 대시보드 대신 반 관리로 이동
+    return next('/admin/classes'); // 대시보드 대신 반 관리로 이동
   }
 
   next();
