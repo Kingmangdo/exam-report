@@ -44,7 +44,7 @@ export const sendScoreReport = async (req, res) => {
     }
     
     // 템플릿 텍스트와 줄바꿈을 극한으로 일치시킴 (하단 안내 문구 포함)
-    const message = `[독강영어학원 성적표 안내]
+const message = `[독강영어학원 성적표 안내]
 
 안녕하세요, ${student.name} 학생 학부모님.
 독강영어학원입니다.
@@ -62,7 +62,7 @@ ${reportUrl}
 
 오늘도 독강영어학원을 믿고 맡겨주셔서 감사합니다.
 
-문의는 학생 이름과 함께 
+문의는 학생 이름과 함께
 문의주세요.`;
 
     const aligoData = {
