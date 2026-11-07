@@ -128,10 +128,9 @@
           <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           
           <!-- 자체 교재/수업 이미지 (워터마크 포함) -->
-          <div class="w-full h-48 sm:h-56 relative overflow-hidden rounded-t-3xl border-b border-gray-100">
-            <div class="absolute inset-0 bg-black/10 z-10"></div>
-            <img src="/assets/class-materials.jpg" alt="독강영어 자체 제작 학습 자료" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 object-center">
-            <div class="absolute bottom-3 right-3 z-20 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">독강영어 자체 제작 학습 자료</div>
+          <div class="w-full relative overflow-hidden rounded-t-3xl border-b border-gray-100" style="aspect-ratio: 952 / 610;">
+            <img src="/assets/report-card.jpg" alt="독강영어 성취평가 성적표 예시" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700 object-top">
+            <div class="absolute top-3 right-3 z-20 bg-black/40 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">성취평가 성적표 예시</div>
           </div>
 
           <div class="p-8 md:p-10 flex-1 relative z-10 bg-white">
