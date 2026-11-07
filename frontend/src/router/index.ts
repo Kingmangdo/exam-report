@@ -102,6 +102,62 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/classes',
+    redirect: '/admin/classes'
+  },
+  {
+    path: '/students',
+    redirect: '/admin/students'
+  },
+  {
+    path: '/attendance',
+    redirect: '/admin/attendance'
+  },
+  {
+    path: '/daily-board',
+    redirect: '/admin/daily-board'
+  },
+  {
+    path: '/supplementary',
+    redirect: '/admin/supplementary'
+  },
+  {
+    path: '/soft-landing',
+    redirect: '/admin/soft-landing'
+  },
+  {
+    path: '/notification',
+    redirect: '/admin/notification'
+  },
+  {
+    path: '/scores/new',
+    redirect: '/admin/scores/new'
+  },
+  {
+    path: '/scores/standalone/new',
+    redirect: '/admin/scores/standalone/new'
+  },
+  {
+    path: '/scores/bimonthly/new',
+    redirect: '/admin/scores/bimonthly/new'
+  },
+  {
+    path: '/scores',
+    redirect: '/admin/scores'
+  },
+  {
+    path: '/scores/bimonthly',
+    redirect: '/admin/scores/bimonthly'
+  },
+  {
+    path: '/reservations',
+    redirect: '/admin/reservations'
+  },
+  {
+    path: '/settings',
+    redirect: '/admin/settings'
+  },
+  {
     path: '/report/:token',
     name: 'report',
     component: () => import('../views/ReportView.vue'),
