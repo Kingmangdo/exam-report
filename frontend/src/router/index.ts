@@ -248,4 +248,37 @@ router.beforeEach((to, from, next) => {
   next();
 });
 
+// 페이지별 제목/검색 노출 설정
+// - 랜딩('/')은 index.html 의 기본 title/description 을 그대로 사용(검색 노출 대상)
+// - 그 외(로그인, 관리자 ERP, 학부모 성적표 링크)는 검색에 노출되지 않도록 noindex
+const defaultTitle = document.title
+
+const setRobots = (content: string) => {
+  let el = document.querySelector('meta[name="robots"]')
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute('name', 'robots')
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', content)
+}
+
+router.afterEach((to) => {
+  if (to.path === '/') {
+    document.title = defaultTitle
+    setRobots('index, follow')
+    return
+  }
+
+  setRobots('noindex, nofollow')
+  if (to.path.startsWith('/report')) {
+    document.title = '독강영어 성적표'
+  } else if (to.path === '/login') {
+    document.title = '로그인 | 독강영어 ERP'
+  } else {
+    const pageTitle = typeof to.meta.title === 'string' ? to.meta.title : ''
+    document.title = pageTitle ? `${pageTitle} | 독강영어 ERP` : '독강영어 ERP'
+  }
+})
+
 export default router

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /report/
+Disallow: /api/
+
+Sitemap: https://exam-report.vercel.app/sitemap.xml
