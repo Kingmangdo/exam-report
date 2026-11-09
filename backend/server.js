@@ -14,6 +14,11 @@ dotenv.config({ path: join(__dirname, '.env') });
 import { supabase } from './models/supabase.js';
 
 const app = express();
+
+// Vercel(프록시)을 거쳐 들어오므로 X-Forwarded-For 의 실제 방문자 IP를 신뢰한다. (1단계 프록시)
+// 이 설정이 없으면 모든 방문자가 Vercel 서버 IP 하나로 보여 상담 신청 횟수 제한이 전체 공용이 된다.
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 5000;
 
 // 서버 시작 시 외부 IP 로깅 (알리고 등록용)
